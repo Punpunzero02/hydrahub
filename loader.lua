@@ -12,6 +12,6 @@ if not ok or not res or res == "return" or #res < 10 then
 end
 
 
-task.wait(40) 
+task.wait(2) 
 
 loadstring(res)()
