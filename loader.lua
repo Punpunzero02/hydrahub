@@ -11,4 +11,7 @@ if not ok or not res or res == "return" or #res < 10 then
     return
 end
 
+
+task.wait(4) 
+
 loadstring(res)()
