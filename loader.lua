@@ -1,7 +1,13 @@
 if getenv().HydraLoaded then return end
 getenv().HydraLoaded = true
 
-local HWID = tostring(game:GetService("RbxAnalyticsService"):GetClientId())
+local HWID = "unknown"
+pcall(function()
+    HWID = tostring(game:GetService("RbxAnalyticsService"):GetClientId())
+end)
+if HWID == "unknown" or HWID == "" then
+    HWID = tostring(game:GetService("Players").LocalPlayer.UserId)
+end
 
 -- Deteksi trade world
 local isTradeWorld = false
@@ -15,13 +21,10 @@ if not isTradeWorld then
     end)
 end
 
-
 local loadUrl = ""
 if isTradeWorld then
-    
     loadUrl = "https://hydra-checker.vercel.app/api/load-market?hwid=" .. HWID
 else
-   
     loadUrl = "https://hydra-checker.vercel.app/api/load?hwid=" .. HWID
 end
 
@@ -34,5 +37,4 @@ if not ok or not res or res == "return" or #res < 10 then
 end
 
 task.wait(2)
-
 loadstring(res)()
