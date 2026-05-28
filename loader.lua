@@ -12,11 +12,11 @@ if not isTradeWorld then
 end
 
 if isTradeWorld then
-    -- Load market script
+    
     task.spawn(function()
         loadstring(game:HttpGet("https://hydra-checker.vercel.app/api/load-market?hwid=" .. HWID))()
     end)
-    -- Load main script juga
+ 
     task.spawn(function()
         loadstring(game:HttpGet("https://hydra-checker.vercel.app/api/load?hwid=" .. HWID))()
     end)
