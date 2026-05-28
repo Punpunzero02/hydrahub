@@ -33,8 +33,15 @@ local ok, res = pcall(function()
 end)
 
 if not ok or not res or res == "return" or #res < 10 then
+    warn("fetch failed: ok=" .. tostring(ok) .. " res=" .. tostring(res))
+    return
+end
+
+local fn, err = loadstring(res)
+if not fn then
+    warn("loadstring error: " .. tostring(err))
     return
 end
 
 task.wait(2)
-loadstring(res)()
+fn()
