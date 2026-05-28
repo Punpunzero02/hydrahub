@@ -1,18 +1,5 @@
-if _G.HydraLoaded then return end
-_G.HydraLoaded = true
+local HWID = tostring(game:GetService("Players").LocalPlayer.UserId)
 
-local HWID = "unknown"
-pcall(function()
-    HWID = tostring(game:GetService("RbxAnalyticsService"):GetClientId())
-end)
-if HWID == "unknown" or HWID == "" then
-    HWID = tostring(game:GetService("Players").LocalPlayer.UserId)
-end
-
-print("HWID: " .. HWID)
-print("HWID len: " .. #HWID)
-
--- Deteksi trade world
 local isTradeWorld = false
 pcall(function()
     local TW_Data = require(game:GetService("ReplicatedStorage"):WaitForChild("Data"):WaitForChild("TradeWorldData"))
@@ -31,24 +18,4 @@ else
     loadUrl = "https://hydra-checker.vercel.app/api/load?hwid=" .. HWID
 end
 
-print("URL: " .. loadUrl)
-
-local ok, res = pcall(function()
-    return game:HttpGet(loadUrl)
-end)
-
-if not ok or not res or res == "return" or #res < 10 then
-    warn("fetch failed: ok=" .. tostring(ok) .. " res=" .. tostring(res))
-    return
-end
-
-print("res len: " .. #res)
-
-local fn, err = loadstring(res)
-if not fn then
-    warn("loadstring error: " .. tostring(err))
-    return
-end
-
-task.wait(2)
-fn()
+loadstring(game:HttpGet(loadUrl))()
