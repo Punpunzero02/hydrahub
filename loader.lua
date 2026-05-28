@@ -1,5 +1,5 @@
-if getenv().HydraLoaded then return end
-getenv().HydraLoaded = true
+if _G.HydraLoaded then return end
+_G.HydraLoaded = true
 
 local HWID = "unknown"
 pcall(function()
