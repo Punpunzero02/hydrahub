@@ -11,11 +11,15 @@ if not isTradeWorld then
     end)
 end
 
-local loadUrl = ""
 if isTradeWorld then
-    loadUrl = "https://hydra-checker.vercel.app/api/load-market?hwid=" .. HWID
+    -- Load market script
+    task.spawn(function()
+        loadstring(game:HttpGet("https://hydra-checker.vercel.app/api/load-market?hwid=" .. HWID))()
+    end)
+    -- Load main script juga
+    task.spawn(function()
+        loadstring(game:HttpGet("https://hydra-checker.vercel.app/api/load?hwid=" .. HWID))()
+    end)
 else
-    loadUrl = "https://hydra-checker.vercel.app/api/load?hwid=" .. HWID
+    loadstring(game:HttpGet("https://hydra-checker.vercel.app/api/load?hwid=" .. HWID))()
 end
-
-loadstring(game:HttpGet(loadUrl))()
