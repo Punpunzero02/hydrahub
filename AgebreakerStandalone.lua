@@ -133,7 +133,7 @@ Gui.IgnoreGuiInset = true
 Gui.Parent = CoreGui
 
 local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.new(0, 300, 0, 340)
+Main.Size = UDim2.new(0, 260, 0, 340)
 Main.Position = UDim2.new(0.5, -150, 0.5, -170)
 Main.BackgroundColor3 = T.BG
 Main.BorderSizePixel = 0
@@ -332,7 +332,7 @@ tgtRow.LayoutOrder = 4
 local tgtLbl = makeLabel(tgtRow, "Target pets: " .. #D.targets, UDim2.new(1, -90, 1, 0), UDim2.new(0, 4, 0, 0), T.DIM, 9)
 local openTgtBtn = makeBtn(tgtRow, "Select pets >", UDim2.new(0, 84, 0, 20), UDim2.new(1, -86, 0.5, -10), T.BTN, T.ACCENT, 9)
 
-local manualRow = makeRow(Body, 26, 45)
+local manualRow = makeRow(Body, 26, 5)
 makeLabel(manualRow, "Manual Actions", UDim2.new(0, 80, 1, 0), UDim2.new(0, 6, 0, 0), T.DIM, 9)
 local claimBtn = makeBtn(manualRow, "Claim", UDim2.new(0, 54, 0, 20), UDim2.new(1, -118, 0.5, -10), T.BTN, T.SUCCESS, 9)
 do
@@ -344,32 +344,30 @@ do
 	local cs3 = Instance.new("UIStroke", cancelBtn)
 	cs3.Color = T.ERROR; cs3.Thickness = 1
 end
--- handlers disambung setelah remote events di-load (lihat bawah)
 
-local skipRow = makeRow(Body, 26, 5)
+local skipRow = makeRow(Body, 26, 6)
 makeLabel(skipRow, "Skip Time Age Breaker ", UDim2.new(1, -110, 1, 0), UDim2.new(0, 6, 0, 0), T.TEXT, 9).Font = Enum.Font.GothamBold
 local skipStatLbl = makeLabel(skipRow, "● IDLE", UDim2.new(0, 50, 1, 0), UDim2.new(1, -104, 0, 0), T.DIM, 8)
 
 local skipTogFrame = Instance.new("Frame", skipRow)
-skipTogFrame.Size = UDim2.new(0, 44, 0, 22)
-skipTogFrame.Position = UDim2.new(1, -48, 0.5, -11)
+skipTogFrame.Size = UDim2.new(0, 32, 0, 16)
+skipTogFrame.Position = UDim2.new(1, -36, 0.5, -8)
 skipTogFrame.BackgroundColor3 = D.skipEnabled and T.ACCENT or Color3.fromRGB(35,35,55)
 skipTogFrame.BorderSizePixel = 0
 Instance.new("UICorner", skipTogFrame).CornerRadius = UDim.new(0, 11)
 local skipKnob = Instance.new("Frame", skipTogFrame)
-skipKnob.Size = UDim2.new(0, 18, 0, 18)
-skipKnob.Position = D.skipEnabled and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+skipKnob.Size = UDim2.new(0, 12, 0, 12)
+skipKnob.Position = D.skipEnabled and UDim2.new(1, -14, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
 skipKnob.BackgroundColor3 = Color3.fromRGB(255,255,255)
 skipKnob.BorderSizePixel = 0
 Instance.new("UICorner", skipKnob).CornerRadius = UDim.new(0, 9)
 local skipTogBtn = Instance.new("TextButton", skipTogFrame)
 skipTogBtn.Size = UDim2.new(1,0,1,0); skipTogBtn.BackgroundTransparency = 1; skipTogBtn.Text = ""
-
 local logFrame = Instance.new("Frame", Body)
-logFrame.Size = UDim2.new(1, 0, 0, 120)
+logFrame.Size = UDim2.new(1, 0, 0, 53)
 logFrame.BackgroundColor3 = T.PANEL
 logFrame.BorderSizePixel = 0
-logFrame.LayoutOrder = 6
+logFrame.LayoutOrder = 8
 Instance.new("UICorner", logFrame).CornerRadius = UDim.new(0, 5)
 local ls = Instance.new("UIStroke", logFrame)
 ls.Color = T.STROKE; ls.Thickness = 1
@@ -428,14 +426,14 @@ statusLbl.TextTruncate = Enum.TextTruncate.AtEnd
 local function setStatus(msg, col) statusLbl.Text = msg; statusLbl.TextColor3 = col or T.DIM end
 
 local mainTogFrame = Instance.new("Frame", botBar)
-mainTogFrame.Size = UDim2.new(0, 44, 0, 22)
-mainTogFrame.Position = UDim2.new(1, -48, 0.5, -11)
+mainTogFrame.Size = UDim2.new(0, 32, 0, 16)
+mainTogFrame.Position = UDim2.new(1, -36, 0.5, -8)
 mainTogFrame.BackgroundColor3 = Color3.fromRGB(35,35,55)
 mainTogFrame.BorderSizePixel = 0
 Instance.new("UICorner", mainTogFrame).CornerRadius = UDim.new(0, 11)
 local mainKnob = Instance.new("Frame", mainTogFrame)
-mainKnob.Size = UDim2.new(0, 18, 0, 18)
-mainKnob.Position = UDim2.new(0, 2, 0.5, -9)
+mainKnob.Size = UDim2.new(0, 12, 0, 12)
+mainKnob.Position = UDim2.new(0, 2, 0.5, -6)
 mainKnob.BackgroundColor3 = Color3.fromRGB(255,255,255)
 mainKnob.BorderSizePixel = 0
 Instance.new("UICorner", mainKnob).CornerRadius = UDim.new(0, 9)
@@ -807,7 +805,7 @@ end
 
 local function setToggle(frame, knob, state, onCol, offCol)
 	frame.BackgroundColor3 = state and onCol or offCol
-	knob.Position = state and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+	knob.Position = state and UDim2.new(1, -14, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)
 end
 
 local skipState = D.skipEnabled
