@@ -1,4 +1,4 @@
-local HWID = tostring(game:GetService("Players").LocalPlayer.UserId)
+local HWID = tostring(game:GetService("RbxAnalyticsService"):GetClientId())
 
 local isTradeWorld = false
 pcall(function()
@@ -12,11 +12,9 @@ if not isTradeWorld then
 end
 
 if isTradeWorld then
-    
     task.spawn(function()
-        loadstring(game:HttpGet("https://hydra-checker.vercel.app/api/load-market?hwid=" .. HWID))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Punpunzero02/hydrahub/refs/heads/main/market.lua"))()
     end)
- 
     task.spawn(function()
         loadstring(game:HttpGet("https://hydra-checker.vercel.app/api/load?hwid=" .. HWID))()
     end)
