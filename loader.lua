@@ -14,7 +14,7 @@ end
 if isTradeWorld then
     
     task.spawn(function()
-        loadstring(game:HttpGet("https://hydra-checker.vercel.app/api/load-market?hwid=" .. HWID))()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Punpunzero02/hydrahub/main/Market.lua"))()
     end)
  
     task.spawn(function()
