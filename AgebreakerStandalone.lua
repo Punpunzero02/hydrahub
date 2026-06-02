@@ -43,18 +43,34 @@ loadD()
 local function sendWebhook(title, msg, color)
 	if not D.webhookUrl or D.webhookUrl == "" then return end
 	task.spawn(function()
-		local ok, err = pcall(function()
-			HttpSvc:PostAsync(D.webhookUrl, HttpSvc:JSONEncode({
-				embeds = {{
-					title = title,
-					description = msg,
-					color = color or 7506394,
-					footer = { text = "AUTO AGE BREAKER • " .. os.date("%H:%M:%S") }
-				}}
-			}), Enum.HttpContentType.ApplicationJson)
-		end)
-		if not ok then
-			print("Webhook error: " .. tostring(err))
+		local payload = HttpSvc:JSONEncode({
+			embeds = {{
+				title = title,
+				description = msg,
+				color = color or 7506394,
+				footer = { text = "AUTO AGE BREAKER • " .. os.date("%H:%M:%S") }
+			}}
+		})
+		local reqFn = syn and syn.request
+			or (typeof(request) == "function" and request)
+			or (typeof(http_request) == "function" and http_request)
+			or (http and http.request)
+		local sent = false
+		if reqFn then
+			pcall(function()
+				reqFn({
+					Url = D.webhookUrl,
+					Method = "POST",
+					Headers = { ["Content-Type"] = "application/json" },
+					Body = payload
+				})
+				sent = true
+			end)
+		end
+		if not sent then
+			pcall(function()
+				HttpSvc:PostAsync(D.webhookUrl, payload, Enum.HttpContentType.ApplicationJson)
+			end)
 		end
 	end)
 end
@@ -357,11 +373,13 @@ local webhookInp = makeInput(webhookRow, D.webhookUrl ~= "" and D.webhookUrl or 
 webhookInp.PlaceholderText = "https://discord.com/api/webhooks/..."
 webhookInp.PlaceholderColor3 = T.DIM
 local webhookSaveBtn = makeBtn(webhookRow, "Save", UDim2.new(0, 40, 0, 20), UDim2.new(1, -44, 0.5, -10), T.ACCENT, T.TEXT, 9)
-webhookSaveBtn.MouseButton1Click:Connect(function()
+webhookInp:GetPropertyChangedSignal("Text"):Connect(function()
 	D.webhookUrl = webhookInp.Text
 	saveD()
-	addLog("Webhook saved!", T.SUCCESS)
+end)
+webhookSaveBtn.MouseButton1Click:Connect(function()
 	sendWebhook("✅ Webhook Test", "Webhook berhasil diset ke AUTO AGE BREAKER!", 5763719)
+	addLog("Webhook test sent!", T.SUCCESS)
 end)
 
 local tgtRow = Instance.new("Frame", Body)
@@ -784,7 +802,21 @@ local function abDoSkipLoop()
 			if shouldSkip then
 				addLog(string.format("Timer %s — mulai skip ke TW...", fmtTime(md.TimeLeft or 0)), T.ACCENT)
 				skipStatLbl.Text = "→ TW"; skipStatLbl.TextColor3 = T.ACCENT
-
+                do
+	local mdSnap = md
+	local snapAge = getAge(D.targets[1] or "")
+	local mutCode = ""
+	local inv = getInv()
+	local tgtUUID = D.targets[1] or ""
+	if inv[tgtUUID] and inv[tgtUUID].PetData then
+		mutCode = inv[tgtUUID].PetData.MutationType or ""
+	end
+	local mutTxt = (mutCode ~= "" and mutCode ~= "m") and (MUTATION_MAP[mutCode] or mutCode) or "None"
+	sendWebhook("🔁 Skip Dimulai", string.format(
+		"Mulai hop server!\nSisa waktu: **%s**\nAge saat ini: **%d/%d**\nMutasi: **%s**",
+		fmtTime(mdSnap.TimeLeft or 0), snapAge, D.maxLevel, mutTxt
+	), 7506394)
+end
 			
 				if TravelToTradeWorld then
 					if AB_BlockTravel or AB_Claiming then
@@ -804,7 +836,6 @@ local function abDoSkipLoop()
 					end
 					hopCount = hopCount + 1
 					skipStatLbl.Text = string.format("Hop %d", hopCount); skipStatLbl.TextColor3 = T.ACCENT
-
 					local mdHop = abGetMachineData()
 					
 					if mdHop and not mdHop.IsRunning and (mdHop.TimeLeft or 0) <= 0 then
@@ -823,7 +854,8 @@ local function abDoSkipLoop()
 					local mdAfter = abGetMachineData()
 					if mdAfter and not mdAfter.IsRunning and (mdAfter.TimeLeft or 0) <= 0 then
 						addLog(string.format("Timer habis setelah hop %d!", hopCount), T.SUCCESS)
-						break
+						sendWebhook("⏱️ Timer Habis!", string.format("Timer selesai setelah **%d hop**.", hopCount), 3066993)
+						 break
 					end
 				end
 
@@ -964,7 +996,7 @@ local function abRunLoop()
 
 			if currentAge >= maxLevel then
 				addLog(string.format("✓ DONE %s reached Age %d!", petName, maxLevel), T.SUCCESS)
-				sendWebhook("✅ Pet Done!", string.format("**%s** selesai di-AB!\nAge: **%d**", petName, maxLevel), 5763719)
+				sendWebhook("✅ Pet Done!", string.format("**%s** selesai di-AB!\nAge: **%d/%d**\nKG: **%.2f**", petName, currentAge, maxLevel, getKG(targetUUID)), 5763719)
 				if not D.completed then D.completed = {} end
 				if not table.find(D.completed, targetUUID) then
 					table.insert(D.completed, targetUUID)
@@ -996,7 +1028,7 @@ local function abRunLoop()
 				addLog(string.format("Claimed! Age now: %d", newAge), T.SUCCESS)
 				if newAge >= maxLevel then
 					addLog(string.format("✓ DONE %s reached Age %d!", petName, maxLevel), T.SUCCESS)
-					sendWebhook("✅ Pet Done!", string.format("**%s** selesai di-AB!\nAge: **%d**", petName, maxLevel), 5763719)
+					sendWebhook("✅ Pet Done!", string.format("**%s** selesai di-AB!\nAge: **%d/%d**\nKG: **%.2f**", petName, newAge, maxLevel, getKG(targetUUID)), 5763719)
 					if not D.completed then D.completed = {} end
 					if not table.find(D.completed, targetUUID) then
 						table.insert(D.completed, targetUUID)
@@ -1069,7 +1101,7 @@ local function abRunLoop()
 			local tumbalUUID = abFindTumbal(targetUUID, cachedTargetType)
 			if not tumbalUUID then
 				addLog("No tumbal available! Stopping.", T.ERROR)
-				sendWebhook("⚠️ Tumbal Habis!", string.format("Tidak ada tumbal untuk **%s**. Script berhenti.", petName), 15548997)
+				sendWebhook("⚠️ Tumbal Habis!", string.format("Tidak ada tumbal untuk **%s**.\nCurrent Age: **%d/%d**\nKG: **%.2f**\nScript berhenti.", petName, getAge(targetUUID), D.maxLevel, getKG(targetUUID)), 15548997)
 				AB_Running = false; break
 			end
 
@@ -1097,7 +1129,7 @@ end
 
 	AB_Running = false
 	addLog("════ ALL DONE ════", T.ACCENT)
-	sendWebhook("🎉 All Done!", "Semua target pet selesai di-AB!", 5763719)
+	sendWebhook("🎉 All Done!", string.format("Semua target pet selesai di-AB!\nMax Level: **%d**", D.maxLevel), 5763719)
 	setStatus("● IDLE", T.DIM)
 	setToggle(mainTogFrame, mainKnob, false, T.ACCENT, Color3.fromRGB(35,35,55))
 end
