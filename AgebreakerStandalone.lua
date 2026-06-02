@@ -369,10 +369,12 @@ end)
 
 local webhookRow = makeRow(Body, 26, 4)
 makeLabel(webhookRow, "Webhook", UDim2.new(0, 55, 1, 0), UDim2.new(0, 6, 0, 0), T.DIM, 9)
-local webhookInp = makeInput(webhookRow, D.webhookUrl ~= "" and D.webhookUrl or "", UDim2.new(1, -120, 0, 20), UDim2.new(0, 58, 0.5, -10))
+local webhookInp = makeInput(webhookRow, D.webhookUrl ~= "" and D.webhookUrl or "", UDim2.new(1, -106, 0, 18), UDim2.new(0, 58, 0.5, -9))
+webhookInp.TextTruncate = Enum.TextTruncate.AtEnd
+webhookInp.ClipsDescendants = true
 webhookInp.PlaceholderText = "https://discord.com/api/webhooks/..."
 webhookInp.PlaceholderColor3 = T.DIM
-local webhookSaveBtn = makeBtn(webhookRow, "Save", UDim2.new(0, 40, 0, 20), UDim2.new(1, -44, 0.5, -10), T.ACCENT, T.TEXT, 9)
+local webhookSaveBtn = makeBtn(webhookRow, "Test", UDim2.new(0, 40, 0, 20), UDim2.new(1, -44, 0.5, -10), T.ACCENT, T.TEXT, 9)
 webhookInp:GetPropertyChangedSignal("Text"):Connect(function()
 	D.webhookUrl = webhookInp.Text
 	saveD()
