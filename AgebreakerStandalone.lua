@@ -18,7 +18,7 @@ local FAV_ATTR = "d"
 
 local MUTATION_MAP = HttpSvc:JSONDecode(game:HttpGet("https://raw.githubusercontent.com/Punpunzero02/updater/refs/heads/main/mutation.json"))
 
-local D = { targets = {}, tumbalKgMax = 2.0, tumbalAgeMax = 99, skipEnabled = false, maxLevel = 125, autoStart = false }
+local D = { targets = {}, tumbalKgMax = 2.0, tumbalAgeMax = 99, skipEnabled = false, maxLevel = 125, autoStart = false, webhookUrl = "" }
 
 local function saveD()
 	if not writefile then return end
@@ -35,8 +35,29 @@ local function loadD()
 	if dec.skipEnabled ~= nil then D.skipEnabled = dec.skipEnabled end
 	if dec.maxLevel ~= nil then D.maxLevel = dec.maxLevel end
 	if dec.autoStart ~= nil then D.autoStart = dec.autoStart end
+	if dec.completed then D.completed = dec.completed end
+	if dec.webhookUrl then D.webhookUrl = dec.webhookUrl end
 end
 loadD()
+
+local function sendWebhook(title, msg, color)
+	if not D.webhookUrl or D.webhookUrl == "" then return end
+	task.spawn(function()
+		local ok, err = pcall(function()
+			HttpSvc:PostAsync(D.webhookUrl, HttpSvc:JSONEncode({
+				embeds = {{
+					title = title,
+					description = msg,
+					color = color or 7506394,
+					footer = { text = "AUTO AGE BREAKER • " .. os.date("%H:%M:%S") }
+				}}
+			}), Enum.HttpContentType.ApplicationJson)
+		end)
+		if not ok then
+			print("Webhook error: " .. tostring(err))
+		end
+	end)
+end
 
 local function getInv()
 	local d = DataService:GetData()
@@ -57,8 +78,13 @@ local function getKG(uuid)
 end
 
 local function getAge(uuid)
-	local inv = getInv()
-	return inv[uuid] and (inv[uuid].PetData.Level or 0) or 0
+    for i = 1, 3 do
+        local inv = getInv()
+        local age = inv[uuid] and (inv[uuid].PetData.Level or 0) or nil
+        if age then return age end
+        task.wait(0.5)
+    end
+    return 0
 end
 
 local function getPType(uuid)
@@ -133,7 +159,7 @@ Gui.IgnoreGuiInset = true
 Gui.Parent = CoreGui
 
 local Main = Instance.new("Frame", Gui)
-Main.Size = UDim2.new(0, 260, 0, 340)
+Main.Size = UDim2.new(0, 380, 0, 340)
 Main.Position = UDim2.new(0.5, -150, 0.5, -170)
 Main.BackgroundColor3 = T.BG
 Main.BorderSizePixel = 0
@@ -234,6 +260,7 @@ Body.Size = UDim2.new(1, -16, 1, -38)
 Body.Position = UDim2.new(0, 8, 0, 34)
 Body.BackgroundTransparency = 1
 Body.BorderSizePixel = 0
+Body.ClipsDescendants = true
 local BodyLayout = Instance.new("UIListLayout", Body)
 BodyLayout.Padding = UDim.new(0, 4)
 BodyLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -298,7 +325,7 @@ local function makeBtn(parent, txt, xs, xp, bg, tc, fs)
 end
 
 local kgRow = makeRow(Body, 26, 1)
-makeLabel(kgRow, "Tumbal: Max Base KG", UDim2.new(1, -80, 1, 0), UDim2.new(0, 6, 0, 0), T.DIM, 9)
+makeLabel(kgRow, "Tumbal: Max KG", UDim2.new(1, -80, 1, 0), UDim2.new(0, 6, 0, 0), T.DIM, 9)
 local kgInp = makeInput(kgRow, D.tumbalKgMax)
 kgInp.FocusLost:Connect(function()
 	local v = tonumber(kgInp.Text)
@@ -324,15 +351,28 @@ maxLvlInp.FocusLost:Connect(function()
 	else maxLvlInp.Text = tostring(D.maxLevel) end
 end)
 
+local webhookRow = makeRow(Body, 26, 4)
+makeLabel(webhookRow, "Webhook", UDim2.new(0, 55, 1, 0), UDim2.new(0, 6, 0, 0), T.DIM, 9)
+local webhookInp = makeInput(webhookRow, D.webhookUrl ~= "" and D.webhookUrl or "", UDim2.new(1, -120, 0, 20), UDim2.new(0, 58, 0.5, -10))
+webhookInp.PlaceholderText = "https://discord.com/api/webhooks/..."
+webhookInp.PlaceholderColor3 = T.DIM
+local webhookSaveBtn = makeBtn(webhookRow, "Save", UDim2.new(0, 40, 0, 20), UDim2.new(1, -44, 0.5, -10), T.ACCENT, T.TEXT, 9)
+webhookSaveBtn.MouseButton1Click:Connect(function()
+	D.webhookUrl = webhookInp.Text
+	saveD()
+	addLog("Webhook saved!", T.SUCCESS)
+	sendWebhook("✅ Webhook Test", "Webhook berhasil diset ke AUTO AGE BREAKER!", 5763719)
+end)
+
 local tgtRow = Instance.new("Frame", Body)
 tgtRow.Size = UDim2.new(1, 0, 0, 22)
 tgtRow.BackgroundTransparency = 1
 tgtRow.BorderSizePixel = 0
-tgtRow.LayoutOrder = 4
+tgtRow.LayoutOrder = 5
 local tgtLbl = makeLabel(tgtRow, "Target pets: " .. #D.targets, UDim2.new(1, -90, 1, 0), UDim2.new(0, 4, 0, 0), T.DIM, 9)
 local openTgtBtn = makeBtn(tgtRow, "Select pets >", UDim2.new(0, 84, 0, 20), UDim2.new(1, -86, 0.5, -10), T.BTN, T.ACCENT, 9)
 
-local manualRow = makeRow(Body, 26, 5)
+local manualRow = makeRow(Body, 26, 6)
 makeLabel(manualRow, "Manual Actions", UDim2.new(0, 80, 1, 0), UDim2.new(0, 6, 0, 0), T.DIM, 9)
 local claimBtn = makeBtn(manualRow, "Claim", UDim2.new(0, 54, 0, 20), UDim2.new(1, -118, 0.5, -10), T.BTN, T.SUCCESS, 9)
 do
@@ -345,7 +385,7 @@ do
 	cs3.Color = T.ERROR; cs3.Thickness = 1
 end
 
-local skipRow = makeRow(Body, 26, 6)
+local skipRow = makeRow(Body, 26, 7)
 makeLabel(skipRow, "Skip Time Age Breaker ", UDim2.new(1, -110, 1, 0), UDim2.new(0, 6, 0, 0), T.TEXT, 9).Font = Enum.Font.GothamBold
 local skipStatLbl = makeLabel(skipRow, "● IDLE", UDim2.new(0, 50, 1, 0), UDim2.new(1, -104, 0, 0), T.DIM, 8)
 
@@ -367,7 +407,9 @@ local logFrame = Instance.new("Frame", Body)
 logFrame.Size = UDim2.new(1, 0, 0, 53)
 logFrame.BackgroundColor3 = T.PANEL
 logFrame.BorderSizePixel = 0
-logFrame.LayoutOrder = 8
+logFrame.LayoutOrder = 9
+
+
 Instance.new("UICorner", logFrame).CornerRadius = UDim.new(0, 5)
 local ls = Instance.new("UIStroke", logFrame)
 ls.Color = T.STROKE; ls.Thickness = 1
@@ -414,7 +456,7 @@ local botBar = Instance.new("Frame", Body)
 botBar.Size = UDim2.new(1, 0, 0, 36)
 botBar.BackgroundColor3 = T.PANEL
 botBar.BorderSizePixel = 0
-botBar.LayoutOrder = 7
+botBar.LayoutOrder = 8
 Instance.new("UICorner", botBar).CornerRadius = UDim.new(0, 5)
 local bb = Instance.new("UIStroke", botBar)
 bb.Color = T.STROKE; bb.Thickness = 1
@@ -884,16 +926,22 @@ local function abRunLoop()
 			end
 			if not petInMachine then
 				addLog(string.format("[%d/%d] Skip — not in inventory", idx, #snapshot), T.DIM)
-				local i = table.find(D.targets, targetUUID)
-				if i then table.remove(D.targets, i); saveD() end
+				if not D.completed then D.completed = {} end
+				if not table.find(D.completed, targetUUID) then
+					table.insert(D.completed, targetUUID)
+					saveD()
+				end
 				tgtLbl.Text = "Target pets: " .. #D.targets
 				continue
 			end
 			inv = getInv()
 			if not inv[targetUUID] then
 				addLog(string.format("[%d/%d] Skip — masih tidak ada di inventory", idx, #snapshot), T.DIM)
-				local i = table.find(D.targets, targetUUID)
-				if i then table.remove(D.targets, i); saveD() end
+				if not D.completed then D.completed = {} end
+				if not table.find(D.completed, targetUUID) then
+					table.insert(D.completed, targetUUID)
+					saveD()
+				end
 				tgtLbl.Text = "Target pets: " .. #D.targets
 				continue
 			end
@@ -916,8 +964,12 @@ local function abRunLoop()
 
 			if currentAge >= maxLevel then
 				addLog(string.format("✓ DONE %s reached Age %d!", petName, maxLevel), T.SUCCESS)
-				local i = table.find(D.targets, targetUUID)
-				if i then table.remove(D.targets, i); saveD() end
+				sendWebhook("✅ Pet Done!", string.format("**%s** selesai di-AB!\nAge: **%d**", petName, maxLevel), 5763719)
+				if not D.completed then D.completed = {} end
+				if not table.find(D.completed, targetUUID) then
+					table.insert(D.completed, targetUUID)
+					saveD()
+				end
 				tgtLbl.Text = "Target pets: " .. #D.targets
 				break
 			end
@@ -944,8 +996,12 @@ local function abRunLoop()
 				addLog(string.format("Claimed! Age now: %d", newAge), T.SUCCESS)
 				if newAge >= maxLevel then
 					addLog(string.format("✓ DONE %s reached Age %d!", petName, maxLevel), T.SUCCESS)
-					local i = table.find(D.targets, targetUUID)
-					if i then table.remove(D.targets, i); saveD() end
+					sendWebhook("✅ Pet Done!", string.format("**%s** selesai di-AB!\nAge: **%d**", petName, maxLevel), 5763719)
+					if not D.completed then D.completed = {} end
+					if not table.find(D.completed, targetUUID) then
+						table.insert(D.completed, targetUUID)
+						saveD()
+					end
 					tgtLbl.Text = "Target pets: " .. #D.targets
 					break
 				end
@@ -1013,6 +1069,7 @@ local function abRunLoop()
 			local tumbalUUID = abFindTumbal(targetUUID, cachedTargetType)
 			if not tumbalUUID then
 				addLog("No tumbal available! Stopping.", T.ERROR)
+				sendWebhook("⚠️ Tumbal Habis!", string.format("Tidak ada tumbal untuk **%s**. Script berhenti.", petName), 15548997)
 				AB_Running = false; break
 			end
 
@@ -1040,6 +1097,7 @@ end
 
 	AB_Running = false
 	addLog("════ ALL DONE ════", T.ACCENT)
+	sendWebhook("🎉 All Done!", "Semua target pet selesai di-AB!", 5763719)
 	setStatus("● IDLE", T.DIM)
 	setToggle(mainTogFrame, mainKnob, false, T.ACCENT, Color3.fromRGB(35,35,55))
 end
