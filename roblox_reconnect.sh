@@ -8,7 +8,7 @@
 PKG="com.roblox.client"
 CHECK_INTERVAL=10
 LOG_FILE="/storage/emulated/0/roblox_reconnect.log"
-CONFIG_FILE="$HOME/roblox_config.cfg"
+CONFIG_FILE="/data/local/tmp/roblox_config.cfg"
 
 STATE_DIR="/data/local/tmp/rbx_state"
 FILE_LAST_RECONNECT="$STATE_DIR/last_reconnect"
