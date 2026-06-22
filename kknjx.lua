@@ -2092,7 +2092,13 @@ function Chloex:Window(GuiConfig)
                local function UpdateSize()
     task.spawn(function()
         task.wait()
-        local totalHeight = ParagraphContent.TextBounds.Y + 33
+        task.wait()  
+        ParagraphContent.TextWrapped = true
+        ParagraphContent.Size = UDim2.new(1, -16, 0, 9999)  
+        task.wait()
+        local contentHeight = ParagraphContent.TextBounds.Y
+        ParagraphContent.Size = UDim2.new(1, -16, 0, contentHeight)
+        local totalHeight = contentHeight + 33
         if ParagraphButton then
             totalHeight = totalHeight + ParagraphButton.Size.Y.Offset + 5
         end
@@ -2110,10 +2116,10 @@ function ParagraphFunc:SetContent(content)
     ParagraphContent.Text = content
     task.spawn(function()
         task.wait()
+        task.wait()
         UpdateSize()
     end)
 end
-
                 CountItem = CountItem + 1
                 RegisterSearch({ label = ParagraphConfig.Title, tab = TabConfig.Name, kind = "Info", switch = SearchSwitch })
                 return ParagraphFunc
