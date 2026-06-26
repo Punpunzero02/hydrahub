@@ -54,9 +54,9 @@ show_current_config() {
     echo ""
     echo "  URL    : ${URL:-[belum diisi]}"
     echo "  Relog  : ${RELOG_SETIAP_JAM} jam $([ "$RELOG_SETIAP_JAM" = "0" ] && echo '(OFF)' || echo '(ON)')"
-    echo "  Restart crash    : $(show_toggle $RESTART_KALAU_CRASH)"
-    echo "  Reconnect@home   : $(show_toggle $RECONNECT_SAAT_HOME)"
-    echo "  Mode             : $MODE"
+    echo "  Restart crash  : $(show_toggle $RESTART_KALAU_CRASH)"
+    echo "  Reconnect@home : $(show_toggle $RECONNECT_SAAT_HOME)"
+    echo "  Mode           : $MODE"
     echo ""
 }
 
@@ -192,10 +192,10 @@ get_cpu_ram() {
     local NUM=$1
     local PID=$(get_pid "$NUM")
     [ "$PID" = "0" ] && echo "CPU:? RAM:?" && return
-    local CPU=0
     local STAT1=$(cat /proc/$PID/stat 2>/dev/null)
     sleep 1
     local STAT2=$(cat /proc/$PID/stat 2>/dev/null)
+    local CPU=0
     if [ -n "$STAT1" ] && [ -n "$STAT2" ]; then
         local U1=$(echo $STAT1 | awk '{print $14+$15}')
         local U2=$(echo $STAT2 | awk '{print $14+$15}')
@@ -214,15 +214,13 @@ get_ping() {
 }
 
 get_lag_status() {
-    local NUM=$1
-    local LAG=$(cat "$STATE_DIR/lag${NUM}" 2>/dev/null || echo 0)
+    local LAG=$(cat "$STATE_DIR/lag${1}" 2>/dev/null || echo 0)
     [ "$LAG" = "1" ] && echo "LAG" || echo "OK"
 }
 
 bring_to_foreground() {
     local PKG=$1
-    local DELAY=$((RANDOM % 4 + 5))
-    sleep "$DELAY"
+    sleep 4
     su -c "am start -n $PKG/com.roblox.client.ActivityNativeMain" 2>/dev/null
 }
 
@@ -348,7 +346,7 @@ monitor_instance() {
             if echo "$line" | grep -q "doTeleport"; then
                 local STATE=$(cat "$STATE_DIR/dc_state${NUM}" 2>/dev/null)
                 if [ "$STATE" = "WAITING" ]; then
-                    log "[$PKG] [NORMAL] doTeleport detected - Roblox handle sendiri, pantau 70s..."
+                    log "[$PKG] [NORMAL] doTeleport detected - pantau 70s..."
                     echo "DONE" > "$STATE_DIR/dc_state${NUM}"
                 fi
                 continue
@@ -493,6 +491,7 @@ start_join_timeout "$PKG2" "2"
 
 log "Monitoring aktif..."
 
+NOW=0
 while true; do
     if check_relog_needed "1"; then
         log "[$PKG1] Relog..."
@@ -508,7 +507,7 @@ while true; do
         start_join_timeout "$PKG2" "2"
     fi
 
-    local NOW=$(date +%s)
+    NOW=$(date +%s)
     if [ $((NOW - LAST_VERBOSE)) -ge "$VERBOSE_INTERVAL" ]; then
         show_status
         LAST_VERBOSE=$NOW
