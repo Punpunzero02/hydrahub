@@ -174,8 +174,19 @@ menu_edit_setting() {
     done
 }
 
-log() {
-    echo "[$(date +%H:%M:%S)] $1" | tee -a "$LOG_FILE"
+flog() {
+    echo "[$(date +%H:%M:%S)] $1" >> "$LOG_FILE"
+    echo "$1" >> "$STATE_DIR/events"
+}
+
+log_event() {
+    local MAX=20
+    echo "[$(date +%H:%M:%S)] $1" >> "$STATE_DIR/events"
+    local LINES=$(wc -l < "$STATE_DIR/events" 2>/dev/null || echo 0)
+    if [ "$LINES" -gt "$MAX" ]; then
+        tail -n "$MAX" "$STATE_DIR/events" > "$STATE_DIR/events.tmp" && mv "$STATE_DIR/events.tmp" "$STATE_DIR/events"
+    fi
+    echo "[$(date +%H:%M:%S)] $1" >> "$LOG_FILE"
 }
 
 update_pid() {
@@ -226,10 +237,11 @@ bring_to_foreground() {
 
 join_private_server() {
     local PKG=$1 NUM=$2
-    log "[$PKG] Join private server..."
+    log_event "[$PKG] Join private server..."
     echo "0" > "$STATE_DIR/ingame${NUM}"
     echo "0" > "$STATE_DIR/joining${NUM}"
     echo "0" > "$STATE_DIR/lag${NUM}"
+    echo "0" > "$STATE_DIR/left_game${NUM}"
     am force-stop "$PKG"
     sleep 4
     am start -a android.intent.action.VIEW -d "$URL" "$PKG"
@@ -238,7 +250,7 @@ join_private_server() {
     local RC=$(cat "$STATE_DIR/rc_count${NUM}" 2>/dev/null || echo 0)
     echo $((RC+1)) > "$STATE_DIR/rc_count${NUM}"
     echo "$(date +%s)" > "$STATE_DIR/last_relog${NUM}"
-    log "[$PKG] Launched | RC:$((RC+1))"
+    log_event "[$PKG] Launched | RC:$((RC+1))"
 }
 
 start_join_timeout() {
@@ -250,7 +262,7 @@ start_join_timeout() {
         local INGAME=$(cat "$STATE_DIR/ingame${NUM}" 2>/dev/null || echo 0)
         local JOINING=$(cat "$STATE_DIR/joining${NUM}" 2>/dev/null || echo 0)
         if [ "$JOINING" = "1" ] && [ "$INGAME" != "1" ]; then
-            log "[$PKG] Timeout ${JOIN_TIMEOUT}s - reconnect..."
+            log_event "[$PKG] Timeout ${JOIN_TIMEOUT}s - reconnect..."
             local DC=$(cat "$STATE_DIR/dc_count${NUM}" 2>/dev/null || echo 0)
             echo $((DC+1)) > "$STATE_DIR/dc_count${NUM}"
             join_private_server "$PKG" "$NUM"
@@ -262,9 +274,10 @@ start_join_timeout() {
 
 monitor_instance() {
     local PKG=$1 NUM=$2
-    log "[$PKG] Monitor aktif (PID: $$)"
+    log_event "[$PKG] Monitor aktif"
     echo "0" > "$STATE_DIR/in_background${NUM}"
     echo "0" > "$STATE_DIR/lag${NUM}"
+    echo "0" > "$STATE_DIR/left_game${NUM}"
     update_pid "$PKG" "$NUM"
     local CURRENT_PID=$(get_pid "$NUM")
 
@@ -272,32 +285,76 @@ monitor_instance() {
 
         if echo "$line" | grep -q "Detected application backgrounding"; then
             echo "1" > "$STATE_DIR/in_background${NUM}"
-            log "[$PKG] Background"
+            log_event "[$PKG] Background"
             if [ "$RECONNECT_SAAT_HOME" = "0" ]; then
-                bring_to_foreground "$PKG" &
+                (
+                    sleep 5
+                    local STILL_BG=$(cat "$STATE_DIR/in_background${NUM}" 2>/dev/null || echo 0)
+                    if [ "$STILL_BG" = "1" ]; then
+                        log_event "[$PKG] Masih BG setelah 5s - tarik FG"
+                        bring_to_foreground "$PKG"
+                    fi
+                ) &
             fi
             continue
         fi
 
         if echo "$line" | grep -q "Detected application foregrounding"; then
             echo "0" > "$STATE_DIR/in_background${NUM}"
-            log "[$PKG] Foreground"
+            local LEFT_AT_FG=$(cat "$STATE_DIR/left_game${NUM}" 2>/dev/null || echo 0)
+            if [ "$LEFT_AT_FG" = "1" ]; then
+                log_event "[$PKG] FG setelah leave - force rejoin PS..."
+                echo "0" > "$STATE_DIR/left_game${NUM}"
+                local DC=$(cat "$STATE_DIR/dc_count${NUM}" 2>/dev/null || echo 0)
+                echo $((DC+1)) > "$STATE_DIR/dc_count${NUM}"
+                echo "0" > "$STATE_DIR/ingame${NUM}"
+                join_private_server "$PKG" "$NUM"
+                update_pid "$PKG" "$NUM"
+                CURRENT_PID=$(get_pid "$NUM")
+                break
+            fi
+            log_event "[$PKG] Foreground"
+            continue
+        fi
+
+        if echo "$line" | grep -q "leaveUGCGameInternal"; then
+            echo "1" > "$STATE_DIR/left_game${NUM}"
+            log_event "[$PKG] leaveUGCGame terdeteksi - tunggu konfirmasi APP mode..."
+            continue
+        fi
+
+        if echo "$line" | grep -q "Roblox has entered APP mode"; then
+            local LEFT=$(cat "$STATE_DIR/left_game${NUM}" 2>/dev/null || echo 0)
+            if [ "$LEFT" = "1" ]; then
+                log_event "[$PKG] Confirmed di Home (leave+APP mode) - force rejoin PS..."
+                echo "0" > "$STATE_DIR/left_game${NUM}"
+                local DC=$(cat "$STATE_DIR/dc_count${NUM}" 2>/dev/null || echo 0)
+                echo $((DC+1)) > "$STATE_DIR/dc_count${NUM}"
+                echo "0" > "$STATE_DIR/ingame${NUM}"
+                join_private_server "$PKG" "$NUM"
+                update_pid "$PKG" "$NUM"
+                CURRENT_PID=$(get_pid "$NUM")
+                break
+            else
+                log_event "[$PKG] APP mode tanpa leave - skip (cold start)"
+            fi
             continue
         fi
 
         if echo "$line" | grep -qE "! Joining game|launchGameWithParams"; then
             local IP=$(echo "$line" | grep -oE "([0-9]{1,3}\.){3}[0-9]{1,3}" | head -1)
             [ -n "$IP" ] && echo "$IP" > "$STATE_DIR/server_ip${NUM}"
-            log "[$PKG] Join dimulai - timeout ${JOIN_TIMEOUT}s"
+            log_event "[$PKG] Join dimulai - timeout ${JOIN_TIMEOUT}s"
             echo "0" > "$STATE_DIR/ingame${NUM}"
             start_join_timeout "$PKG" "$NUM"
             continue
         fi
 
         if echo "$line" | grep -q "onGameLoaded.*SessionReporterState_GameLoaded"; then
-            log "[$PKG] INGAME!"
+            log_event "[$PKG] INGAME!"
             echo "1" > "$STATE_DIR/ingame${NUM}"
             echo "0" > "$STATE_DIR/joining${NUM}"
+            echo "0" > "$STATE_DIR/left_game${NUM}"
             [ "$NUM" = "1" ] && kill "$TIMEOUT_PID1" 2>/dev/null || kill "$TIMEOUT_PID2" 2>/dev/null
             continue
         fi
@@ -314,7 +371,18 @@ monitor_instance() {
 
         if [ "$MODE" = "stayps" ]; then
             if echo "$line" | grep -qE "doTeleport|Lost connection with reason"; then
-                log "[$PKG] [STAYPS] DC/Hop detected - force rejoin PS..."
+                log_event "[$PKG] [STAYPS] DC/Hop - force rejoin PS..."
+                local DC=$(cat "$STATE_DIR/dc_count${NUM}" 2>/dev/null || echo 0)
+                echo $((DC+1)) > "$STATE_DIR/dc_count${NUM}"
+                join_private_server "$PKG" "$NUM"
+                update_pid "$PKG" "$NUM"
+                CURRENT_PID=$(get_pid "$NUM")
+                break
+            fi
+
+            if echo "$line" | grep -q "Sending disconnect with reason:"; then
+                local REASON=$(echo "$line" | grep -oE "reason: [0-9]+" | grep -oE "[0-9]+")
+                log_event "[$PKG] [STAYPS] Disconnect reason:${REASON} - force rejoin PS..."
                 local DC=$(cat "$STATE_DIR/dc_count${NUM}" 2>/dev/null || echo 0)
                 echo $((DC+1)) > "$STATE_DIR/dc_count${NUM}"
                 join_private_server "$PKG" "$NUM"
@@ -326,13 +394,13 @@ monitor_instance() {
 
         if [ "$MODE" = "normal" ]; then
             if echo "$line" | grep -q "Lost connection with reason"; then
-                log "[$PKG] [NORMAL] DC detected - tunggu 3s cek doTeleport..."
+                log_event "[$PKG] [NORMAL] DC - tunggu 3s cek doTeleport..."
                 echo "WAITING" > "$STATE_DIR/dc_state${NUM}"
                 (
                     sleep 3
                     local STATE=$(cat "$STATE_DIR/dc_state${NUM}" 2>/dev/null)
                     if [ "$STATE" = "WAITING" ]; then
-                        log "[$PKG] [NORMAL] Tidak ada doTeleport - reconnect ke PS..."
+                        log_event "[$PKG] [NORMAL] Tidak ada doTeleport - reconnect ke PS..."
                         local DC=$(cat "$STATE_DIR/dc_count${NUM}" 2>/dev/null || echo 0)
                         echo $((DC+1)) > "$STATE_DIR/dc_count${NUM}"
                         echo "DONE" > "$STATE_DIR/dc_state${NUM}"
@@ -346,15 +414,29 @@ monitor_instance() {
             if echo "$line" | grep -q "doTeleport"; then
                 local STATE=$(cat "$STATE_DIR/dc_state${NUM}" 2>/dev/null)
                 if [ "$STATE" = "WAITING" ]; then
-                    log "[$PKG] [NORMAL] doTeleport detected - pantau 70s..."
+                    log_event "[$PKG] [NORMAL] doTeleport - pantau 70s..."
                     echo "DONE" > "$STATE_DIR/dc_state${NUM}"
+                fi
+                continue
+            fi
+
+            if echo "$line" | grep -q "Sending disconnect with reason:"; then
+                local REASON=$(echo "$line" | grep -oE "reason: [0-9]+" | grep -oE "[0-9]+")
+                if [ "$REASON" = "267" ]; then
+                    log_event "[$PKG] [NORMAL] Kicked (reason:267) - force rejoin PS..."
+                    local DC=$(cat "$STATE_DIR/dc_count${NUM}" 2>/dev/null || echo 0)
+                    echo $((DC+1)) > "$STATE_DIR/dc_count${NUM}"
+                    echo "DONE" > "$STATE_DIR/dc_state${NUM}"
+                    join_private_server "$PKG" "$NUM"
+                    start_monitor "$PKG" "$NUM"
+                    break
                 fi
                 continue
             fi
         fi
 
         if echo "$line" | grep -q "System.exit called"; then
-            log "[$PKG] Crash!"
+            log_event "[$PKG] Crash!"
             echo "0" > "$STATE_DIR/ingame${NUM}"
             echo "0" > "$STATE_DIR/joining${NUM}"
             if [ "$RESTART_KALAU_CRASH" = "1" ]; then
@@ -370,7 +452,7 @@ monitor_instance() {
 
     done
 
-    log "[$PKG] Monitor ended - restart..."
+    log_event "[$PKG] Monitor ended - restart..."
     sleep 2
     monitor_instance "$PKG" "$NUM" &
     [ "$NUM" = "1" ] && MONITOR_PID1=$! || MONITOR_PID2=$!
@@ -383,10 +465,8 @@ start_monitor() {
     monitor_instance "$PKG" "$NUM" &
     if [ "$NUM" = "1" ]; then
         MONITOR_PID1=$!
-        log "[$PKG] Monitor started (PID: $MONITOR_PID1)"
     else
         MONITOR_PID2=$!
-        log "[$PKG] Monitor started (PID: $MONITOR_PID2)"
     fi
 }
 
@@ -398,8 +478,8 @@ check_relog_needed() {
     [ $((NOW - LAST)) -ge $((RELOG_SETIAP_JAM * 3600)) ]
 }
 
-show_status() {
-    local NOW=$(date +%H:%M:%S)
+draw_status() {
+    local TIME=$(date +%H:%M:%S)
     local INGAME1=$(cat "$STATE_DIR/ingame1" 2>/dev/null || echo 0)
     local INGAME2=$(cat "$STATE_DIR/ingame2" 2>/dev/null || echo 0)
     local BG1=$(cat "$STATE_DIR/in_background1" 2>/dev/null || echo 0)
@@ -423,17 +503,32 @@ show_status() {
     [ "$INGAME2" != "1" ] && STATUS2="LOADING"
     [ "$BG2" = "1" ] && STATUS2="BACKGROUND"
 
+    clr
+    echo "========================================="
+    echo "   ROBLOX AUTO RECONNECT + AUTO RELOG"
+    echo "   2 INSTANCE | MODE: $MODE"
+    echo "========================================="
+    echo "  PKG1 : $STATUS1"
+    echo "         DC:$DC1  RC:$RC1  $STATS1"
+    echo "         $PING1  $LAG1"
+    echo "-----------------------------------------"
+    echo "  PKG2 : $STATUS2"
+    echo "         DC:$DC2  RC:$RC2  $STATS2"
+    echo "         $PING2  $LAG2"
+    echo "========================================="
+    echo "  Last updated : $TIME"
+    echo "========================================="
     echo ""
-    echo "========================================="
-    echo "  [$NOW] STATUS | MODE: $MODE"
-    echo "========================================="
-    echo "  PKG1 : $STATUS1 | DC:$DC1 RC:$RC1 | $STATS1 | $PING1 | $LAG1"
-    echo "  PKG2 : $STATUS2 | DC:$DC2 RC:$RC2 | $STATS2 | $PING2 | $LAG2"
+    echo "  Recent events:"
+    if [ -f "$STATE_DIR/events" ]; then
+        tail -10 "$STATE_DIR/events" | while read -r ev; do
+            echo "  $ev"
+        done
+    fi
     echo "========================================="
 }
 
 cleanup() {
-    log "Script dihentikan."
     kill "$MONITOR_PID1" "$MONITOR_PID2" "$TIMEOUT_PID1" "$TIMEOUT_PID2" 2>/dev/null
     rm -rf "$STATE_DIR"
     exit 0
@@ -457,24 +552,17 @@ else
 fi
 
 mkdir -p "$STATE_DIR"
-for F in ingame1 ingame2 joining1 joining2 in_background1 in_background2 dc_count1 dc_count2 rc_count1 rc_count2 lag1 lag2 dc_state1 dc_state2; do
+for F in ingame1 ingame2 joining1 joining2 in_background1 in_background2 dc_count1 dc_count2 rc_count1 rc_count2 lag1 lag2 dc_state1 dc_state2 left_game1 left_game2; do
     echo "0" > "$STATE_DIR/$F"
 done
 echo "$(date +%s)" > "$STATE_DIR/last_relog1"
 echo "$(date +%s)" > "$STATE_DIR/last_relog2"
+echo "" > "$STATE_DIR/events"
 
-clr
-echo "========================================="
-echo "   ROBLOX AUTO RECONNECT + AUTO RELOG"
-echo "   2 INSTANCE | MODE: $MODE"
-echo "========================================="
-log "URL    : $URL"
-log "Relog  : ${RELOG_SETIAP_JAM} jam"
-log "Crash  : $(show_toggle $RESTART_KALAU_CRASH)"
-log "Home   : $(show_toggle $RECONNECT_SAAT_HOME)"
-log "Mode   : $MODE"
-log "Timeout: ${JOIN_TIMEOUT}s"
-echo "========================================="
+log_event "URL    : $URL"
+log_event "Relog  : ${RELOG_SETIAP_JAM} jam"
+log_event "Mode   : $MODE"
+log_event "Timeout: ${JOIN_TIMEOUT}s"
 
 join_private_server "$PKG1" "1"
 sleep 5
@@ -489,19 +577,19 @@ start_join_timeout "$PKG1" "1"
 sleep 2
 start_join_timeout "$PKG2" "2"
 
-log "Monitoring aktif..."
+log_event "Monitoring aktif..."
 
 NOW=0
 while true; do
     if check_relog_needed "1"; then
-        log "[$PKG1] Relog..."
+        log_event "[$PKG1] Relog..."
         join_private_server "$PKG1" "1"
         start_monitor "$PKG1" "1"
         start_join_timeout "$PKG1" "1"
     fi
 
     if check_relog_needed "2"; then
-        log "[$PKG2] Relog..."
+        log_event "[$PKG2] Relog..."
         join_private_server "$PKG2" "2"
         start_monitor "$PKG2" "2"
         start_join_timeout "$PKG2" "2"
@@ -509,7 +597,7 @@ while true; do
 
     NOW=$(date +%s)
     if [ $((NOW - LAST_VERBOSE)) -ge "$VERBOSE_INTERVAL" ]; then
-        show_status
+        draw_status
         LAST_VERBOSE=$NOW
     fi
 
