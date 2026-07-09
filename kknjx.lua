@@ -846,7 +846,7 @@ function Chloex:Window(GuiConfig)
         Main.ImageTransparency = GuiConfig.ThemeTransparency or 0.15
     else
         Main.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
-        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.35
+        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.12
     end
 
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1458,17 +1458,44 @@ function Chloex:Window(GuiConfig)
         ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
         ScreenGui.Name = "ToggleUIButton"
 
+        local FloatFrame = Instance.new("Frame")
+        FloatFrame.Parent = ScreenGui
+        FloatFrame.Size = UDim2.new(0, 60, 0, 74)
+        FloatFrame.Position = UDim2.new(0, 20, 0, 100)
+        FloatFrame.BackgroundTransparency = 1
+        FloatFrame.Name = "FloatFrame"
+
         local MainButton = Instance.new("ImageLabel")
-        MainButton.Parent = ScreenGui
+        MainButton.Parent = FloatFrame
         MainButton.Size = UDim2.new(0, 50, 0, 50)
-        MainButton.Position = UDim2.new(0, 20, 0, 100)
-        MainButton.BackgroundTransparency = 1
-        MainButton.Image = "rbxassetid://" .. GuiConfig.Image
+        MainButton.Position = UDim2.new(0.5, 0, 0, 0)
+        MainButton.AnchorPoint = Vector2.new(0.5, 0)
+        MainButton.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+        MainButton.BackgroundTransparency = 0.15
+        local rawImage = tostring(GuiConfig.Image or "")
+        if string.find(rawImage, "rbxthumb://") or string.find(rawImage, "rbxassetid://") then
+            MainButton.Image = rawImage
+        else
+            MainButton.Image = "rbxassetid://" .. rawImage
+        end
         MainButton.ScaleType = Enum.ScaleType.Fit
 
         local UICorner = Instance.new("UICorner")
-        UICorner.CornerRadius = UDim.new(0, 6)
+        UICorner.CornerRadius = UDim.new(0, 10)
         UICorner.Parent = MainButton
+
+        local NameLabel = Instance.new("TextLabel")
+        NameLabel.Parent = FloatFrame
+        NameLabel.AnchorPoint = Vector2.new(0.5, 0)
+        NameLabel.Position = UDim2.new(0.5, 0, 0, 54)
+        NameLabel.Size = UDim2.new(1, 10, 0, 16)
+        NameLabel.BackgroundTransparency = 1
+        NameLabel.Font = Enum.Font.GothamBold
+        NameLabel.Text = "HydraHub"
+        NameLabel.TextSize = 12
+        NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        NameLabel.TextStrokeTransparency = 0.7
+        NameLabel.Name = "NameLabel"
 
         local Button = Instance.new("TextButton")
         Button.Parent = MainButton
@@ -1487,7 +1514,7 @@ function Chloex:Window(GuiConfig)
 
         local function update(input)
             local delta = input.Position - dragStart
-            MainButton.Position = UDim2.new(
+            FloatFrame.Position = UDim2.new(
                 startPos.X.Scale,
                 startPos.X.Offset + delta.X,
                 startPos.Y.Scale,
@@ -1499,7 +1526,7 @@ function Chloex:Window(GuiConfig)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 dragging = true
                 dragStart = input.Position
-                startPos = MainButton.Position
+                startPos = FloatFrame.Position
                 input.Changed:Connect(function()
                     if input.UserInputState == Enum.UserInputState.End then
                         dragging = false
