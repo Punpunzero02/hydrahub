@@ -843,8 +843,8 @@ function Chloex:Window(GuiConfig)
         Main.BackgroundTransparency = 1
         Main.ImageTransparency = GuiConfig.ThemeTransparency or 0.15
     else
-        Main.BackgroundColor3 = Color3.fromRGB(10, 14, 26)
-        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.22
+        Main.BackgroundColor3 = Color3.fromRGB(14, 22, 48)
+        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.08
     end
 
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -859,21 +859,21 @@ function Chloex:Window(GuiConfig)
 
     if not GuiConfig.Theme then
         local GlassStroke = Instance.new("UIStroke")
-        GlassStroke.Color = Color3.fromRGB(120, 160, 255)
+        GlassStroke.Color = Color3.fromRGB(90, 140, 255)
         GlassStroke.Thickness = 1
-        GlassStroke.Transparency = 0.92
+        GlassStroke.Transparency = 0.55
         GlassStroke.Parent = Main
 
         local GlassGradient = Instance.new("UIGradient")
         GlassGradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(140, 170, 255)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(90, 110, 180)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 170, 255)),
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 190, 255)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(80, 100, 170)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 190, 255)),
         })
         GlassGradient.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.97),
-            NumberSequenceKeypoint.new(0.5, 0.99),
-            NumberSequenceKeypoint.new(1, 0.97),
+            NumberSequenceKeypoint.new(0, 0.85),
+            NumberSequenceKeypoint.new(0.5, 0.93),
+            NumberSequenceKeypoint.new(1, 0.85),
         })
         GlassGradient.Rotation = 90
         GlassGradient.Parent = Main
