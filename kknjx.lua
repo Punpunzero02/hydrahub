@@ -873,6 +873,23 @@ function Chloex:Window(GuiConfig)
     Top.Name = "Top"
     Top.Parent = Main
 
+    local HeaderLogo = Instance.new("ImageLabel")
+    HeaderLogo.BackgroundTransparency = 1
+    HeaderLogo.AnchorPoint = Vector2.new(0, 0.5)
+    HeaderLogo.Position = UDim2.new(0, 8, 0.5, 0)
+    HeaderLogo.Size = UDim2.new(0, 20, 0, 20)
+    HeaderLogo.ScaleType = Enum.ScaleType.Fit
+    HeaderLogo.Name = "HeaderLogo"
+    HeaderLogo.Parent = Top
+    do
+        local rawLogo = tostring(GuiConfig.Image or "")
+        if string.find(rawLogo, "rbxthumb://") or string.find(rawLogo, "rbxassetid://") then
+            HeaderLogo.Image = rawLogo
+        elseif rawLogo ~= "" then
+            HeaderLogo.Image = "rbxassetid://" .. rawLogo
+        end
+    end
+
     TextLabel.Font = Enum.Font.GothamBold
     TextLabel.Text = GuiConfig.Title
     TextLabel.TextColor3 = GuiConfig.Color
@@ -882,11 +899,65 @@ function Chloex:Window(GuiConfig)
     TextLabel.BackgroundTransparency = 0.9990000128746033
     TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
     TextLabel.BorderSizePixel = 0
-    TextLabel.Size = UDim2.new(1, -100, 1, 0)
-    TextLabel.Position = UDim2.new(0, 10, 0, 0)
+    TextLabel.Size = UDim2.new(1, -190, 1, 0)
+    TextLabel.Position = UDim2.new(0, 34, 0, 0)
     TextLabel.Parent = Top
 
     UICorner1.Parent = Top
+
+    do
+        local Players = game:GetService("Players")
+        local LP = Players.LocalPlayer
+
+        local PlayerBadge = Instance.new("Frame")
+        PlayerBadge.BackgroundTransparency = 1
+        PlayerBadge.AnchorPoint = Vector2.new(1, 0.5)
+        PlayerBadge.Position = UDim2.new(1, -70, 0.5, 0)
+        PlayerBadge.Size = UDim2.new(0, 100, 0, 24)
+        PlayerBadge.Name = "PlayerBadge"
+        PlayerBadge.ZIndex = 5
+        PlayerBadge.Parent = Top
+
+        local AvatarImg = Instance.new("ImageLabel")
+        AvatarImg.BackgroundTransparency = 1
+        AvatarImg.AnchorPoint = Vector2.new(1, 0.5)
+        AvatarImg.Position = UDim2.new(1, 0, 0.5, 0)
+        AvatarImg.Size = UDim2.new(0, 20, 0, 20)
+        AvatarImg.ZIndex = 6
+        AvatarImg.Name = "AvatarImg"
+        AvatarImg.Parent = PlayerBadge
+        local avatarCorner = Instance.new("UICorner")
+        avatarCorner.CornerRadius = UDim.new(1, 0)
+        avatarCorner.Parent = AvatarImg
+
+        local NameLbl = Instance.new("TextLabel")
+        NameLbl.Font = Enum.Font.GothamBold
+        NameLbl.Text = LP.DisplayName or LP.Name
+        NameLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+        NameLbl.TextSize = 11
+        NameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+        NameLbl.TextXAlignment = Enum.TextXAlignment.Right
+        NameLbl.BackgroundTransparency = 1
+        NameLbl.AnchorPoint = Vector2.new(1, 0.5)
+        NameLbl.Position = UDim2.new(1, -26, 0.5, 0)
+        NameLbl.Size = UDim2.new(0, 76, 0, 16)
+        NameLbl.ZIndex = 6
+        NameLbl.Name = "NameLbl"
+        NameLbl.Parent = PlayerBadge
+
+        task.spawn(function()
+            local ok, content = pcall(function()
+                return Players:GetUserThumbnailAsync(
+                    LP.UserId,
+                    Enum.ThumbnailType.HeadShot,
+                    Enum.ThumbnailSize.Size48x48
+                )
+            end)
+            if ok and content and AvatarImg.Parent then
+                AvatarImg.Image = content
+            end
+        end)
+    end
 
     local discordOffset = 0
     local DiscordButtonRef = nil
