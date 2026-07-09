@@ -215,8 +215,7 @@ local function MakeDraggable(topbarobject, object)
                 StartPosition.Y.Scale,
                 StartPosition.Y.Offset + Delta.Y
             )
-            local Tween = TweenService:Create(object, TweenInfo.new(0.2), { Position = pos })
-            Tween:Play()
+            object.Position = pos
         end
 
         topbarobject.InputBegan:Connect(function(input)
@@ -277,8 +276,7 @@ local function MakeDraggable(topbarobject, object)
             newWidth = math.max(newWidth, minSizeX)
             newHeight = math.max(newHeight, minSizeY)
 
-            local Tween = TweenService:Create(object, TweenInfo.new(0.2), { Size = UDim2.new(0, newWidth, 0, newHeight) })
-            Tween:Play()
+            object.Size = UDim2.new(0, newWidth, 0, newHeight)
         end
 
         changesizeobject.InputBegan:Connect(function(input)
@@ -1103,7 +1101,7 @@ function Chloex:Window(GuiConfig)
     local ScrollTab = Instance.new("ScrollingFrame");
     local UIListLayout = Instance.new("UIListLayout");
 
-    ScrollTab.CanvasSize = UDim2.new(0, 0, 1.10000002, 0)
+    ScrollTab.AutomaticCanvasSize = Enum.AutomaticSize.Y
     ScrollTab.ScrollBarImageColor3 = Color3.fromRGB(0, 0, 0)
     ScrollTab.ScrollBarThickness = 0
     ScrollTab.Active = true
@@ -1123,25 +1121,6 @@ function Chloex:Window(GuiConfig)
     UIListLayout.Padding = UDim.new(0, 3)
     UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
     UIListLayout.Parent = ScrollTab
-
-    local ScrollTabResizePending = false
-
-    local function UpdateSize1()
-        if ScrollTabResizePending then return end
-        ScrollTabResizePending = true
-        task.defer(function()
-            ScrollTabResizePending = false
-            local OffsetY = 0
-            for _, child in ScrollTab:GetChildren() do
-                if child.Name ~= "UIListLayout" then
-                    OffsetY = OffsetY + 3 + child.Size.Y.Offset
-                end
-            end
-            ScrollTab.CanvasSize = UDim2.new(0, 0, 0, OffsetY)
-        end)
-    end
-    ScrollTab.ChildAdded:Connect(UpdateSize1)
-    ScrollTab.ChildRemoved:Connect(UpdateSize1)
 
     local SearchResults, SearchResultsLayout, SearchBox
     if GuiConfig.Search then
