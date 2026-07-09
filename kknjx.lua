@@ -843,8 +843,8 @@ function Chloex:Window(GuiConfig)
         Main.BackgroundTransparency = 1
         Main.ImageTransparency = GuiConfig.ThemeTransparency or 0.15
     else
-        Main.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
-        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.55
+        Main.BackgroundColor3 = Color3.fromRGB(10, 14, 26)
+        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.22
     end
 
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -859,21 +859,21 @@ function Chloex:Window(GuiConfig)
 
     if not GuiConfig.Theme then
         local GlassStroke = Instance.new("UIStroke")
-        GlassStroke.Color = Color3.fromRGB(255, 255, 255)
+        GlassStroke.Color = Color3.fromRGB(120, 160, 255)
         GlassStroke.Thickness = 1
-        GlassStroke.Transparency = 0.85
+        GlassStroke.Transparency = 0.92
         GlassStroke.Parent = Main
 
         local GlassGradient = Instance.new("UIGradient")
         GlassGradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 150, 150)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(140, 170, 255)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(90, 110, 180)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 170, 255)),
         })
         GlassGradient.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.92),
-            NumberSequenceKeypoint.new(0.5, 0.97),
-            NumberSequenceKeypoint.new(1, 0.92),
+            NumberSequenceKeypoint.new(0, 0.97),
+            NumberSequenceKeypoint.new(0.5, 0.99),
+            NumberSequenceKeypoint.new(1, 0.97),
         })
         GlassGradient.Rotation = 90
         GlassGradient.Parent = Main
@@ -1646,6 +1646,7 @@ function Chloex:Window(GuiConfig)
         local ScrolLayers = Instance.new("ScrollingFrame");
         local UIListLayout1 = Instance.new("UIListLayout");
 
+        ScrolLayers.AutomaticCanvasSize = Enum.AutomaticSize.Y
         ScrolLayers.ScrollBarImageColor3 = Color3.fromRGB(80.00000283122063, 80.00000283122063, 80.00000283122063)
         ScrolLayers.ScrollBarThickness = 0
         ScrolLayers.Active = true
