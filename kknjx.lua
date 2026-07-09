@@ -845,8 +845,8 @@ function Chloex:Window(GuiConfig)
         Main.BackgroundTransparency = 1
         Main.ImageTransparency = GuiConfig.ThemeTransparency or 0.15
     else
-        Main.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        Main.BackgroundTransparency = 0
+        Main.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
+        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.35
     end
 
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -858,6 +858,28 @@ function Chloex:Window(GuiConfig)
     Main.Parent = DropShadow
 
     UICorner.Parent = Main
+
+    if not GuiConfig.Theme then
+        local GlassStroke = Instance.new("UIStroke")
+        GlassStroke.Color = Color3.fromRGB(255, 255, 255)
+        GlassStroke.Thickness = 1
+        GlassStroke.Transparency = 0.85
+        GlassStroke.Parent = Main
+
+        local GlassGradient = Instance.new("UIGradient")
+        GlassGradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(150, 150, 150)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+        })
+        GlassGradient.Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0.92),
+            NumberSequenceKeypoint.new(0.5, 0.97),
+            NumberSequenceKeypoint.new(1, 0.92),
+        })
+        GlassGradient.Rotation = 90
+        GlassGradient.Parent = Main
+    end
 
     Top.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     Top.BackgroundTransparency = 0.9990000128746033
