@@ -846,7 +846,7 @@ function Chloex:Window(GuiConfig)
         Main.ImageTransparency = GuiConfig.ThemeTransparency or 0.15
     else
         Main.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
-        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.12
+        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.55
     end
 
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1491,7 +1491,7 @@ function Chloex:Window(GuiConfig)
         NameLabel.Size = UDim2.new(1, 10, 0, 16)
         NameLabel.BackgroundTransparency = 1
         NameLabel.Font = Enum.Font.GothamBold
-        NameLabel.Text = "HydraHub"
+        NameLabel.Text = ""
         NameLabel.TextSize = 12
         NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
         NameLabel.TextStrokeTransparency = 0.7
