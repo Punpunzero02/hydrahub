@@ -339,10 +339,8 @@ function CircleClick(Button, X, Y)
         local Time = 0.5
         Circle:TweenSizeAndPosition(UDim2.new(0, Size, 0, Size), UDim2.new(0.5, -Size / 2, 0.5, -Size / 2), "Out", "Quad",
             Time, false, nil)
-        for i = 1, 10 do
-            Circle.ImageTransparency = Circle.ImageTransparency + 0.01
-            wait(Time / 10)
-        end
+        TweenService:Create(Circle, TweenInfo.new(Time, Enum.EasingStyle.Quad), { ImageTransparency = 1 }):Play()
+        task.wait(Time)
         Circle:Destroy()
     end)
 end
@@ -1104,14 +1102,21 @@ function Chloex:Window(GuiConfig)
     UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
     UIListLayout.Parent = ScrollTab
 
+    local ScrollTabResizePending = false
+
     local function UpdateSize1()
-        local OffsetY = 0
-        for _, child in ScrollTab:GetChildren() do
-            if child.Name ~= "UIListLayout" then
-                OffsetY = OffsetY + 3 + child.Size.Y.Offset
+        if ScrollTabResizePending then return end
+        ScrollTabResizePending = true
+        task.defer(function()
+            ScrollTabResizePending = false
+            local OffsetY = 0
+            for _, child in ScrollTab:GetChildren() do
+                if child.Name ~= "UIListLayout" then
+                    OffsetY = OffsetY + 3 + child.Size.Y.Offset
+                end
             end
-        end
-        ScrollTab.CanvasSize = UDim2.new(0, 0, 0, OffsetY)
+            ScrollTab.CanvasSize = UDim2.new(0, 0, 0, OffsetY)
+        end)
     end
     ScrollTab.ChildAdded:Connect(UpdateSize1)
     ScrollTab.ChildRemoved:Connect(UpdateSize1)
@@ -1922,23 +1927,30 @@ function Chloex:Window(GuiConfig)
                 ScrolLayers.CanvasSize = UDim2.new(0, 0, 0, OffsetY)
             end
 
+            local SectionResizePending = false
+
             local function UpdateSizeSection()
-                if OpenSection then
+                if not OpenSection then return end
+                if SectionResizePending then return end
+                SectionResizePending = true
+
+                task.defer(function()
+                    SectionResizePending = false
+
                     local SectionSizeYWitdh = 38
                     for _, v in SectionAdd:GetChildren() do
                         if v.Name ~= "UIListLayout" and v.Name ~= "UICorner" then
                             SectionSizeYWitdh = SectionSizeYWitdh + v.Size.Y.Offset + 3
                         end
                     end
-                    TweenService:Create(FeatureFrame, TweenInfo.new(0.5), { Rotation = 90 }):Play()
-                    TweenService:Create(Section, TweenInfo.new(0.5), { Size = UDim2.new(1, 1, 0, SectionSizeYWitdh) })
+                    TweenService:Create(FeatureFrame, TweenInfo.new(0.3), { Rotation = 90 }):Play()
+                    TweenService:Create(Section, TweenInfo.new(0.3), { Size = UDim2.new(1, 1, 0, SectionSizeYWitdh) })
                         :Play()
-                    TweenService:Create(SectionAdd, TweenInfo.new(0.5),
+                    TweenService:Create(SectionAdd, TweenInfo.new(0.3),
                         { Size = UDim2.new(1, 0, 0, SectionSizeYWitdh - 38) }):Play()
-                    TweenService:Create(SectionDecideFrame, TweenInfo.new(0.5), { Size = UDim2.new(1, 0, 0, 2) }):Play()
-                    task.wait(0.5)
+                    TweenService:Create(SectionDecideFrame, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 2) }):Play()
                     UpdateSizeScroll()
-                end
+                end)
             end
 
             if AlwaysOpen == true then
@@ -1969,21 +1981,6 @@ function Chloex:Window(GuiConfig)
                         UpdateSizeSection()
                     end
                 end)
-            end
-
-            if AlwaysOpen == true or AlwaysOpen == false then
-                OpenSection = true
-                local SectionSizeYWitdh = 38
-                for _, v in SectionAdd:GetChildren() do
-                    if v.Name ~= "UIListLayout" and v.Name ~= "UICorner" then
-                        SectionSizeYWitdh = SectionSizeYWitdh + v.Size.Y.Offset + 3
-                    end
-                end
-                FeatureFrame.Rotation = 90
-                Section.Size = UDim2.new(1, 1, 0, SectionSizeYWitdh)
-                SectionAdd.Size = UDim2.new(1, 0, 0, SectionSizeYWitdh - 38)
-                SectionDecideFrame.Size = UDim2.new(1, 0, 0, 2)
-                UpdateSizeScroll()
             end
 
             SectionAdd.ChildAdded:Connect(UpdateSizeSection)
@@ -3297,15 +3294,10 @@ end
                     newList = newList or {}
                     selecting = selecting or (DropdownConfig.Multi and {} or nil)
                     DropdownFunc:Clear()
-                    task.spawn(function()
-                        for i, v in ipairs(newList) do
-                            DropdownFunc:AddOption(v)
-                            if i % 20 == 0 then
-                                task.wait()
-                            end
-                        end
-                        DropdownFunc:Set(selecting, noSave)
-                    end)
+                    for _, v in ipairs(newList) do
+                        DropdownFunc:AddOption(v)
+                    end
+                    DropdownFunc:Set(selecting, noSave)
                     DropdownFunc.Options = newList
                 end
 
