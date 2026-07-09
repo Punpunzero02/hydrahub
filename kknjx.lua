@@ -863,20 +863,6 @@ function Chloex:Window(GuiConfig)
         GlassStroke.Thickness = 1
         GlassStroke.Transparency = 0.55
         GlassStroke.Parent = Main
-
-        local GlassGradient = Instance.new("UIGradient")
-        GlassGradient.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(150, 190, 255)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(80, 100, 170)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 190, 255)),
-        })
-        GlassGradient.Transparency = NumberSequence.new({
-            NumberSequenceKeypoint.new(0, 0.85),
-            NumberSequenceKeypoint.new(0.5, 0.93),
-            NumberSequenceKeypoint.new(1, 0.85),
-        })
-        GlassGradient.Rotation = 90
-        GlassGradient.Parent = Main
     end
 
     Top.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
