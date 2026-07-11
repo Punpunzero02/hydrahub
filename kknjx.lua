@@ -303,6 +303,65 @@ local function MakeDraggable(topbarobject, object)
                 UpdateSize(input)
             end
         end)
+
+        -- ===== RESIZE HANDLE: TOP-LEFT =====
+        local DraggingTL, DragInputTL, DragStartTL, StartSizeTL, StartPosTL
+
+        local changesizeobjectTL = Instance.new("Frame")
+        changesizeobjectTL.AnchorPoint = Vector2.new(0, 0)
+        changesizeobjectTL.BackgroundTransparency = 1
+        changesizeobjectTL.Size = UDim2.new(0, 40, 0, 40)
+        changesizeobjectTL.Position = UDim2.new(0, -20, 0, -20)
+        changesizeobjectTL.Name = "changesizeobjectTL"
+        changesizeobjectTL.Parent = object
+
+        local function UpdateSizeTL(input)
+            local Delta = input.Position - DragStartTL
+
+            local newWidth = StartSizeTL.X.Offset - Delta.X
+            local newHeight = StartSizeTL.Y.Offset - Delta.Y
+
+            newWidth = math.max(newWidth, minSizeX)
+            newHeight = math.max(newHeight, minSizeY)
+
+            local actualDeltaW = StartSizeTL.X.Offset - newWidth
+            local actualDeltaH = StartSizeTL.Y.Offset - newHeight
+
+            object.Size = UDim2.new(0, newWidth, 0, newHeight)
+            object.Position = UDim2.new(
+                StartPosTL.X.Scale,
+                StartPosTL.X.Offset + actualDeltaW,
+                StartPosTL.Y.Scale,
+                StartPosTL.Y.Offset + actualDeltaH
+            )
+        end
+
+        changesizeobjectTL.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                DraggingTL = true
+                DragStartTL = input.Position
+                StartSizeTL = object.Size
+                StartPosTL = object.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        DraggingTL = false
+                    end
+                end)
+            end
+        end)
+
+        changesizeobjectTL.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                DragInputTL = input
+            end
+        end)
+
+        UserInputService.InputChanged:Connect(function(input)
+            if input == DragInputTL and DraggingTL then
+                UpdateSizeTL(input)
+            end
+        end)
+        -- ===== END TOP-LEFT =====
     end
 
     CustomSize(object)
