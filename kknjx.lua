@@ -843,6 +843,28 @@ local function ShowInventoryPicker(config)
         buildRow(itemData)
     end
 
+    if config.OnRefresh then
+        task.spawn(function()
+            while ScreenGui.Parent do
+                task.wait(1)
+                local ok, freshItems = pcall(config.OnRefresh)
+                if ok and type(freshItems) == "table" then
+                    for _, itemData in ipairs(freshItems) do
+                        local r = rowsByName[itemData.Name]
+                        if r then
+                            local stockLbl = r.row:FindFirstChild("StockLbl") or r.row:FindFirstChildWhichIsA("TextLabel", true)
+                            for _, child in ipairs(r.row:GetChildren()) do
+                                if child:IsA("TextLabel") and child ~= r.nameLbl and child.Name ~= "CheckMark" then
+                                    child.Text = tostring(itemData.Stock or 0)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+
     local searchTicket = 0
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         searchTicket = searchTicket + 1
@@ -4806,6 +4828,9 @@ function Items:AddMailQueue(MailConfig)
                 Items = invItems,
                 SelectedSet = selectedSet,
                 Color = GuiConfig.Color,
+                OnRefresh = function()
+                    return MailConfig.OnGetInventoryItems and MailConfig.OnGetInventoryItems(catKey) or {}
+                end,
                 OnToggle = function(name, nowSelected)
                     if nowSelected then
                         local stock = 0
