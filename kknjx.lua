@@ -633,8 +633,7 @@ local function ShowInventoryPicker(config)
 
     local Overlay = Instance.new("Frame")
     Overlay.Size = UDim2.new(1, 0, 1, 0)
-    Overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    Overlay.BackgroundTransparency = 0.5
+    Overlay.BackgroundTransparency = 1
     Overlay.ZIndex = 100
     Overlay.Parent = ScreenGui
 
@@ -4108,6 +4107,30 @@ function Items:AddMailQueue(MailConfig)
         if not noSave then QueueSaveConfig() end
     end
 
+    function MailFunc:Set(newState, noSave)
+        if type(newState) ~= "table" then return end
+
+        State.Targets = newState.Targets or {}
+        State.ActiveTarget = newState.ActiveTarget
+        State.CategoryItems = newState.CategoryItems or {}
+        State.AutoSend = newState.AutoSend or false
+        State.IntervalHours = newState.IntervalHours or 6
+        State.KnownUsernames = newState.KnownUsernames or {}
+
+        MailFunc:RefreshTargets()
+        for _, cat in pairs(MailFunc.Categories) do
+            cat:Refresh()
+        end
+
+        SwitchBg.BackgroundColor3 = State.AutoSend and GuiConfig.Color or Color3.fromRGB(255, 255, 255)
+        SwitchBg.BackgroundTransparency = State.AutoSend and 0 or 0.92
+        SwitchDot.AnchorPoint = Vector2.new(State.AutoSend and 1 or 0, 0.5)
+        SwitchDot.Position = UDim2.new(State.AutoSend and 1 or 0, 0, 0.5, 0)
+        IntLabel.Text = State.IntervalHours .. " hours"
+
+        if not noSave then Persist() end
+    end
+
   
     local Root = Instance.new("Frame")
     Root.BackgroundTransparency = 1
@@ -4786,8 +4809,16 @@ function Items:AddMailQueue(MailConfig)
                 OnToggle = function(name, nowSelected)
                     if nowSelected then
                         local stock = 0
+                        local target = tostring(name):lower():gsub("^%s+", ""):gsub("%s+$", "")
                         for _, it in ipairs(invItems) do
-                            if it.Name == name then stock = it.Stock break end
+                            local itName = tostring(it.Name or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
+                            if itName == target then
+                                stock = tonumber(it.Stock) or 0
+                                break
+                            end
+                        end
+                        if stock == 0 then
+                            warn("[MailQueue] No stock match for '" .. tostring(name) .. "' in category '" .. catKey .. "' — check OnGetInventoryItems for this category")
                         end
                         CategoryFunc:AddItem(name, stock, nil, false, stock)
                     else
@@ -4991,6 +5022,30 @@ function Items:AddMailQueue(MailConfig)
 
     IntMinusBtn.Activated:Connect(function() SetInterval(State.IntervalHours - 1) end)
     IntPlusBtn.Activated:Connect(function() SetInterval(State.IntervalHours + 1) end)
+
+    function MailFunc:Set(newState, noSave)
+        if type(newState) ~= "table" then return end
+
+        State.Targets = newState.Targets or {}
+        State.ActiveTarget = newState.ActiveTarget
+        State.CategoryItems = newState.CategoryItems or {}
+        State.AutoSend = newState.AutoSend or false
+        State.IntervalHours = newState.IntervalHours or 6
+        State.KnownUsernames = newState.KnownUsernames or {}
+
+        MailFunc:RefreshTargets()
+        for _, cat in pairs(MailFunc.Categories) do
+            cat:Refresh()
+        end
+
+        SwitchBg.BackgroundColor3 = State.AutoSend and GuiConfig.Color or Color3.fromRGB(255, 255, 255)
+        SwitchBg.BackgroundTransparency = State.AutoSend and 0 or 0.92
+        SwitchDot.AnchorPoint = Vector2.new(State.AutoSend and 1 or 0, 0.5)
+        SwitchDot.Position = UDim2.new(State.AutoSend and 1 or 0, 0, 0.5, 0)
+        IntLabel.Text = State.IntervalHours .. " hours"
+
+        if not noSave then Persist() end
+    end
 
     ResizeRoot()
 
