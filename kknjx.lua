@@ -787,22 +787,24 @@ local function ShowInventoryPicker(config)
         NameLbl.TextSize = 12
         NameLbl.TextXAlignment = Enum.TextXAlignment.Left
         NameLbl.BackgroundTransparency = 1
-        NameLbl.Position = UDim2.new(0, 8, 0, 3)
+        NameLbl.Position = UDim2.new(0, 8, 0, config.ShowStock == false and 8 or 3)
         NameLbl.Size = UDim2.new(0.6, 0, 0, 12)
         NameLbl.ZIndex = 103
         NameLbl.Parent = Row
 
-        local StockLbl = Instance.new("TextLabel")
-        StockLbl.Font = Enum.Font.Gotham
-        StockLbl.Text = "have " .. tostring(stock)
-        StockLbl.TextColor3 = Color3.fromRGB(150, 220, 150)
-        StockLbl.TextSize = 10
-        StockLbl.TextXAlignment = Enum.TextXAlignment.Left
-        StockLbl.BackgroundTransparency = 1
-        StockLbl.Position = UDim2.new(0, 8, 0, 16)
-        StockLbl.Size = UDim2.new(0.6, 0, 0, 10)
-        StockLbl.ZIndex = 103
-        StockLbl.Parent = Row
+        if config.ShowStock ~= false then
+            local StockLbl = Instance.new("TextLabel")
+            StockLbl.Font = Enum.Font.Gotham
+            StockLbl.Text = tostring(stock)
+            StockLbl.TextColor3 = Color3.fromRGB(150, 220, 150)
+            StockLbl.TextSize = 10
+            StockLbl.TextXAlignment = Enum.TextXAlignment.Left
+            StockLbl.BackgroundTransparency = 1
+            StockLbl.Position = UDim2.new(0, 8, 0, 16)
+            StockLbl.Size = UDim2.new(0.6, 0, 0, 10)
+            StockLbl.ZIndex = 103
+            StockLbl.Parent = Row
+        end
 
         local CheckMark = Instance.new("TextLabel")
         CheckMark.Font = Enum.Font.GothamBold
@@ -4216,10 +4218,7 @@ function Items:AddMailQueue(MailConfig)
     UsernameBoxCorner.Parent = UsernameBox
 
     local SavedUserBtn = Instance.new("TextButton")
-    SavedUserBtn.Font = Enum.Font.GothamBold
-    SavedUserBtn.Text = "▾"
-    SavedUserBtn.TextSize = 14
-    SavedUserBtn.TextColor3 = GuiConfig.Color
+    SavedUserBtn.Text = ""
     SavedUserBtn.AnchorPoint = Vector2.new(1, 0)
     SavedUserBtn.Position = UDim2.new(1, -30, 0, 0)
     SavedUserBtn.BackgroundColor3 = GuiConfig.Color
@@ -4230,6 +4229,16 @@ function Items:AddMailQueue(MailConfig)
     local SavedUserCorner = Instance.new("UICorner")
     SavedUserCorner.CornerRadius = UDim.new(0, 4)
     SavedUserCorner.Parent = SavedUserBtn
+
+    local SavedUserIcon = Instance.new("ImageLabel")
+    SavedUserIcon.Image = "rbxassetid://108483430622128"
+    SavedUserIcon.ImageColor3 = GuiConfig.Color
+    SavedUserIcon.BackgroundTransparency = 1
+    SavedUserIcon.ScaleType = Enum.ScaleType.Fit
+    SavedUserIcon.AnchorPoint = Vector2.new(0.5, 0.5)
+    SavedUserIcon.Position = UDim2.new(0.5, 0, 0.5, 0)
+    SavedUserIcon.Size = UDim2.new(0, 16, 0, 16)
+    SavedUserIcon.Parent = SavedUserBtn
 
     local AddTargetBtn = Instance.new("TextButton")
     AddTargetBtn.Font = Enum.Font.GothamBold
@@ -4618,13 +4627,22 @@ function Items:AddMailQueue(MailConfig)
             NameLbl.TextSize = 12
             NameLbl.TextXAlignment = Enum.TextXAlignment.Left
             NameLbl.BackgroundTransparency = 1
-            NameLbl.Position = UDim2.new(0, 8, 0, 0)
-            NameLbl.Size = UDim2.new(0.5, 0, 1, 0)
+            NameLbl.Position = UDim2.new(0, 8, 0, 3)
+            NameLbl.Size = UDim2.new(0.4, 0, 0, 12)
             NameLbl.Parent = Row
 
+            local StockLbl = Instance.new("TextLabel")
+            StockLbl.Font = Enum.Font.Gotham
+            StockLbl.Text = tostring(entry.Stock or 0)
+            StockLbl.TextColor3 = Color3.fromRGB(150, 220, 150)
+            StockLbl.TextSize = 10
+            StockLbl.TextXAlignment = Enum.TextXAlignment.Left
+            StockLbl.BackgroundTransparency = 1
+            StockLbl.Position = UDim2.new(0, 8, 0, 16)
+            StockLbl.Size = UDim2.new(0.4, 0, 0, 10)
+            StockLbl.Parent = Row
+
             if entry.Note then
-                NameLbl.Position = UDim2.new(0, 8, 0, 3)
-                NameLbl.Size = UDim2.new(0.5, 0, 0, 12)
                 local NoteLbl = Instance.new("TextLabel")
                 NoteLbl.Font = Enum.Font.Gotham
                 NoteLbl.Text = entry.Note
@@ -4632,8 +4650,8 @@ function Items:AddMailQueue(MailConfig)
                 NoteLbl.TextSize = 10
                 NoteLbl.TextXAlignment = Enum.TextXAlignment.Left
                 NoteLbl.BackgroundTransparency = 1
-                NoteLbl.Position = UDim2.new(0, 8, 0, 15)
-                NoteLbl.Size = UDim2.new(0.5, 0, 0, 10)
+                NoteLbl.Position = UDim2.new(0.4, 4, 0, 16)
+                NoteLbl.Size = UDim2.new(0.2, 0, 0, 10)
                 NoteLbl.Parent = Row
             end
 
@@ -4710,62 +4728,47 @@ function Items:AddMailQueue(MailConfig)
             ResizeCatBlock()
         end
 
-        function CategoryFunc:AddItem(name, qty, note, noSave)
+        function CategoryFunc:AddItem(name, qty, note, noSave, stockVal)
             for _, v in ipairs(State.CategoryItems[catKey]) do
                 if v.Name == name then return end
             end
-            table.insert(State.CategoryItems[catKey], { Name = name, Qty = qty or 0, Note = note })
+            table.insert(State.CategoryItems[catKey], { Name = name, Qty = qty or 0, Note = note, Stock = stockVal })
             if not noSave then Persist() end
             CategoryFunc:Refresh()
         end
 
-        -- "Add from list": small inline picker built from catOptions
-        local ListPicker = Instance.new("Frame")
-        ListPicker.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-        ListPicker.BackgroundTransparency = 0.1
-        ListPicker.Size = UDim2.new(1, 0, 0, 0)
-        ListPicker.ClipsDescendants = true
-        ListPicker.Visible = false
-        ListPicker.LayoutOrder = 1
-        ListPicker.Parent = ItemListFrame
-        local ListPickerCorner = Instance.new("UICorner")
-        ListPickerCorner.CornerRadius = UDim.new(0, 4)
-        ListPickerCorner.Parent = ListPicker
-        local ListPickerLayout = Instance.new("UIListLayout")
-        ListPickerLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        ListPickerLayout.Parent = ListPicker
-
-        for _, optName in ipairs(catOptions) do
-            local OptBtn = Instance.new("TextButton")
-            OptBtn.Font = Enum.Font.GothamBold
-            OptBtn.Text = optName
-            OptBtn.TextSize = 11
-            OptBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-            OptBtn.TextXAlignment = Enum.TextXAlignment.Left
-            OptBtn.BackgroundTransparency = 1
-            OptBtn.Size = UDim2.new(1, 0, 0, 24)
-            OptBtn.Parent = ListPicker
-            local OptPad = Instance.new("UIPadding")
-            OptPad.PaddingLeft = UDim.new(0, 8)
-            OptPad.Parent = OptBtn
-
-            OptBtn.Activated:Connect(function()
-                CategoryFunc:AddItem(optName, 0)
-                ListPicker.Visible = false
-                ListPicker.Size = UDim2.new(1, 0, 0, 0)
-                ResizeCatBlock()
-            end)
-        end
-
+        -- "Add from list": pakai popup picker sama kayak "Add from inventory", tanpa harga/stock
         AddFromListBtn.Activated:Connect(function()
             CircleClick(AddFromListBtn, Mouse.X, Mouse.Y)
-            ListPicker.Visible = not ListPicker.Visible
-            if ListPicker.Visible then
-                ListPicker.Size = UDim2.new(1, 0, 0, #catOptions * 24)
-            else
-                ListPicker.Size = UDim2.new(1, 0, 0, 0)
+            local listItems = {}
+            for _, optName in ipairs(catOptions) do
+                table.insert(listItems, { Name = optName, Stock = nil })
             end
-            ResizeCatBlock()
+            local selectedSet = {}
+            for _, entry in ipairs(State.CategoryItems[catKey]) do
+                selectedSet[entry.Name] = true
+            end
+            ShowInventoryPicker({
+                Title = catKey .. " — from list",
+                Items = listItems,
+                SelectedSet = selectedSet,
+                Color = GuiConfig.Color,
+                ShowStock = false,
+                OnToggle = function(name, nowSelected)
+                    if nowSelected then
+                        CategoryFunc:AddItem(name, 0)
+                    else
+                        for i, v in ipairs(State.CategoryItems[catKey]) do
+                            if v.Name == name then
+                                table.remove(State.CategoryItems[catKey], i)
+                                break
+                            end
+                        end
+                        Persist()
+                        CategoryFunc:Refresh()
+                    end
+                end,
+            })
         end)
 
         AddFromInvBtn.Activated:Connect(function()
@@ -4786,7 +4789,7 @@ function Items:AddMailQueue(MailConfig)
                         for _, it in ipairs(invItems) do
                             if it.Name == name then stock = it.Stock break end
                         end
-                        CategoryFunc:AddItem(name, stock)
+                        CategoryFunc:AddItem(name, stock, nil, false, stock)
                     else
                         for i, v in ipairs(State.CategoryItems[catKey]) do
                             if v.Name == name then
