@@ -3737,6 +3737,827 @@ end
                 return Divider
             end
 
+        
+
+function Items:AddMailQueue(MailConfig)
+    MailConfig = MailConfig or {}
+    MailConfig.Title = MailConfig.Title or "Mail Targets"
+    MailConfig.Placeholder = MailConfig.Placeholder or "Type username"
+    MailConfig.Categories = MailConfig.Categories or {}
+        -- Categories = { { Key = "Seeds", Options = {"Carrot","Wheat"} }, ... }
+
+    MailConfig.OnAddTarget = MailConfig.OnAddTarget or function(username) end
+    MailConfig.OnRemoveTarget = MailConfig.OnRemoveTarget or function(username) end
+    MailConfig.OnSetActiveTarget = MailConfig.OnSetActiveTarget or function(username) end
+
+    MailConfig.OnAddFromInventory = MailConfig.OnAddFromInventory or function(categoryKey) end
+    MailConfig.OnQuantityChange = MailConfig.OnQuantityChange or function(categoryKey, itemName, newQty) end
+    MailConfig.OnRemoveItem = MailConfig.OnRemoveItem or function(categoryKey, itemName) end
+
+    MailConfig.OnSaveConfig = MailConfig.OnSaveConfig or function() end
+    MailConfig.OnLoadConfig = MailConfig.OnLoadConfig or function() end
+    MailConfig.OnAutoSendToggle = MailConfig.OnAutoSendToggle or function(state) end
+    MailConfig.OnIntervalChange = MailConfig.OnIntervalChange or function(hours) end
+
+    local configKey = "MailQueue_" .. MailConfig.Title
+    local shouldSave = MailConfig.Save ~= false
+
+    -- persisted state: { Targets = {name=..}, ActiveTarget = name,
+    --                    Categories = { [Key] = { {Name=.., Qty=..}, ... } },
+    --                    AutoSend = bool, IntervalHours = n }
+    local State = {
+        Targets = {},
+        ActiveTarget = nil,
+        CategoryItems = {},
+        AutoSend = false,
+        IntervalHours = 6,
+    }
+    if shouldSave and ConfigData[configKey] ~= nil and type(ConfigData[configKey]) == "table" then
+        local saved = ConfigData[configKey]
+        State.Targets = saved.Targets or {}
+        State.ActiveTarget = saved.ActiveTarget
+        State.CategoryItems = saved.CategoryItems or {}
+        State.AutoSend = saved.AutoSend or false
+        State.IntervalHours = saved.IntervalHours or 6
+    end
+
+    local MailFunc = { Value = State }
+
+    local function Persist(noSave)
+        if not shouldSave then return end
+        ConfigData[configKey] = State
+        if not noSave then QueueSaveConfig() end
+    end
+
+  
+    local Root = Instance.new("Frame")
+    Root.BackgroundTransparency = 1
+    Root.LayoutOrder = CountItem
+    Root.Name = "MailQueue"
+    Root.Parent = SectionAdd
+
+    local RootList = Instance.new("UIListLayout")
+    RootList.Padding = UDim.new(0, 6)
+    RootList.SortOrder = Enum.SortOrder.LayoutOrder
+    RootList.Parent = Root
+
+    local function ResizeRoot()
+        task.defer(function()
+            local h = 0
+            for _, c in Root:GetChildren() do
+                if c:IsA("GuiObject") then
+                    h = h + c.Size.Y.Offset + 6
+                end
+            end
+            Root.Size = UDim2.new(1, 0, 0, h)
+            UpdateSizeSection()
+        end)
+    end
+
+   
+    local function MakeIconButton(parent, text, w, color)
+        local Btn = Instance.new("TextButton")
+        Btn.Font = Enum.Font.GothamBold
+        Btn.Text = text
+        Btn.TextSize = 12
+        Btn.TextColor3 = color or Color3.fromRGB(255, 255, 255)
+        Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Btn.BackgroundTransparency = 0.94
+        Btn.Size = UDim2.new(0, w, 0, 20)
+        Btn.Parent = parent
+        local c = Instance.new("UICorner")
+        c.CornerRadius = UDim.new(0, 4)
+        c.Parent = Btn
+        return Btn
+    end
+
+ 
+ 
+    local TargetsBlock = Instance.new("Frame")
+    TargetsBlock.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TargetsBlock.BackgroundTransparency = 0.965
+    TargetsBlock.Size = UDim2.new(1, 0, 0, 40)
+    TargetsBlock.LayoutOrder = 1
+    TargetsBlock.Name = "TargetsBlock"
+    TargetsBlock.Parent = Root
+
+    local TargetsCorner = Instance.new("UICorner")
+    TargetsCorner.CornerRadius = UDim.new(0, 6)
+    TargetsCorner.Parent = TargetsBlock
+
+    local TargetsPad = Instance.new("UIPadding")
+    TargetsPad.PaddingTop = UDim.new(0, 8)
+    TargetsPad.PaddingBottom = UDim.new(0, 8)
+    TargetsPad.PaddingLeft = UDim.new(0, 8)
+    TargetsPad.PaddingRight = UDim.new(0, 8)
+    TargetsPad.Parent = TargetsBlock
+
+    local TargetsList = Instance.new("UIListLayout")
+    TargetsList.Padding = UDim.new(0, 6)
+    TargetsList.SortOrder = Enum.SortOrder.LayoutOrder
+    TargetsList.Parent = TargetsBlock
+
+    local TargetsTitle = Instance.new("TextLabel")
+    TargetsTitle.Font = Enum.Font.GothamBold
+    TargetsTitle.Text = MailConfig.Title
+    TargetsTitle.TextColor3 = GuiConfig.Color
+    TargetsTitle.TextSize = 13
+    TargetsTitle.TextXAlignment = Enum.TextXAlignment.Left
+    TargetsTitle.BackgroundTransparency = 1
+    TargetsTitle.Size = UDim2.new(1, 0, 0, 14)
+    TargetsTitle.LayoutOrder = 0
+    TargetsTitle.Parent = TargetsBlock
+
+    local InputRow = Instance.new("Frame")
+    InputRow.BackgroundTransparency = 1
+    InputRow.Size = UDim2.new(1, 0, 0, 26)
+    InputRow.LayoutOrder = 1
+    InputRow.Parent = TargetsBlock
+
+    local UsernameBox = Instance.new("TextBox")
+    UsernameBox.Font = Enum.Font.GothamBold
+    UsernameBox.PlaceholderText = MailConfig.Placeholder
+    UsernameBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+    UsernameBox.Text = ""
+    UsernameBox.TextSize = 12
+    UsernameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    UsernameBox.TextXAlignment = Enum.TextXAlignment.Left
+    UsernameBox.ClearTextOnFocus = false
+    UsernameBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    UsernameBox.BackgroundTransparency = 0.94
+    UsernameBox.Size = UDim2.new(1, -32, 1, 0)
+    UsernameBox.Parent = InputRow
+
+    local UsernameBoxPad = Instance.new("UIPadding")
+    UsernameBoxPad.PaddingLeft = UDim.new(0, 8)
+    UsernameBoxPad.Parent = UsernameBox
+
+    local UsernameBoxCorner = Instance.new("UICorner")
+    UsernameBoxCorner.CornerRadius = UDim.new(0, 4)
+    UsernameBoxCorner.Parent = UsernameBox
+
+    local AddTargetBtn = Instance.new("TextButton")
+    AddTargetBtn.Font = Enum.Font.GothamBold
+    AddTargetBtn.Text = "+"
+    AddTargetBtn.TextSize = 16
+    AddTargetBtn.TextColor3 = GuiConfig.Color
+    AddTargetBtn.AnchorPoint = Vector2.new(1, 0)
+    AddTargetBtn.Position = UDim2.new(1, 0, 0, 0)
+    AddTargetBtn.BackgroundColor3 = GuiConfig.Color
+    AddTargetBtn.BackgroundTransparency = 0.88
+    AddTargetBtn.Size = UDim2.new(0, 26, 1, 0)
+    AddTargetBtn.Parent = InputRow
+
+    local AddTargetCorner = Instance.new("UICorner")
+    AddTargetCorner.CornerRadius = UDim.new(0, 4)
+    AddTargetCorner.Parent = AddTargetBtn
+
+    local TargetListFrame = Instance.new("Frame")
+    TargetListFrame.BackgroundTransparency = 1
+    TargetListFrame.Size = UDim2.new(1, 0, 0, 0)
+    TargetListFrame.LayoutOrder = 2
+    TargetListFrame.Name = "TargetListFrame"
+    TargetListFrame.Parent = TargetsBlock
+
+    local TargetListLayout = Instance.new("UIListLayout")
+    TargetListLayout.Padding = UDim.new(0, 4)
+    TargetListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TargetListLayout.Parent = TargetListFrame
+
+    local function ResizeTargetsBlock()
+        task.defer(function()
+            local rowsH = 0
+            for _, c in TargetListFrame:GetChildren() do
+                if c:IsA("GuiObject") then rowsH = rowsH + c.Size.Y.Offset + 4 end
+            end
+            TargetListFrame.Size = UDim2.new(1, 0, 0, rowsH)
+            TargetsBlock.Size = UDim2.new(1, 0, 0, 16 + 14 + 6 + 26 + 6 + rowsH)
+            ResizeRoot()
+        end)
+    end
+
+    local targetRows = {}
+
+    local function RenderTargetRow(username)
+        local isActive = State.ActiveTarget == username
+
+        local Row = Instance.new("Frame")
+        Row.BackgroundColor3 = isActive and GuiConfig.Color or Color3.fromRGB(255, 255, 255)
+        Row.BackgroundTransparency = isActive and 0.88 or 0.965
+        Row.Size = UDim2.new(1, 0, 0, 30)
+        Row.Name = "TargetRow"
+        Row.Parent = TargetListFrame
+
+        local RowCorner = Instance.new("UICorner")
+        RowCorner.CornerRadius = UDim.new(0, 4)
+        RowCorner.Parent = Row
+
+        local Dot = Instance.new("Frame")
+        Dot.AnchorPoint = Vector2.new(0, 0.5)
+        Dot.Position = UDim2.new(0, 8, 0.5, 0)
+        Dot.Size = UDim2.new(0, 8, 0, 8)
+        Dot.BackgroundColor3 = isActive and GuiConfig.Color or Color3.fromRGB(120, 120, 120)
+        Dot.BackgroundTransparency = isActive and 0 or 1
+        if not isActive then
+            local Stroke = Instance.new("UIStroke")
+            Stroke.Color = Color3.fromRGB(120, 120, 120)
+            Stroke.Thickness = 1
+            Stroke.Parent = Dot
+        end
+        Dot.Parent = Row
+        local DotCorner = Instance.new("UICorner")
+        DotCorner.CornerRadius = UDim.new(1, 0)
+        DotCorner.Parent = Dot
+
+        local Avatar = Instance.new("ImageLabel")
+        Avatar.AnchorPoint = Vector2.new(0, 0.5)
+        Avatar.Position = UDim2.new(0, 22, 0.5, 0)
+        Avatar.Size = UDim2.new(0, 20, 0, 20)
+        Avatar.BackgroundColor3 = Color3.fromRGB(58, 74, 122)
+        Avatar.Parent = Row
+        local AvatarCorner = Instance.new("UICorner")
+        AvatarCorner.CornerRadius = UDim.new(1, 0)
+        AvatarCorner.Parent = Avatar
+
+        local NameLbl = Instance.new("TextLabel")
+        NameLbl.Font = Enum.Font.GothamBold
+        NameLbl.Text = username
+        NameLbl.TextColor3 = isActive and GuiConfig.Color or Color3.fromRGB(230, 230, 230)
+        NameLbl.TextSize = 12
+        NameLbl.TextXAlignment = Enum.TextXAlignment.Left
+        NameLbl.BackgroundTransparency = 1
+        NameLbl.Position = UDim2.new(0, 48, 0, 3)
+        NameLbl.Size = UDim2.new(1, -80, 0, 12)
+        NameLbl.Parent = Row
+
+        local SubLbl = Instance.new("TextLabel")
+        SubLbl.Font = Enum.Font.Gotham
+        SubLbl.Text = isActive and "active target" or ""
+        SubLbl.TextColor3 = GuiConfig.Color
+        SubLbl.TextTransparency = 0.2
+        SubLbl.TextSize = 10
+        SubLbl.TextXAlignment = Enum.TextXAlignment.Left
+        SubLbl.BackgroundTransparency = 1
+        SubLbl.Position = UDim2.new(0, 48, 0, 15)
+        SubLbl.Size = UDim2.new(1, -80, 0, 10)
+        SubLbl.Parent = Row
+
+        local RowClick = Instance.new("TextButton")
+        RowClick.Text = ""
+        RowClick.BackgroundTransparency = 1
+        RowClick.Size = UDim2.new(1, -26, 1, 0)
+        RowClick.Parent = Row
+
+        local RemoveBtn = Instance.new("TextButton")
+        RemoveBtn.Font = Enum.Font.GothamBold
+        RemoveBtn.Text = "x"
+        RemoveBtn.TextColor3 = Color3.fromRGB(255, 107, 107)
+        RemoveBtn.TextSize = 12
+        RemoveBtn.AnchorPoint = Vector2.new(1, 0.5)
+        RemoveBtn.Position = UDim2.new(1, -6, 0.5, 0)
+        RemoveBtn.BackgroundColor3 = Color3.fromRGB(226, 75, 74)
+        RemoveBtn.BackgroundTransparency = 0.88
+        RemoveBtn.Size = UDim2.new(0, 18, 0, 18)
+        RemoveBtn.Parent = Row
+        local RemoveCorner = Instance.new("UICorner")
+        RemoveCorner.CornerRadius = UDim.new(0, 3)
+        RemoveCorner.Parent = RemoveBtn
+
+        RowClick.Activated:Connect(function()
+            State.ActiveTarget = username
+            Persist()
+            MailConfig.OnSetActiveTarget(username)
+            MailFunc:RefreshTargets()
+        end)
+
+        RemoveBtn.Activated:Connect(function()
+            CircleClick(RemoveBtn, Mouse.X, Mouse.Y)
+            for i, v in ipairs(State.Targets) do
+                if v == username then
+                    table.remove(State.Targets, i)
+                    break
+                end
+            end
+            if State.ActiveTarget == username then
+                State.ActiveTarget = State.Targets[1]
+            end
+            Persist()
+            MailConfig.OnRemoveTarget(username)
+            MailFunc:RefreshTargets()
+        end)
+
+        return Row
+    end
+
+    function MailFunc:RefreshTargets()
+        for _, r in ipairs(targetRows) do
+            if r and r.Parent then r:Destroy() end
+        end
+        targetRows = {}
+        for _, username in ipairs(State.Targets) do
+            table.insert(targetRows, RenderTargetRow(username))
+        end
+        ResizeTargetsBlock()
+    end
+
+    AddTargetBtn.Activated:Connect(function()
+        CircleClick(AddTargetBtn, Mouse.X, Mouse.Y)
+        local username = UsernameBox.Text
+        if username == "" then return end
+        for _, v in ipairs(State.Targets) do
+            if v == username then
+                than("That target is already in the list", 3, Color3.fromRGB(255, 170, 0), "HydraHub", "Mail")
+                return
+            end
+        end
+        table.insert(State.Targets, username)
+        if not State.ActiveTarget then State.ActiveTarget = username end
+        UsernameBox.Text = ""
+        Persist()
+        MailConfig.OnAddTarget(username)
+        MailFunc:RefreshTargets()
+    end)
+
+    MailFunc:RefreshTargets()
+
+  
+    -- SECTION 2: category queues (Seeds / Eggs / Pets / Gear / ...)
+   
+    local Divider = Instance.new("Frame")
+    Divider.Size = UDim2.new(1, 0, 0, 1)
+    Divider.BorderSizePixel = 0
+    Divider.LayoutOrder = 2
+    Divider.Parent = Root
+    local DividerGrad = Instance.new("UIGradient")
+    DividerGrad.Color = ColorSequence.new {
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
+        ColorSequenceKeypoint.new(0.5, GuiConfig.Color),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20)),
+    }
+    DividerGrad.Parent = Divider
+
+    MailFunc.Categories = {}
+
+    local categoryOrder = 3
+    for _, catDef in ipairs(MailConfig.Categories) do
+        categoryOrder = categoryOrder + 1
+        local catKey = catDef.Key or "Category"
+        local catOptions = catDef.Options or {}
+
+        if not State.CategoryItems[catKey] then
+            State.CategoryItems[catKey] = {}
+        end
+
+        local CatBlock = Instance.new("Frame")
+        CatBlock.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        CatBlock.BackgroundTransparency = 0.965
+        CatBlock.Size = UDim2.new(1, 0, 0, 40)
+        CatBlock.LayoutOrder = categoryOrder
+        CatBlock.Name = "Cat_" .. catKey
+        CatBlock.Parent = Root
+
+        local CatCorner = Instance.new("UICorner")
+        CatCorner.CornerRadius = UDim.new(0, 6)
+        CatCorner.Parent = CatBlock
+
+        local CatPad = Instance.new("UIPadding")
+        CatPad.PaddingTop = UDim.new(0, 8)
+        CatPad.PaddingBottom = UDim.new(0, 8)
+        CatPad.PaddingLeft = UDim.new(0, 8)
+        CatPad.PaddingRight = UDim.new(0, 8)
+        CatPad.Parent = CatBlock
+
+        local CatList = Instance.new("UIListLayout")
+        CatList.Padding = UDim.new(0, 6)
+        CatList.SortOrder = Enum.SortOrder.LayoutOrder
+        CatList.Parent = CatBlock
+
+        local CatTitle = Instance.new("TextLabel")
+        CatTitle.Font = Enum.Font.GothamBold
+        CatTitle.Text = catKey
+        CatTitle.TextColor3 = GuiConfig.Color
+        CatTitle.TextSize = 13
+        CatTitle.TextXAlignment = Enum.TextXAlignment.Left
+        CatTitle.BackgroundTransparency = 1
+        CatTitle.Size = UDim2.new(1, 0, 0, 14)
+        CatTitle.LayoutOrder = 0
+        CatTitle.Parent = CatBlock
+
+        local CatBtnRow = Instance.new("Frame")
+        CatBtnRow.BackgroundTransparency = 1
+        CatBtnRow.Size = UDim2.new(1, 0, 0, 24)
+        CatBtnRow.LayoutOrder = 1
+        CatBtnRow.Parent = CatBlock
+
+        local CatBtnLayout = Instance.new("UIListLayout")
+        CatBtnLayout.FillDirection = Enum.FillDirection.Horizontal
+        CatBtnLayout.Padding = UDim.new(0, 6)
+        CatBtnLayout.Parent = CatBtnRow
+
+        local AddFromListBtn = MakeIconButton(CatBtnRow, "Add from list", 0, nil)
+        AddFromListBtn.Size = UDim2.new(0.5, -3, 1, 0)
+        local AddFromInvBtn = MakeIconButton(CatBtnRow, "Add from inventory", 0, nil)
+        AddFromInvBtn.Size = UDim2.new(0.5, -3, 1, 0)
+
+        local ItemListFrame = Instance.new("Frame")
+        ItemListFrame.BackgroundTransparency = 1
+        ItemListFrame.Size = UDim2.new(1, 0, 0, 0)
+        ItemListFrame.LayoutOrder = 2
+        ItemListFrame.Parent = CatBlock
+
+        local ItemListLayout = Instance.new("UIListLayout")
+        ItemListLayout.Padding = UDim.new(0, 4)
+        ItemListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        ItemListLayout.Parent = ItemListFrame
+
+        local function ResizeCatBlock()
+            task.defer(function()
+                local rowsH = 0
+                for _, c in ItemListFrame:GetChildren() do
+                    if c:IsA("GuiObject") then rowsH = rowsH + c.Size.Y.Offset + 4 end
+                end
+                ItemListFrame.Size = UDim2.new(1, 0, 0, rowsH)
+                CatBlock.Size = UDim2.new(1, 0, 0, 16 + 14 + 6 + 24 + 6 + rowsH)
+                ResizeRoot()
+            end)
+        end
+
+        local CategoryFunc = { Key = catKey }
+        local itemRows = {}
+
+        local function RenderItemRow(entry)
+            local Row = Instance.new("Frame")
+            Row.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Row.BackgroundTransparency = 0.965
+            Row.Size = UDim2.new(1, 0, 0, 30)
+            Row.Name = "ItemRow"
+            Row.Parent = ItemListFrame
+
+            local RowCorner = Instance.new("UICorner")
+            RowCorner.CornerRadius = UDim.new(0, 4)
+            RowCorner.Parent = Row
+
+            local NameLbl = Instance.new("TextLabel")
+            NameLbl.Font = Enum.Font.GothamBold
+            NameLbl.Text = entry.Name
+            NameLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+            NameLbl.TextSize = 12
+            NameLbl.TextXAlignment = Enum.TextXAlignment.Left
+            NameLbl.BackgroundTransparency = 1
+            NameLbl.Position = UDim2.new(0, 8, 0, 0)
+            NameLbl.Size = UDim2.new(0.5, 0, 1, 0)
+            NameLbl.Parent = Row
+
+            if entry.Note then
+                NameLbl.Position = UDim2.new(0, 8, 0, 3)
+                NameLbl.Size = UDim2.new(0.5, 0, 0, 12)
+                local NoteLbl = Instance.new("TextLabel")
+                NoteLbl.Font = Enum.Font.Gotham
+                NoteLbl.Text = entry.Note
+                NoteLbl.TextColor3 = Color3.fromRGB(120, 220, 130)
+                NoteLbl.TextSize = 10
+                NoteLbl.TextXAlignment = Enum.TextXAlignment.Left
+                NoteLbl.BackgroundTransparency = 1
+                NoteLbl.Position = UDim2.new(0, 8, 0, 15)
+                NoteLbl.Size = UDim2.new(0.5, 0, 0, 10)
+                NoteLbl.Parent = Row
+            end
+
+            local StepRow = Instance.new("Frame")
+            StepRow.AnchorPoint = Vector2.new(1, 0.5)
+            StepRow.Position = UDim2.new(1, -6, 0.5, 0)
+            StepRow.Size = UDim2.new(0, 118, 0, 20)
+            StepRow.BackgroundTransparency = 1
+            StepRow.Parent = Row
+
+            local StepLayout = Instance.new("UIListLayout")
+            StepLayout.FillDirection = Enum.FillDirection.Horizontal
+            StepLayout.Padding = UDim.new(0, 4)
+            StepLayout.Parent = StepRow
+
+            local MinusBtn = MakeIconButton(StepRow, "-", 20, GuiConfig.Color)
+            local QtyBox = Instance.new("TextBox")
+            QtyBox.Font = Enum.Font.GothamBold
+            QtyBox.Text = tostring(entry.Qty)
+            QtyBox.TextSize = 11
+            QtyBox.TextColor3 = Color3.fromRGB(230, 230, 230)
+            QtyBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            QtyBox.BackgroundTransparency = 0.93
+            QtyBox.Size = UDim2.new(0, 56, 1, 0)
+            QtyBox.ClearTextOnFocus = false
+            QtyBox.Parent = StepRow
+            local QtyCorner = Instance.new("UICorner")
+            QtyCorner.CornerRadius = UDim.new(0, 3)
+            QtyCorner.Parent = QtyBox
+
+            local PlusBtn = MakeIconButton(StepRow, "+", 20, GuiConfig.Color)
+            local RemoveBtn = MakeIconButton(StepRow, "x", 18, Color3.fromRGB(255, 107, 107))
+            RemoveBtn.BackgroundColor3 = Color3.fromRGB(226, 75, 74)
+            RemoveBtn.BackgroundTransparency = 0.88
+
+            local function SetQty(newQty, noSave)
+                newQty = math.max(0, math.floor(tonumber(newQty) or entry.Qty))
+                entry.Qty = newQty
+                QtyBox.Text = tostring(newQty)
+                if not noSave then
+                    Persist()
+                    MailConfig.OnQuantityChange(catKey, entry.Name, newQty)
+                end
+            end
+
+            MinusBtn.Activated:Connect(function() SetQty(entry.Qty - 1) end)
+            PlusBtn.Activated:Connect(function() SetQty(entry.Qty + 1) end)
+            QtyBox.FocusLost:Connect(function() SetQty(QtyBox.Text) end)
+
+            RemoveBtn.Activated:Connect(function()
+                CircleClick(RemoveBtn, Mouse.X, Mouse.Y)
+                for i, v in ipairs(State.CategoryItems[catKey]) do
+                    if v.Name == entry.Name then
+                        table.remove(State.CategoryItems[catKey], i)
+                        break
+                    end
+                end
+                Persist()
+                MailConfig.OnRemoveItem(catKey, entry.Name)
+                CategoryFunc:Refresh()
+            end)
+
+            return Row
+        end
+
+        function CategoryFunc:Refresh()
+            for _, r in ipairs(itemRows) do
+                if r and r.Parent then r:Destroy() end
+            end
+            itemRows = {}
+            for _, entry in ipairs(State.CategoryItems[catKey]) do
+                table.insert(itemRows, RenderItemRow(entry))
+            end
+            ResizeCatBlock()
+        end
+
+        function CategoryFunc:AddItem(name, qty, note, noSave)
+            for _, v in ipairs(State.CategoryItems[catKey]) do
+                if v.Name == name then return end
+            end
+            table.insert(State.CategoryItems[catKey], { Name = name, Qty = qty or 0, Note = note })
+            if not noSave then Persist() end
+            CategoryFunc:Refresh()
+        end
+
+        -- "Add from list": small inline picker built from catOptions
+        local ListPicker = Instance.new("Frame")
+        ListPicker.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        ListPicker.BackgroundTransparency = 0.1
+        ListPicker.Size = UDim2.new(1, 0, 0, 0)
+        ListPicker.ClipsDescendants = true
+        ListPicker.Visible = false
+        ListPicker.LayoutOrder = 1
+        ListPicker.Parent = ItemListFrame
+        local ListPickerCorner = Instance.new("UICorner")
+        ListPickerCorner.CornerRadius = UDim.new(0, 4)
+        ListPickerCorner.Parent = ListPicker
+        local ListPickerLayout = Instance.new("UIListLayout")
+        ListPickerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        ListPickerLayout.Parent = ListPicker
+
+        for _, optName in ipairs(catOptions) do
+            local OptBtn = Instance.new("TextButton")
+            OptBtn.Font = Enum.Font.GothamBold
+            OptBtn.Text = optName
+            OptBtn.TextSize = 11
+            OptBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+            OptBtn.TextXAlignment = Enum.TextXAlignment.Left
+            OptBtn.BackgroundTransparency = 1
+            OptBtn.Size = UDim2.new(1, 0, 0, 24)
+            OptBtn.Parent = ListPicker
+            local OptPad = Instance.new("UIPadding")
+            OptPad.PaddingLeft = UDim.new(0, 8)
+            OptPad.Parent = OptBtn
+
+            OptBtn.Activated:Connect(function()
+                CategoryFunc:AddItem(optName, 0)
+                ListPicker.Visible = false
+                ListPicker.Size = UDim2.new(1, 0, 0, 0)
+                ResizeCatBlock()
+            end)
+        end
+
+        AddFromListBtn.Activated:Connect(function()
+            CircleClick(AddFromListBtn, Mouse.X, Mouse.Y)
+            ListPicker.Visible = not ListPicker.Visible
+            if ListPicker.Visible then
+                ListPicker.Size = UDim2.new(1, 0, 0, #catOptions * 24)
+            else
+                ListPicker.Size = UDim2.new(1, 0, 0, 0)
+            end
+            ResizeCatBlock()
+        end)
+
+        AddFromInvBtn.Activated:Connect(function()
+            CircleClick(AddFromInvBtn, Mouse.X, Mouse.Y)
+            MailConfig.OnAddFromInventory(catKey)
+        end)
+
+        CategoryFunc:Refresh()
+        MailFunc.Categories[catKey] = CategoryFunc
+    end
+
+    
+    local FooterDivider = Instance.new("Frame")
+    FooterDivider.Size = UDim2.new(1, 0, 0, 1)
+    FooterDivider.BorderSizePixel = 0
+    FooterDivider.LayoutOrder = categoryOrder + 1
+    FooterDivider.Parent = Root
+    local FooterGrad = Instance.new("UIGradient")
+    FooterGrad.Color = ColorSequence.new {
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
+        ColorSequenceKeypoint.new(0.5, GuiConfig.Color),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20)),
+    }
+    FooterGrad.Parent = FooterDivider
+
+    local SaveLoadRow = Instance.new("Frame")
+    SaveLoadRow.BackgroundTransparency = 1
+    SaveLoadRow.Size = UDim2.new(1, 0, 0, 32)
+    SaveLoadRow.LayoutOrder = categoryOrder + 2
+    SaveLoadRow.Parent = Root
+    local SaveLoadLayout = Instance.new("UIListLayout")
+    SaveLoadLayout.FillDirection = Enum.FillDirection.Horizontal
+    SaveLoadLayout.Padding = UDim.new(0, 6)
+    SaveLoadLayout.Parent = SaveLoadRow
+
+    local SaveBtn = MakeIconButton(SaveLoadRow, "Save mail config", 0, nil)
+    SaveBtn.Size = UDim2.new(0.5, -3, 1, 0)
+    local LoadBtn = MakeIconButton(SaveLoadRow, "Load mail config", 0, nil)
+    LoadBtn.Size = UDim2.new(0.5, -3, 1, 0)
+    SaveBtn.Activated:Connect(function()
+        CircleClick(SaveBtn, Mouse.X, Mouse.Y)
+        MailConfig.OnSaveConfig()
+    end)
+    LoadBtn.Activated:Connect(function()
+        CircleClick(LoadBtn, Mouse.X, Mouse.Y)
+        MailConfig.OnLoadConfig()
+    end)
+
+    local AutoSendBlock = Instance.new("Frame")
+    AutoSendBlock.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    AutoSendBlock.BackgroundTransparency = 0.965
+    AutoSendBlock.Size = UDim2.new(1, 0, 0, 40)
+    AutoSendBlock.LayoutOrder = categoryOrder + 3
+    AutoSendBlock.Parent = Root
+    local AutoSendCorner = Instance.new("UICorner")
+    AutoSendCorner.CornerRadius = UDim.new(0, 6)
+    AutoSendCorner.Parent = AutoSendBlock
+
+    local AutoSendTitle = Instance.new("TextLabel")
+    AutoSendTitle.Font = Enum.Font.GothamBold
+    AutoSendTitle.Text = "Auto Send Mail"
+    AutoSendTitle.TextColor3 = Color3.fromRGB(230, 230, 230)
+    AutoSendTitle.TextSize = 13
+    AutoSendTitle.TextXAlignment = Enum.TextXAlignment.Left
+    AutoSendTitle.BackgroundTransparency = 1
+    AutoSendTitle.Position = UDim2.new(0, 10, 0, 8)
+    AutoSendTitle.Size = UDim2.new(1, -60, 0, 13)
+    AutoSendTitle.Parent = AutoSendBlock
+
+    local AutoSendSub = Instance.new("TextLabel")
+    AutoSendSub.Font = Enum.Font.Gotham
+    AutoSendSub.Text = "Loop send to active target"
+    AutoSendSub.TextColor3 = Color3.fromRGB(255, 255, 255)
+    AutoSendSub.TextTransparency = 0.6
+    AutoSendSub.TextSize = 11
+    AutoSendSub.TextXAlignment = Enum.TextXAlignment.Left
+    AutoSendSub.BackgroundTransparency = 1
+    AutoSendSub.Position = UDim2.new(0, 10, 0, 21)
+    AutoSendSub.Size = UDim2.new(1, -60, 0, 11)
+    AutoSendSub.Parent = AutoSendBlock
+
+    local SwitchBg = Instance.new("Frame")
+    SwitchBg.AnchorPoint = Vector2.new(1, 0.5)
+    SwitchBg.Position = UDim2.new(1, -10, 0.5, 0)
+    SwitchBg.Size = UDim2.new(0, 30, 0, 15)
+    SwitchBg.BackgroundColor3 = State.AutoSend and GuiConfig.Color or Color3.fromRGB(255, 255, 255)
+    SwitchBg.BackgroundTransparency = State.AutoSend and 0 or 0.92
+    SwitchBg.Parent = AutoSendBlock
+    local SwitchCorner = Instance.new("UICorner")
+    SwitchCorner.CornerRadius = UDim.new(1, 0)
+    SwitchCorner.Parent = SwitchBg
+
+    local SwitchDot = Instance.new("Frame")
+    SwitchDot.Size = UDim2.new(0, 14, 0, 14)
+    SwitchDot.AnchorPoint = Vector2.new(State.AutoSend and 1 or 0, 0.5)
+    SwitchDot.Position = UDim2.new(State.AutoSend and 1 or 0, 0, 0.5, 0)
+    SwitchDot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SwitchDot.Parent = SwitchBg
+    local SwitchDotCorner = Instance.new("UICorner")
+    SwitchDotCorner.CornerRadius = UDim.new(1, 0)
+    SwitchDotCorner.Parent = SwitchDot
+
+    local SwitchBtn = Instance.new("TextButton")
+    SwitchBtn.Text = ""
+    SwitchBtn.BackgroundTransparency = 1
+    SwitchBtn.Size = UDim2.new(1, 0, 1, 0)
+    SwitchBtn.Parent = AutoSendBlock
+
+    SwitchBtn.Activated:Connect(function()
+        State.AutoSend = not State.AutoSend
+        Persist()
+        TweenService:Create(SwitchBg, TweenInfo.new(0.2), {
+            BackgroundColor3 = State.AutoSend and GuiConfig.Color or Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = State.AutoSend and 0 or 0.92,
+        }):Play()
+        TweenService:Create(SwitchDot, TweenInfo.new(0.2), {
+            Position = UDim2.new(State.AutoSend and 1 or 0, 0, 0.5, 0),
+        }):Play()
+        SwitchDot.AnchorPoint = Vector2.new(State.AutoSend and 1 or 0, 0.5)
+        MailConfig.OnAutoSendToggle(State.AutoSend)
+    end)
+
+    local IntervalBlock = Instance.new("Frame")
+    IntervalBlock.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    IntervalBlock.BackgroundTransparency = 0.965
+    IntervalBlock.Size = UDim2.new(1, 0, 0, 36)
+    IntervalBlock.LayoutOrder = categoryOrder + 4
+    IntervalBlock.Parent = Root
+    local IntervalCorner = Instance.new("UICorner")
+    IntervalCorner.CornerRadius = UDim.new(0, 6)
+    IntervalCorner.Parent = IntervalBlock
+
+    local IntervalTitle = Instance.new("TextLabel")
+    IntervalTitle.Font = Enum.Font.GothamBold
+    IntervalTitle.Text = "Send every"
+    IntervalTitle.TextColor3 = Color3.fromRGB(230, 230, 230)
+    IntervalTitle.TextSize = 12
+    IntervalTitle.TextXAlignment = Enum.TextXAlignment.Left
+    IntervalTitle.BackgroundTransparency = 1
+    IntervalTitle.Position = UDim2.new(0, 10, 0, 0)
+    IntervalTitle.Size = UDim2.new(0.5, 0, 0, 24)
+    IntervalTitle.Parent = IntervalBlock
+
+    local IntervalStepRow = Instance.new("Frame")
+    IntervalStepRow.AnchorPoint = Vector2.new(1, 0)
+    IntervalStepRow.Position = UDim2.new(1, -8, 0, 4)
+    IntervalStepRow.Size = UDim2.new(0, 130, 0, 20)
+    IntervalStepRow.BackgroundTransparency = 1
+    IntervalStepRow.Parent = IntervalBlock
+    local IntervalStepLayout = Instance.new("UIListLayout")
+    IntervalStepLayout.FillDirection = Enum.FillDirection.Horizontal
+    IntervalStepLayout.Padding = UDim.new(0, 4)
+    IntervalStepLayout.Parent = IntervalStepRow
+
+    local IntMinusBtn = MakeIconButton(IntervalStepRow, "-", 20, GuiConfig.Color)
+    local IntLabel = Instance.new("TextLabel")
+    IntLabel.Font = Enum.Font.GothamBold
+    IntLabel.Text = State.IntervalHours .. " hours"
+    IntLabel.TextSize = 11
+    IntLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+    IntLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    IntLabel.BackgroundTransparency = 0.93
+    IntLabel.Size = UDim2.new(0, 66, 1, 0)
+    IntLabel.Parent = IntervalStepRow
+    local IntLabelCorner = Instance.new("UICorner")
+    IntLabelCorner.CornerRadius = UDim.new(0, 3)
+    IntLabelCorner.Parent = IntLabel
+    local IntPlusBtn = MakeIconButton(IntervalStepRow, "+", 20, GuiConfig.Color)
+
+    local NextSendLbl = Instance.new("TextLabel")
+    NextSendLbl.Font = Enum.Font.Gotham
+    NextSendLbl.Text = ""
+    NextSendLbl.TextColor3 = Color3.fromRGB(150, 150, 150)
+    NextSendLbl.TextSize = 10
+    NextSendLbl.TextXAlignment = Enum.TextXAlignment.Left
+    NextSendLbl.BackgroundTransparency = 1
+    NextSendLbl.Position = UDim2.new(0, 10, 0, 22)
+    NextSendLbl.Size = UDim2.new(1, -20, 0, 12)
+    NextSendLbl.Parent = IntervalBlock
+
+    function MailFunc:SetNextSendText(text)
+        NextSendLbl.Text = text or ""
+    end
+
+    local function SetInterval(hours)
+        hours = math.max(1, math.floor(hours))
+        State.IntervalHours = hours
+        IntLabel.Text = hours .. " hours"
+        Persist()
+        MailConfig.OnIntervalChange(hours)
+    end
+
+    IntMinusBtn.Activated:Connect(function() SetInterval(State.IntervalHours - 1) end)
+    IntPlusBtn.Activated:Connect(function() SetInterval(State.IntervalHours + 1) end)
+
+    ResizeRoot()
+
+    if shouldSave then
+        Elements[configKey] = MailFunc
+    end
+    RegisterSearch({ label = MailConfig.Title, tab = TabConfig.Name, kind = "MailQueue", switch = SearchSwitch })
+
+    CountItem = CountItem + 1
+    return MailFunc
+end
+
             function Items:AddSubSection(title)
                 title = title or "Sub Section"
 
