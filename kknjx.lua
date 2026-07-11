@@ -5488,6 +5488,13 @@ end
     ValuesLayout.Padding = UDim.new(0, 6)
     ValuesLayout.Parent = ValuesRow
 
+    local function ResizeInputBlock()
+        task.defer(function()
+            InputBlock.Size = UDim2.new(1, 0, 0, 72)
+            ResizeRoot()
+        end)
+    end
+
     local KgBox = Instance.new("TextBox")
     KgBox.Font = Enum.Font.GothamBold
     KgBox.PlaceholderText = "KG (mis. 100)"
@@ -5781,6 +5788,7 @@ end
     end)
 
     FruitTargetFunc:Refresh()
+    ResizeInputBlock()
     ResizeRoot()
 
     if shouldSave then
