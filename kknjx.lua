@@ -5327,10 +5327,23 @@ end
                 Label.Size = UDim2.new(1, -20, 1, 0)
                 Label.BackgroundTransparency = 1
                 Label.Font = Enum.Font.GothamBold
-                Label.Text = "──> " .. title .. " <──"
+                Label.Text = title
                 Label.TextColor3 = Color3.fromRGB(230, 230, 230)
                 Label.TextSize = 12
+                Label.TextWrapped = true
                 Label.TextXAlignment = Enum.TextXAlignment.Left
+                Label.TextYAlignment = Enum.TextYAlignment.Center
+
+                local function UpdateSubSectionHeight()
+                    task.defer(function()
+                        local lines = math.ceil(Label.TextBounds.X / math.max(Label.AbsoluteSize.X, 1))
+                        local h = math.max(22, 14 * lines + 8)
+                        SubSection.Size = UDim2.new(1, 0, 0, h)
+                        UpdateSizeSection()
+                    end)
+                end
+                Label:GetPropertyChangedSignal("TextBounds"):Connect(UpdateSubSectionHeight)
+                UpdateSubSectionHeight()
 
                 CountItem = CountItem + 1
                 return SubSection
