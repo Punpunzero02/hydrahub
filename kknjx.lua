@@ -552,6 +552,261 @@ function than(msg, delay, color, title, desc)
     })
 end
 
+local InventoryPickerGui = nil
+
+local function ShowInventoryPicker(config)
+    config = config or {}
+    local items = config.Items or {}
+    local selectedSet = config.SelectedSet or {}
+    local onToggle = config.OnToggle or function(name, nowSelected) end
+    local accentColor = config.Color or Color3.fromRGB(100, 200, 255)
+
+    if InventoryPickerGui then
+        InventoryPickerGui:Destroy()
+        InventoryPickerGui = nil
+    end
+
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "InventoryPickerGui"
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.Parent = game:GetService("CoreGui")
+    InventoryPickerGui = ScreenGui
+
+    local Overlay = Instance.new("Frame")
+    Overlay.Size = UDim2.new(1, 0, 1, 0)
+    Overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    Overlay.BackgroundTransparency = 0.5
+    Overlay.ZIndex = 100
+    Overlay.Parent = ScreenGui
+
+    local Box = Instance.new("Frame")
+    Box.AnchorPoint = Vector2.new(0.5, 0.5)
+    Box.Position = UDim2.new(0.5, 0, 0.5, 0)
+    Box.Size = UDim2.new(0, 260, 0, 320)
+    Box.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+    Box.BorderSizePixel = 0
+    Box.ZIndex = 101
+    Box.Parent = Overlay
+
+    local BoxCorner = Instance.new("UICorner")
+    BoxCorner.CornerRadius = UDim.new(0, 8)
+    BoxCorner.Parent = Box
+
+    local BoxStroke = Instance.new("UIStroke")
+    BoxStroke.Color = accentColor
+    BoxStroke.Thickness = 1
+    BoxStroke.Transparency = 0.5
+    BoxStroke.Parent = Box
+
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Size = UDim2.new(1, 0, 0, 32)
+    TitleBar.BackgroundTransparency = 1
+    TitleBar.ZIndex = 102
+    TitleBar.Name = "TitleBar"
+    TitleBar.Parent = Box
+
+    local TitleLbl = Instance.new("TextLabel")
+    TitleLbl.Font = Enum.Font.GothamBold
+    TitleLbl.Text = config.Title or "Select Items"
+    TitleLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+    TitleLbl.TextSize = 13
+    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLbl.BackgroundTransparency = 1
+    TitleLbl.Position = UDim2.new(0, 10, 0, 0)
+    TitleLbl.Size = UDim2.new(1, -40, 1, 0)
+    TitleLbl.ZIndex = 102
+    TitleLbl.Parent = TitleBar
+
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.Text = "x"
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 107, 107)
+    CloseBtn.TextSize = 14
+    CloseBtn.AnchorPoint = Vector2.new(1, 0.5)
+    CloseBtn.Position = UDim2.new(1, -8, 0.5, 0)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(226, 75, 74)
+    CloseBtn.BackgroundTransparency = 0.88
+    CloseBtn.Size = UDim2.new(0, 22, 0, 22)
+    CloseBtn.ZIndex = 102
+    CloseBtn.Parent = TitleBar
+
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 4)
+    CloseCorner.Parent = CloseBtn
+
+    CloseBtn.Activated:Connect(function()
+        ScreenGui:Destroy()
+        if InventoryPickerGui == ScreenGui then InventoryPickerGui = nil end
+    end)
+
+    local dragging, dragStart, startPos
+    TitleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = Box.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            Box.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    local SearchBar = Instance.new("Frame")
+    SearchBar.Position = UDim2.new(0, 8, 0, 36)
+    SearchBar.Size = UDim2.new(1, -16, 0, 26)
+    SearchBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SearchBar.BackgroundTransparency = 0.93
+    SearchBar.ZIndex = 102
+    SearchBar.Parent = Box
+    local SearchCorner = Instance.new("UICorner")
+    SearchCorner.CornerRadius = UDim.new(0, 4)
+    SearchCorner.Parent = SearchBar
+
+    local SearchBox = Instance.new("TextBox")
+    SearchBox.Font = Enum.Font.Gotham
+    SearchBox.PlaceholderText = "Search..."
+    SearchBox.PlaceholderColor3 = Color3.fromRGB(130, 130, 130)
+    SearchBox.Text = ""
+    SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SearchBox.TextSize = 12
+    SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+    SearchBox.ClearTextOnFocus = false
+    SearchBox.BackgroundTransparency = 1
+    SearchBox.Position = UDim2.new(0, 8, 0, 0)
+    SearchBox.Size = UDim2.new(1, -16, 1, 0)
+    SearchBox.ZIndex = 102
+    SearchBox.Parent = SearchBar
+
+    local ListScroll = Instance.new("ScrollingFrame")
+    ListScroll.Position = UDim2.new(0, 8, 0, 68)
+    ListScroll.Size = UDim2.new(1, -16, 1, -76)
+    ListScroll.BackgroundTransparency = 1
+    ListScroll.BorderSizePixel = 0
+    ListScroll.ScrollBarThickness = 3
+    ListScroll.ScrollBarImageColor3 = accentColor
+    ListScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    ListScroll.ZIndex = 102
+    ListScroll.Parent = Box
+
+    local ListLayout = Instance.new("UIListLayout")
+    ListLayout.Padding = UDim.new(0, 4)
+    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ListLayout.Parent = ListScroll
+    ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        ListScroll.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 8)
+    end)
+
+    local rowsByName = {}
+
+    local function buildRow(itemData)
+        local name = itemData.Name
+        local stock = itemData.Stock or 0
+        local isSelected = selectedSet[name] == true
+
+        local Row = Instance.new("Frame")
+        Row.BackgroundColor3 = isSelected and accentColor or Color3.fromRGB(255, 255, 255)
+        Row.BackgroundTransparency = isSelected and 0.85 or 0.96
+        Row.Size = UDim2.new(1, 0, 0, 30)
+        Row.ZIndex = 102
+        Row.Name = "Row"
+        Row.Parent = ListScroll
+
+        local RowCorner = Instance.new("UICorner")
+        RowCorner.CornerRadius = UDim.new(0, 4)
+        RowCorner.Parent = Row
+
+        local NameLbl = Instance.new("TextLabel")
+        NameLbl.Font = Enum.Font.GothamBold
+        NameLbl.Text = name
+        NameLbl.TextColor3 = isSelected and accentColor or Color3.fromRGB(220, 220, 220)
+        NameLbl.TextSize = 12
+        NameLbl.TextXAlignment = Enum.TextXAlignment.Left
+        NameLbl.BackgroundTransparency = 1
+        NameLbl.Position = UDim2.new(0, 8, 0, 3)
+        NameLbl.Size = UDim2.new(0.6, 0, 0, 12)
+        NameLbl.ZIndex = 103
+        NameLbl.Parent = Row
+
+        local StockLbl = Instance.new("TextLabel")
+        StockLbl.Font = Enum.Font.Gotham
+        StockLbl.Text = "have " .. tostring(stock)
+        StockLbl.TextColor3 = Color3.fromRGB(150, 220, 150)
+        StockLbl.TextSize = 10
+        StockLbl.TextXAlignment = Enum.TextXAlignment.Left
+        StockLbl.BackgroundTransparency = 1
+        StockLbl.Position = UDim2.new(0, 8, 0, 16)
+        StockLbl.Size = UDim2.new(0.6, 0, 0, 10)
+        StockLbl.ZIndex = 103
+        StockLbl.Parent = Row
+
+        local CheckMark = Instance.new("TextLabel")
+        CheckMark.Font = Enum.Font.GothamBold
+        CheckMark.Text = isSelected and "✓" or ""
+        CheckMark.TextColor3 = accentColor
+        CheckMark.TextSize = 14
+        CheckMark.AnchorPoint = Vector2.new(1, 0.5)
+        CheckMark.Position = UDim2.new(1, -8, 0.5, 0)
+        CheckMark.Size = UDim2.new(0, 20, 0, 20)
+        CheckMark.BackgroundTransparency = 1
+        CheckMark.ZIndex = 103
+        CheckMark.Name = "CheckMark"
+        CheckMark.Parent = Row
+
+        local Btn = Instance.new("TextButton")
+        Btn.Text = ""
+        Btn.BackgroundTransparency = 1
+        Btn.Size = UDim2.new(1, 0, 1, 0)
+        Btn.ZIndex = 104
+        Btn.Parent = Row
+
+        Btn.Activated:Connect(function()
+            local nowSelected = not selectedSet[name]
+            selectedSet[name] = nowSelected or nil
+            Row.BackgroundColor3 = nowSelected and accentColor or Color3.fromRGB(255, 255, 255)
+            Row.BackgroundTransparency = nowSelected and 0.85 or 0.96
+            NameLbl.TextColor3 = nowSelected and accentColor or Color3.fromRGB(220, 220, 220)
+            CheckMark.Text = nowSelected and "✓" or ""
+            onToggle(name, nowSelected)
+        end)
+
+        rowsByName[name] = { row = Row, nameLbl = NameLbl }
+        return Row
+    end
+
+    for _, itemData in ipairs(items) do
+        buildRow(itemData)
+    end
+
+    local searchTicket = 0
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        searchTicket = searchTicket + 1
+        local ticket = searchTicket
+        task.delay(0.08, function()
+            if ticket ~= searchTicket then return end
+            local q = string.lower(SearchBox.Text)
+            for name, r in pairs(rowsByName) do
+                r.row.Visible = (q == "") or string.find(string.lower(name), q, 1, true) ~= nil
+            end
+        end)
+    end)
+
+    Overlay.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.Position.X < Box.AbsolutePosition.X or input.Position.X > Box.AbsolutePosition.X + Box.AbsoluteSize.X
+                or input.Position.Y < Box.AbsolutePosition.Y or input.Position.Y > Box.AbsolutePosition.Y + Box.AbsoluteSize.Y then
+                ScreenGui:Destroy()
+                if InventoryPickerGui == ScreenGui then InventoryPickerGui = nil end
+            end
+        end
+    end)
+end
+
 function Chloex:Window(GuiConfig)
     GuiConfig              = GuiConfig or {}
     GuiConfig.Title        = GuiConfig.Title or "HydraHub"
@@ -3751,6 +4006,7 @@ function Items:AddMailQueue(MailConfig)
     MailConfig.OnSetActiveTarget = MailConfig.OnSetActiveTarget or function(username) end
 
     MailConfig.OnAddFromInventory = MailConfig.OnAddFromInventory or function(categoryKey) end
+    MailConfig.OnGetInventoryItems = MailConfig.OnGetInventoryItems or function(categoryKey) return {} end
     MailConfig.OnQuantityChange = MailConfig.OnQuantityChange or function(categoryKey, itemName, newQty) end
     MailConfig.OnRemoveItem = MailConfig.OnRemoveItem or function(categoryKey, itemName) end
 
@@ -3771,6 +4027,7 @@ function Items:AddMailQueue(MailConfig)
         CategoryItems = {},
         AutoSend = false,
         IntervalHours = 6,
+        KnownUsernames = {},
     }
     if shouldSave and ConfigData[configKey] ~= nil and type(ConfigData[configKey]) == "table" then
         local saved = ConfigData[configKey]
@@ -3779,6 +4036,7 @@ function Items:AddMailQueue(MailConfig)
         State.CategoryItems = saved.CategoryItems or {}
         State.AutoSend = saved.AutoSend or false
         State.IntervalHours = saved.IntervalHours or 6
+        State.KnownUsernames = saved.KnownUsernames or {}
     end
 
     local MailFunc = { Value = State }
@@ -3868,6 +4126,8 @@ function Items:AddMailQueue(MailConfig)
     TargetsTitle.LayoutOrder = 0
     TargetsTitle.Parent = TargetsBlock
 
+    local ResizeTargetsBlockOuter
+
     local InputRow = Instance.new("Frame")
     InputRow.BackgroundTransparency = 1
     InputRow.Size = UDim2.new(1, 0, 0, 26)
@@ -3885,7 +4145,7 @@ function Items:AddMailQueue(MailConfig)
     UsernameBox.ClearTextOnFocus = false
     UsernameBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     UsernameBox.BackgroundTransparency = 0.94
-    UsernameBox.Size = UDim2.new(1, -32, 1, 0)
+    UsernameBox.Size = UDim2.new(1, -58, 1, 0)
     UsernameBox.Parent = InputRow
 
     local UsernameBoxPad = Instance.new("UIPadding")
@@ -3895,6 +4155,22 @@ function Items:AddMailQueue(MailConfig)
     local UsernameBoxCorner = Instance.new("UICorner")
     UsernameBoxCorner.CornerRadius = UDim.new(0, 4)
     UsernameBoxCorner.Parent = UsernameBox
+
+    local SavedUserBtn = Instance.new("TextButton")
+    SavedUserBtn.Font = Enum.Font.GothamBold
+    SavedUserBtn.Text = "▾"
+    SavedUserBtn.TextSize = 14
+    SavedUserBtn.TextColor3 = GuiConfig.Color
+    SavedUserBtn.AnchorPoint = Vector2.new(1, 0)
+    SavedUserBtn.Position = UDim2.new(1, -30, 0, 0)
+    SavedUserBtn.BackgroundColor3 = GuiConfig.Color
+    SavedUserBtn.BackgroundTransparency = 0.88
+    SavedUserBtn.Size = UDim2.new(0, 24, 1, 0)
+    SavedUserBtn.Parent = InputRow
+
+    local SavedUserCorner = Instance.new("UICorner")
+    SavedUserCorner.CornerRadius = UDim.new(0, 4)
+    SavedUserCorner.Parent = SavedUserBtn
 
     local AddTargetBtn = Instance.new("TextButton")
     AddTargetBtn.Font = Enum.Font.GothamBold
@@ -3912,10 +4188,65 @@ function Items:AddMailQueue(MailConfig)
     AddTargetCorner.CornerRadius = UDim.new(0, 4)
     AddTargetCorner.Parent = AddTargetBtn
 
+    local SavedUserPicker = Instance.new("Frame")
+    SavedUserPicker.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    SavedUserPicker.BackgroundTransparency = 0.1
+    SavedUserPicker.Size = UDim2.new(1, 0, 0, 0)
+    SavedUserPicker.ClipsDescendants = true
+    SavedUserPicker.Visible = false
+    SavedUserPicker.LayoutOrder = 2
+    SavedUserPicker.Name = "SavedUserPicker"
+    SavedUserPicker.Parent = TargetsBlock
+    local SavedUserPickerCorner = Instance.new("UICorner")
+    SavedUserPickerCorner.CornerRadius = UDim.new(0, 4)
+    SavedUserPickerCorner.Parent = SavedUserPicker
+    local SavedUserPickerLayout = Instance.new("UIListLayout")
+    SavedUserPickerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    SavedUserPickerLayout.Parent = SavedUserPicker
+
+    local function RefreshSavedUserPicker()
+        for _, c in ipairs(SavedUserPicker:GetChildren()) do
+            if c:IsA("GuiObject") then c:Destroy() end
+        end
+        for _, uname in ipairs(State.KnownUsernames) do
+            local OptBtn = Instance.new("TextButton")
+            OptBtn.Font = Enum.Font.GothamBold
+            OptBtn.Text = uname
+            OptBtn.TextSize = 11
+            OptBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+            OptBtn.TextXAlignment = Enum.TextXAlignment.Left
+            OptBtn.BackgroundTransparency = 1
+            OptBtn.Size = UDim2.new(1, 0, 0, 24)
+            OptBtn.Parent = SavedUserPicker
+            local OptPad = Instance.new("UIPadding")
+            OptPad.PaddingLeft = UDim.new(0, 8)
+            OptPad.Parent = OptBtn
+
+            OptBtn.Activated:Connect(function()
+                UsernameBox.Text = uname
+                SavedUserPicker.Visible = false
+                SavedUserPicker.Size = UDim2.new(1, 0, 0, 0)
+                ResizeTargetsBlockOuter()
+            end)
+        end
+    end
+
+    SavedUserBtn.Activated:Connect(function()
+        CircleClick(SavedUserBtn, Mouse.X, Mouse.Y)
+        RefreshSavedUserPicker()
+        SavedUserPicker.Visible = not SavedUserPicker.Visible
+        if SavedUserPicker.Visible then
+            SavedUserPicker.Size = UDim2.new(1, 0, 0, #State.KnownUsernames * 24)
+        else
+            SavedUserPicker.Size = UDim2.new(1, 0, 0, 0)
+        end
+        ResizeTargetsBlockOuter()
+    end)
+
     local TargetListFrame = Instance.new("Frame")
     TargetListFrame.BackgroundTransparency = 1
     TargetListFrame.Size = UDim2.new(1, 0, 0, 0)
-    TargetListFrame.LayoutOrder = 2
+    TargetListFrame.LayoutOrder = 3
     TargetListFrame.Name = "TargetListFrame"
     TargetListFrame.Parent = TargetsBlock
 
@@ -3931,10 +4262,12 @@ function Items:AddMailQueue(MailConfig)
                 if c:IsA("GuiObject") then rowsH = rowsH + c.Size.Y.Offset + 4 end
             end
             TargetListFrame.Size = UDim2.new(1, 0, 0, rowsH)
-            TargetsBlock.Size = UDim2.new(1, 0, 0, 16 + 14 + 6 + 26 + 6 + rowsH)
+            local pickerH = SavedUserPicker.Visible and SavedUserPicker.Size.Y.Offset or 0
+            TargetsBlock.Size = UDim2.new(1, 0, 0, 16 + 14 + 6 + 26 + 6 + pickerH + rowsH)
             ResizeRoot()
         end)
     end
+    ResizeTargetsBlockOuter = ResizeTargetsBlock
 
     local targetRows = {}
 
@@ -3978,6 +4311,25 @@ function Items:AddMailQueue(MailConfig)
         local AvatarCorner = Instance.new("UICorner")
         AvatarCorner.CornerRadius = UDim.new(1, 0)
         AvatarCorner.Parent = Avatar
+
+        task.spawn(function()
+            local Players = game:GetService("Players")
+            local ok, userId = pcall(function()
+                return Players:GetUserIdFromNameAsync(username)
+            end)
+            if ok and userId then
+                local ok2, content = pcall(function()
+                    return Players:GetUserThumbnailAsync(
+                        userId,
+                        Enum.ThumbnailType.HeadShot,
+                        Enum.ThumbnailSize.Size48x48
+                    )
+                end)
+                if ok2 and content and Avatar.Parent then
+                    Avatar.Image = content
+                end
+            end
+        end)
 
         local NameLbl = Instance.new("TextLabel")
         NameLbl.Font = Enum.Font.GothamBold
@@ -4071,6 +4423,9 @@ function Items:AddMailQueue(MailConfig)
             end
         end
         table.insert(State.Targets, username)
+        if not table.find(State.KnownUsernames, username) then
+            table.insert(State.KnownUsernames, username)
+        end
         if not State.ActiveTarget then State.ActiveTarget = username end
         UsernameBox.Text = ""
         Persist()
@@ -4356,7 +4711,35 @@ function Items:AddMailQueue(MailConfig)
 
         AddFromInvBtn.Activated:Connect(function()
             CircleClick(AddFromInvBtn, Mouse.X, Mouse.Y)
-            MailConfig.OnAddFromInventory(catKey)
+            local invItems = MailConfig.OnGetInventoryItems and MailConfig.OnGetInventoryItems(catKey) or {}
+            local selectedSet = {}
+            for _, entry in ipairs(State.CategoryItems[catKey]) do
+                selectedSet[entry.Name] = true
+            end
+            ShowInventoryPicker({
+                Title = catKey .. " — from inventory",
+                Items = invItems,
+                SelectedSet = selectedSet,
+                Color = GuiConfig.Color,
+                OnToggle = function(name, nowSelected)
+                    if nowSelected then
+                        local stock = 0
+                        for _, it in ipairs(invItems) do
+                            if it.Name == name then stock = it.Stock break end
+                        end
+                        CategoryFunc:AddItem(name, stock)
+                    else
+                        for i, v in ipairs(State.CategoryItems[catKey]) do
+                            if v.Name == name then
+                                table.remove(State.CategoryItems[catKey], i)
+                                break
+                            end
+                        end
+                        Persist()
+                        CategoryFunc:Refresh()
+                    end
+                end,
+            })
         end)
 
         CategoryFunc:Refresh()
