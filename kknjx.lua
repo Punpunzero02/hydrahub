@@ -5309,19 +5309,20 @@ end
                 SubSection.Name = "SubSection"
                 SubSection.Parent = SectionAdd
                 SubSection.BackgroundTransparency = 1
-                SubSection.Size = UDim2.new(1, 0, 0, 22)
+                SubSection.Size = UDim2.new(1, 0, 0, 28)
                 SubSection.LayoutOrder = CountItem
 
                 local Background = Instance.new("Frame")
                 Background.Parent = SubSection
-                Background.Size = UDim2.new(1, 0, 1, 0)
+                Background.Size = UDim2.new(1, 0, 0, 22)
+                Background.Position = UDim2.new(0, 0, 0, 0)
                 Background.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                 Background.BackgroundTransparency = 0.935
                 Background.BorderSizePixel = 0
                 Instance.new("UICorner", Background).CornerRadius = UDim.new(0, 6)
 
                 local Label = Instance.new("TextLabel")
-                Label.Parent = SubSection
+                Label.Parent = Background
                 Label.AnchorPoint = Vector2.new(0, 0.5)
                 Label.Position = UDim2.new(0, 10, 0.5, 0)
                 Label.Size = UDim2.new(1, -20, 1, 0)
@@ -5337,8 +5338,9 @@ end
                 local function UpdateSubSectionHeight()
                     task.defer(function()
                         local lines = math.ceil(Label.TextBounds.X / math.max(Label.AbsoluteSize.X, 1))
-                        local h = math.max(22, 14 * lines + 8)
-                        SubSection.Size = UDim2.new(1, 0, 0, h)
+                        local bgH = math.max(22, 14 * lines + 8)
+                        Background.Size = UDim2.new(1, 0, 0, bgH)
+                        SubSection.Size = UDim2.new(1, 0, 0, bgH + 6)
                         UpdateSizeSection()
                     end)
                 end
