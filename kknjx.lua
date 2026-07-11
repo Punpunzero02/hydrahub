@@ -4853,34 +4853,277 @@ function Items:AddMailQueue(MailConfig)
     }
     FooterGrad.Parent = FooterDivider
 
+    -- === Mail Presets: nama + save + load terpisah dari config hub ===
+    local PresetFolderBase = "HydraHub/Configs/" .. gameName .. "/_mailpresets"
+
+    local function EnsurePresetFolder()
+        if not isfolder("HydraHub") then makefolder("HydraHub") end
+        if not isfolder("HydraHub/Configs") then makefolder("HydraHub/Configs") end
+        if not isfolder("HydraHub/Configs/" .. gameName) then makefolder("HydraHub/Configs/" .. gameName) end
+        if not isfolder(PresetFolderBase) then makefolder(PresetFolderBase) end
+    end
+
+    local function GetMailPresets()
+        local out = {}
+        if not listfiles then return out end
+        EnsurePresetFolder()
+        for _, f in ipairs(listfiles(PresetFolderBase)) do
+            local n = string.match(f, "([^/\\]+)%.json$")
+            if n then table.insert(out, n) end
+        end
+        return out
+    end
+
+    local function SaveMailPreset(name)
+        if not name or name == "" then
+            than("Enter a preset name first", 4, Color3.fromRGB(255, 90, 90), "HydraHub", "Mail")
+            return false
+        end
+        if not writefile then return false end
+        EnsurePresetFolder()
+        local path = PresetFolderBase .. "/" .. name .. ".json"
+        local payload = {
+            Targets = State.Targets,
+            ActiveTarget = State.ActiveTarget,
+            CategoryItems = State.CategoryItems,
+            AutoSend = State.AutoSend,
+            IntervalHours = State.IntervalHours,
+            KnownUsernames = State.KnownUsernames,
+        }
+        writefile(path, HttpService:JSONEncode(payload))
+        than("Mail preset '" .. name .. "' saved", 4, GuiConfig.Color, "HydraHub", "Mail")
+        return true
+    end
+
+    local function LoadMailPreset(name)
+        if not name or name == "" then return false end
+        local path = PresetFolderBase .. "/" .. name .. ".json"
+        if not (isfile and isfile(path)) then
+            than("Preset '" .. tostring(name) .. "' not found", 4, Color3.fromRGB(255, 90, 90), "HydraHub", "Mail")
+            return false
+        end
+        local ok, dec = pcall(function() return HttpService:JSONDecode(readfile(path)) end)
+        if not ok or type(dec) ~= "table" then
+            than("Failed to read preset", 4, Color3.fromRGB(255, 90, 90), "HydraHub", "Mail")
+            return false
+        end
+        MailFunc:Set(dec)
+        than("Mail preset '" .. name .. "' loaded", 4, GuiConfig.Color, "HydraHub", "Mail")
+        return true
+    end
+
+    local function DeleteMailPreset(name)
+        local path = PresetFolderBase .. "/" .. name .. ".json"
+        if isfile and isfile(path) and delfile then
+            delfile(path)
+            than("Preset '" .. name .. "' deleted", 4, Color3.fromRGB(255, 170, 0), "HydraHub", "Mail")
+            return true
+        end
+        return false
+    end
+
+    local PresetNameBlock = Instance.new("Frame")
+    PresetNameBlock.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    PresetNameBlock.BackgroundTransparency = 0.965
+    PresetNameBlock.Size = UDim2.new(1, 0, 0, 40)
+    PresetNameBlock.LayoutOrder = categoryOrder + 2
+    PresetNameBlock.Name = "PresetNameBlock"
+    PresetNameBlock.Parent = Root
+
+    local PresetNameCorner = Instance.new("UICorner")
+    PresetNameCorner.CornerRadius = UDim.new(0, 6)
+    PresetNameCorner.Parent = PresetNameBlock
+
+    local PresetNameTitle = Instance.new("TextLabel")
+    PresetNameTitle.Font = Enum.Font.GothamBold
+    PresetNameTitle.Text = "Preset Name"
+    PresetNameTitle.TextColor3 = GuiConfig.Color
+    PresetNameTitle.TextSize = 12
+    PresetNameTitle.TextXAlignment = Enum.TextXAlignment.Left
+    PresetNameTitle.BackgroundTransparency = 1
+    PresetNameTitle.Position = UDim2.new(0, 10, 0, 6)
+    PresetNameTitle.Size = UDim2.new(1, -20, 0, 12)
+    PresetNameTitle.Parent = PresetNameBlock
+
+    local PresetNameBox = Instance.new("TextBox")
+    PresetNameBox.Font = Enum.Font.GothamBold
+    PresetNameBox.PlaceholderText = "MyMailPreset"
+    PresetNameBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 120)
+    PresetNameBox.Text = ""
+    PresetNameBox.TextSize = 12
+    PresetNameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    PresetNameBox.TextXAlignment = Enum.TextXAlignment.Left
+    PresetNameBox.ClearTextOnFocus = false
+    PresetNameBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    PresetNameBox.BackgroundTransparency = 0.94
+    PresetNameBox.Position = UDim2.new(0, 8, 0, 20)
+    PresetNameBox.Size = UDim2.new(1, -16, 0, 16)
+    PresetNameBox.Parent = PresetNameBlock
+
+    local PresetNameBoxPad = Instance.new("UIPadding")
+    PresetNameBoxPad.PaddingLeft = UDim.new(0, 6)
+    PresetNameBoxPad.Parent = PresetNameBox
+
+    local currentPresetName = ""
+    PresetNameBox:GetPropertyChangedSignal("Text"):Connect(function()
+        currentPresetName = PresetNameBox.Text
+    end)
+
+    local PresetListBlock = Instance.new("Frame")
+    PresetListBlock.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    PresetListBlock.BackgroundTransparency = 0.965
+    PresetListBlock.Size = UDim2.new(1, 0, 0, 40)
+    PresetListBlock.LayoutOrder = categoryOrder + 3
+    PresetListBlock.Name = "PresetListBlock"
+    PresetListBlock.Parent = Root
+
+    local PresetListCorner = Instance.new("UICorner")
+    PresetListCorner.CornerRadius = UDim.new(0, 6)
+    PresetListCorner.Parent = PresetListBlock
+
+    local PresetListTitle = Instance.new("TextLabel")
+    PresetListTitle.Font = Enum.Font.GothamBold
+    PresetListTitle.Text = "Saved Presets"
+    PresetListTitle.TextColor3 = GuiConfig.Color
+    PresetListTitle.TextSize = 12
+    PresetListTitle.TextXAlignment = Enum.TextXAlignment.Left
+    PresetListTitle.BackgroundTransparency = 1
+    PresetListTitle.Position = UDim2.new(0, 10, 0, 6)
+    PresetListTitle.Size = UDim2.new(1, -20, 0, 12)
+    PresetListTitle.Parent = PresetListBlock
+
+    local selectedPreset = nil
+
+    local PresetDropdownBtn = Instance.new("TextButton")
+    PresetDropdownBtn.Font = Enum.Font.GothamBold
+    PresetDropdownBtn.Text = "Select preset..."
+    PresetDropdownBtn.TextSize = 12
+    PresetDropdownBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    PresetDropdownBtn.TextXAlignment = Enum.TextXAlignment.Left
+    PresetDropdownBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    PresetDropdownBtn.BackgroundTransparency = 0.94
+    PresetDropdownBtn.Position = UDim2.new(0, 8, 0, 20)
+    PresetDropdownBtn.Size = UDim2.new(1, -16, 0, 16)
+    PresetDropdownBtn.Parent = PresetListBlock
+    local PresetDropdownCorner = Instance.new("UICorner")
+    PresetDropdownCorner.CornerRadius = UDim.new(0, 4)
+    PresetDropdownCorner.Parent = PresetDropdownBtn
+    local PresetDropdownPad = Instance.new("UIPadding")
+    PresetDropdownPad.PaddingLeft = UDim.new(0, 6)
+    PresetDropdownPad.Parent = PresetDropdownBtn
+
+    local PresetPicker = Instance.new("Frame")
+    PresetPicker.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    PresetPicker.BackgroundTransparency = 0.1
+    PresetPicker.Size = UDim2.new(1, 0, 0, 0)
+    PresetPicker.ClipsDescendants = true
+    PresetPicker.Visible = false
+    PresetPicker.LayoutOrder = 1
+    PresetPicker.Name = "PresetPicker"
+    PresetPicker.Parent = PresetListBlock
+    local PresetPickerCorner = Instance.new("UICorner")
+    PresetPickerCorner.CornerRadius = UDim.new(0, 4)
+    PresetPickerCorner.Parent = PresetPicker
+    local PresetPickerLayout = Instance.new("UIListLayout")
+    PresetPickerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    PresetPickerLayout.Parent = PresetPicker
+
+    local function ResizePresetListBlock()
+        task.defer(function()
+            local pickerH = PresetPicker.Visible and PresetPicker.Size.Y.Offset or 0
+            PresetListBlock.Size = UDim2.new(1, 0, 0, 40 + pickerH)
+            ResizeRoot()
+        end)
+    end
+
+    local function RefreshPresetPicker()
+        for _, c in ipairs(PresetPicker:GetChildren()) do
+            if c:IsA("GuiObject") then c:Destroy() end
+        end
+        local presets = GetMailPresets()
+        for _, pname in ipairs(presets) do
+            local OptBtn = Instance.new("TextButton")
+            OptBtn.Font = Enum.Font.GothamBold
+            OptBtn.Text = pname
+            OptBtn.TextSize = 11
+            OptBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
+            OptBtn.TextXAlignment = Enum.TextXAlignment.Left
+            OptBtn.BackgroundTransparency = 1
+            OptBtn.Size = UDim2.new(1, 0, 0, 24)
+            OptBtn.Parent = PresetPicker
+            local OptPad = Instance.new("UIPadding")
+            OptPad.PaddingLeft = UDim.new(0, 8)
+            OptPad.Parent = OptBtn
+
+            OptBtn.Activated:Connect(function()
+                selectedPreset = pname
+                PresetDropdownBtn.Text = pname
+                PresetDropdownBtn.TextColor3 = GuiConfig.Color
+                PresetPicker.Visible = false
+                PresetPicker.Size = UDim2.new(1, 0, 0, 0)
+                ResizePresetListBlock()
+            end)
+        end
+    end
+
+    PresetDropdownBtn.Activated:Connect(function()
+        CircleClick(PresetDropdownBtn, Mouse.X, Mouse.Y)
+        RefreshPresetPicker()
+        PresetPicker.Visible = not PresetPicker.Visible
+        if PresetPicker.Visible then
+            PresetPicker.Size = UDim2.new(1, 0, 0, #GetMailPresets() * 24)
+        else
+            PresetPicker.Size = UDim2.new(1, 0, 0, 0)
+        end
+        ResizePresetListBlock()
+    end)
+
     local SaveLoadRow = Instance.new("Frame")
     SaveLoadRow.BackgroundTransparency = 1
     SaveLoadRow.Size = UDim2.new(1, 0, 0, 32)
-    SaveLoadRow.LayoutOrder = categoryOrder + 2
+    SaveLoadRow.LayoutOrder = categoryOrder + 4
     SaveLoadRow.Parent = Root
     local SaveLoadLayout = Instance.new("UIListLayout")
     SaveLoadLayout.FillDirection = Enum.FillDirection.Horizontal
     SaveLoadLayout.Padding = UDim.new(0, 6)
     SaveLoadLayout.Parent = SaveLoadRow
 
-    local SaveBtn = MakeIconButton(SaveLoadRow, "Save mail config", 0, nil)
-    SaveBtn.Size = UDim2.new(0.5, -3, 1, 0)
-    local LoadBtn = MakeIconButton(SaveLoadRow, "Load mail config", 0, nil)
-    LoadBtn.Size = UDim2.new(0.5, -3, 1, 0)
+    local SaveBtn = MakeIconButton(SaveLoadRow, "Save preset", 0, nil)
+    SaveBtn.Size = UDim2.new(0.33, -4, 1, 0)
+    local LoadBtn = MakeIconButton(SaveLoadRow, "Load preset", 0, nil)
+    LoadBtn.Size = UDim2.new(0.33, -4, 1, 0)
+    local DeleteBtn = MakeIconButton(SaveLoadRow, "Delete", 0, Color3.fromRGB(255, 107, 107))
+    DeleteBtn.Size = UDim2.new(0.33, -4, 1, 0)
+
     SaveBtn.Activated:Connect(function()
         CircleClick(SaveBtn, Mouse.X, Mouse.Y)
+        if SaveMailPreset(currentPresetName) then
+            selectedPreset = currentPresetName
+            PresetDropdownBtn.Text = currentPresetName
+            PresetDropdownBtn.TextColor3 = GuiConfig.Color
+        end
         MailConfig.OnSaveConfig()
     end)
     LoadBtn.Activated:Connect(function()
         CircleClick(LoadBtn, Mouse.X, Mouse.Y)
+        LoadMailPreset(selectedPreset)
         MailConfig.OnLoadConfig()
+    end)
+    DeleteBtn.Activated:Connect(function()
+        CircleClick(DeleteBtn, Mouse.X, Mouse.Y)
+        if selectedPreset then
+            DeleteMailPreset(selectedPreset)
+            selectedPreset = nil
+            PresetDropdownBtn.Text = "Select preset..."
+            PresetDropdownBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end
     end)
 
     local AutoSendBlock = Instance.new("Frame")
     AutoSendBlock.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     AutoSendBlock.BackgroundTransparency = 0.965
     AutoSendBlock.Size = UDim2.new(1, 0, 0, 40)
-    AutoSendBlock.LayoutOrder = categoryOrder + 3
+    AutoSendBlock.LayoutOrder = categoryOrder + 5
     AutoSendBlock.Parent = Root
     local AutoSendCorner = Instance.new("UICorner")
     AutoSendCorner.CornerRadius = UDim.new(0, 6)
@@ -4954,7 +5197,7 @@ function Items:AddMailQueue(MailConfig)
     IntervalBlock.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     IntervalBlock.BackgroundTransparency = 0.965
     IntervalBlock.Size = UDim2.new(1, 0, 0, 36)
-    IntervalBlock.LayoutOrder = categoryOrder + 4
+    IntervalBlock.LayoutOrder = categoryOrder + 6
     IntervalBlock.Parent = Root
     local IntervalCorner = Instance.new("UICorner")
     IntervalCorner.CornerRadius = UDim.new(0, 6)
@@ -5022,30 +5265,6 @@ function Items:AddMailQueue(MailConfig)
 
     IntMinusBtn.Activated:Connect(function() SetInterval(State.IntervalHours - 1) end)
     IntPlusBtn.Activated:Connect(function() SetInterval(State.IntervalHours + 1) end)
-
-    function MailFunc:Set(newState, noSave)
-        if type(newState) ~= "table" then return end
-
-        State.Targets = newState.Targets or {}
-        State.ActiveTarget = newState.ActiveTarget
-        State.CategoryItems = newState.CategoryItems or {}
-        State.AutoSend = newState.AutoSend or false
-        State.IntervalHours = newState.IntervalHours or 6
-        State.KnownUsernames = newState.KnownUsernames or {}
-
-        MailFunc:RefreshTargets()
-        for _, cat in pairs(MailFunc.Categories) do
-            cat:Refresh()
-        end
-
-        SwitchBg.BackgroundColor3 = State.AutoSend and GuiConfig.Color or Color3.fromRGB(255, 255, 255)
-        SwitchBg.BackgroundTransparency = State.AutoSend and 0 or 0.92
-        SwitchDot.AnchorPoint = Vector2.new(State.AutoSend and 1 or 0, 0.5)
-        SwitchDot.Position = UDim2.new(State.AutoSend and 1 or 0, 0, 0.5, 0)
-        IntLabel.Text = State.IntervalHours .. " hours"
-
-        if not noSave then Persist() end
-    end
 
     ResizeRoot()
 
