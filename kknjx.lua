@@ -6108,6 +6108,9 @@ function Chloex:CreateProgressPanel(PanelConfig)
             StatusLbl.TextWrapped = true
             local h = math.max(20, StatusLbl.TextBounds.Y + 8)
             StatusLbl.Size = UDim2.new(1, 0, 0, h)
+            task.defer(function()
+                Body.CanvasSize = UDim2.new(0, 0, 0, BodyList.AbsoluteContentSize.Y + 12)
+            end)
         end)
     end
 
