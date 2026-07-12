@@ -5813,8 +5813,14 @@ end
         FruitTargetFunc:Refresh()
     end
 
-    function FruitTargetFunc:Set(newEntries, noSave)
-        State.Entries = type(newEntries) == "table" and newEntries or {}
+    function FruitTargetFunc:Set(newValue, noSave)
+        if type(newValue) == "table" and newValue.Entries ~= nil then
+            State.Entries = newValue.Entries
+        elseif type(newValue) == "table" then
+            State.Entries = newValue
+        else
+            State.Entries = {}
+        end
         FruitTargetFunc:Refresh()
         if not noSave then Persist() end
     end
