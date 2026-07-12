@@ -5953,4 +5953,275 @@ end
     return Tabs
 end
 
+
+
+function Chloex:CreateProgressPanel(PanelConfig)
+    PanelConfig = PanelConfig or {}
+    PanelConfig.Title = PanelConfig.Title or "Progress"
+    PanelConfig.Color = PanelConfig.Color or Color3.fromRGB(100, 200, 255)
+
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "HydraProgressPanel"
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.Parent = game:GetService("CoreGui")
+
+    local Root = Instance.new("Frame")
+    Root.AnchorPoint = Vector2.new(0, 0)
+    Root.Position = PanelConfig.Position or UDim2.new(0, 20, 0, 400)
+    Root.Size = UDim2.new(0, 260, 0, 200)
+    Root.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+    Root.BackgroundTransparency = 0.05
+    Root.BorderSizePixel = 0
+    Root.ClipsDescendants = true
+    Root.Name = "Root"
+    Root.Parent = ScreenGui
+
+    local RootCorner = Instance.new("UICorner")
+    RootCorner.CornerRadius = UDim.new(0, 8)
+    RootCorner.Parent = Root
+
+    local RootStroke = Instance.new("UIStroke")
+    RootStroke.Color = PanelConfig.Color
+    RootStroke.Thickness = 1
+    RootStroke.Transparency = 0.6
+    RootStroke.Parent = Root
+
+    local Header = Instance.new("Frame")
+    Header.Size = UDim2.new(1, 0, 0, 32)
+    Header.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Header.BackgroundTransparency = 0.94
+    Header.BorderSizePixel = 0
+    Header.Name = "Header"
+    Header.Parent = Root
+
+    local HeaderCorner = Instance.new("UICorner")
+    HeaderCorner.CornerRadius = UDim.new(0, 8)
+    HeaderCorner.Parent = Header
+
+    local HeaderFix = Instance.new("Frame")
+    HeaderFix.Position = UDim2.new(0, 0, 1, -8)
+    HeaderFix.Size = UDim2.new(1, 0, 0, 8)
+    HeaderFix.BackgroundColor3 = Header.BackgroundColor3
+    HeaderFix.BackgroundTransparency = Header.BackgroundTransparency
+    HeaderFix.BorderSizePixel = 0
+    HeaderFix.Parent = Header
+
+    local TitleLbl = Instance.new("TextLabel")
+    TitleLbl.Font = Enum.Font.GothamBold
+    TitleLbl.Text = PanelConfig.Title
+    TitleLbl.TextColor3 = PanelConfig.Color
+    TitleLbl.TextSize = 13
+    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLbl.BackgroundTransparency = 1
+    TitleLbl.Position = UDim2.new(0, 10, 0, 0)
+    TitleLbl.Size = UDim2.new(1, -70, 1, 0)
+    TitleLbl.Parent = Header
+
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.Text = "x"
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 107, 107)
+    CloseBtn.TextSize = 14
+    CloseBtn.AnchorPoint = Vector2.new(1, 0.5)
+    CloseBtn.Position = UDim2.new(1, -6, 0.5, 0)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(226, 75, 74)
+    CloseBtn.BackgroundTransparency = 0.88
+    CloseBtn.Size = UDim2.new(0, 22, 0, 22)
+    CloseBtn.Parent = Header
+
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 5)
+    CloseCorner.Parent = CloseBtn
+
+    local MinBtn = Instance.new("TextButton")
+    MinBtn.Font = Enum.Font.GothamBold
+    MinBtn.Text = "_"
+    MinBtn.TextColor3 = PanelConfig.Color
+    MinBtn.TextSize = 14
+    MinBtn.AnchorPoint = Vector2.new(1, 0.5)
+    MinBtn.Position = UDim2.new(1, -32, 0.5, 0)
+    MinBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    MinBtn.BackgroundTransparency = 0.9
+    MinBtn.Size = UDim2.new(0, 22, 0, 22)
+    MinBtn.Parent = Header
+
+    local MinCorner = Instance.new("UICorner")
+    MinCorner.CornerRadius = UDim.new(0, 5)
+    MinCorner.Parent = MinBtn
+
+    local Body = Instance.new("ScrollingFrame")
+    Body.Position = UDim2.new(0, 0, 0, 34)
+    Body.Size = UDim2.new(1, 0, 1, -36)
+    Body.BackgroundTransparency = 1
+    Body.BorderSizePixel = 0
+    Body.ScrollBarThickness = 3
+    Body.ScrollBarImageColor3 = PanelConfig.Color
+    Body.CanvasSize = UDim2.new(0, 0, 0, 0)
+    Body.Name = "Body"
+    Body.Parent = Root
+
+    local BodyPad = Instance.new("UIPadding")
+    BodyPad.PaddingTop = UDim.new(0, 6)
+    BodyPad.PaddingBottom = UDim.new(0, 6)
+    BodyPad.PaddingLeft = UDim.new(0, 8)
+    BodyPad.PaddingRight = UDim.new(0, 8)
+    BodyPad.Parent = Body
+
+    local BodyList = Instance.new("UIListLayout")
+    BodyList.Padding = UDim.new(0, 6)
+    BodyList.SortOrder = Enum.SortOrder.LayoutOrder
+    BodyList.Parent = Body
+
+    BodyList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        Body.CanvasSize = UDim2.new(0, 0, 0, BodyList.AbsoluteContentSize.Y + 12)
+    end)
+
+    -- Status block (mode, sprinkler status, SWC status)
+    local StatusLbl = Instance.new("TextLabel")
+    StatusLbl.Font = Enum.Font.Gotham
+    StatusLbl.Text = "Idle"
+    StatusLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+    StatusLbl.TextSize = 11
+    StatusLbl.TextWrapped = true
+    StatusLbl.TextXAlignment = Enum.TextXAlignment.Left
+    StatusLbl.TextYAlignment = Enum.TextYAlignment.Top
+    StatusLbl.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    StatusLbl.BackgroundTransparency = 0.94
+    StatusLbl.LayoutOrder = 0
+    StatusLbl.Size = UDim2.new(1, 0, 0, 40)
+    StatusLbl.Name = "StatusLbl"
+    StatusLbl.Parent = Body
+
+    local StatusCorner = Instance.new("UICorner")
+    StatusCorner.CornerRadius = UDim.new(0, 4)
+    StatusCorner.Parent = StatusLbl
+
+    local StatusPad = Instance.new("UIPadding")
+    StatusPad.PaddingTop = UDim.new(0, 4)
+    StatusPad.PaddingLeft = UDim.new(0, 6)
+    StatusPad.PaddingRight = UDim.new(0, 6)
+    StatusPad.Parent = StatusLbl
+
+    local function ResizeStatus()
+        task.defer(function()
+            StatusLbl.TextWrapped = true
+            local h = math.max(20, StatusLbl.TextBounds.Y + 8)
+            StatusLbl.Size = UDim2.new(1, 0, 0, h)
+        end)
+    end
+
+    local progressRows = {}
+    local progressOrder = {}
+
+    local function KeyFor(seedName, kg)
+        return seedName .. "_" .. tostring(kg)
+    end
+
+    local Panel = {}
+
+    function Panel:UpdateStatus(text)
+        StatusLbl.Text = text or ""
+        ResizeStatus()
+    end
+
+    function Panel:UpdateProgress(seedName, kg, done, total)
+        done = math.max(0, tonumber(done) or 0)
+        total = math.max(0, tonumber(total) or 0)
+        local left = math.max(0, total - done)
+        local key = KeyFor(seedName, kg)
+
+        local row = progressRows[key]
+        if not row then
+            row = Instance.new("Frame")
+            row.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            row.BackgroundTransparency = 0.94
+            row.Size = UDim2.new(1, 0, 0, 34)
+            row.LayoutOrder = #progressOrder + 1
+            row.Name = key
+            row.Parent = Body
+
+            local RowCorner = Instance.new("UICorner")
+            RowCorner.CornerRadius = UDim.new(0, 4)
+            RowCorner.Parent = row
+
+            local NameLbl = Instance.new("TextLabel")
+            NameLbl.Font = Enum.Font.GothamBold
+            NameLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+            NameLbl.TextSize = 11
+            NameLbl.TextXAlignment = Enum.TextXAlignment.Left
+            NameLbl.BackgroundTransparency = 1
+            NameLbl.Position = UDim2.new(0, 6, 0, 3)
+            NameLbl.Size = UDim2.new(1, -12, 0, 12)
+            NameLbl.Name = "NameLbl"
+            NameLbl.Parent = row
+
+            local BarBg = Instance.new("Frame")
+            BarBg.Position = UDim2.new(0, 6, 0, 19)
+            BarBg.Size = UDim2.new(1, -12, 0, 6)
+            BarBg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            BarBg.BackgroundTransparency = 0.85
+            BarBg.BorderSizePixel = 0
+            BarBg.Name = "BarBg"
+            BarBg.Parent = row
+
+            local BarBgCorner = Instance.new("UICorner")
+            BarBgCorner.CornerRadius = UDim.new(1, 0)
+            BarBgCorner.Parent = BarBg
+
+            local BarFill = Instance.new("Frame")
+            BarFill.Size = UDim2.new(0, 0, 1, 0)
+            BarFill.BackgroundColor3 = PanelConfig.Color
+            BarFill.BorderSizePixel = 0
+            BarFill.Name = "BarFill"
+            BarFill.Parent = BarBg
+
+            local BarFillCorner = Instance.new("UICorner")
+            BarFillCorner.CornerRadius = UDim.new(1, 0)
+            BarFillCorner.Parent = BarFill
+
+            row.Parent = Body
+            progressRows[key] = { row = row, nameLbl = NameLbl, barFill = BarFill }
+            table.insert(progressOrder, key)
+        end
+
+        local r = progressRows[key]
+        r.nameLbl.Text = string.format("%s %sx \xE2\x89\xA5%dkg  |  done: %d, %d left", seedName, tostring(total), kg, done, left)
+
+        local pct = total > 0 and math.clamp(done / total, 0, 1) or 0
+        TweenService:Create(r.barFill, TweenInfo.new(0.2), { Size = UDim2.new(pct, 0, 1, 0) }):Play()
+    end
+
+    function Panel:ClearProgress()
+        for _, data in pairs(progressRows) do
+            if data.row and data.row.Parent then data.row:Destroy() end
+        end
+        progressRows = {}
+        progressOrder = {}
+    end
+
+    function Panel:Destroy()
+        ScreenGui:Destroy()
+    end
+
+    local minimized = false
+    local expandedSize = Root.Size
+    MinBtn.Activated:Connect(function()
+        minimized = not minimized
+        if minimized then
+            Root.Size = UDim2.new(0, expandedSize.X.Offset, 0, 34)
+        else
+            Root.Size = expandedSize
+        end
+    end)
+
+    CloseBtn.Activated:Connect(function()
+        Panel:Destroy()
+    end)
+
+    MakeDraggable(Header, Root)
+
+    return Panel
+end
+
 return Chloex
