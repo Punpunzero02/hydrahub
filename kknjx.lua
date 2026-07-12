@@ -5358,6 +5358,7 @@ end
     FruitTargetConfig.OnAdd = FruitTargetConfig.OnAdd or function(entry) end
     FruitTargetConfig.OnRemove = FruitTargetConfig.OnRemove or function(entry) end
     FruitTargetConfig.OnChange = FruitTargetConfig.OnChange or function(list) end
+    FruitTargetConfig.OnGetSeedStock = FruitTargetConfig.OnGetSeedStock or function(seedName) return 0 end
 
     local configKey = "FruitTargetList_" .. FruitTargetConfig.Title
     local shouldSave = FruitTargetConfig.Save ~= false
@@ -5552,7 +5553,9 @@ end
         CircleClick(SeedPickBtn, Mouse.X, Mouse.Y)
         local listItems = {}
         for _, optName in ipairs(FruitTargetConfig.SeedOptions) do
-            table.insert(listItems, { Name = optName, Stock = nil })
+            local stock = 0
+            pcall(function() stock = FruitTargetConfig.OnGetSeedStock(optName) or 0 end)
+            table.insert(listItems, { Name = optName, Stock = stock })
         end
         local selectedSet = {}
         if selectedSeedName then selectedSet[selectedSeedName] = true end
@@ -5561,7 +5564,16 @@ end
             Items = listItems,
             SelectedSet = selectedSet,
             Color = GuiConfig.Color,
-            ShowStock = false,
+            ShowStock = true,
+            OnRefresh = function()
+                local fresh = {}
+                for _, optName in ipairs(FruitTargetConfig.SeedOptions) do
+                    local stock = 0
+                    pcall(function() stock = FruitTargetConfig.OnGetSeedStock(optName) or 0 end)
+                    table.insert(fresh, { Name = optName, Stock = stock })
+                end
+                return fresh
+            end,
             OnToggle = function(name, nowSelected)
                 if nowSelected then
                     selectedSeedName = name
