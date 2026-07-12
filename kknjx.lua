@@ -5383,7 +5383,7 @@ end
     Root.Parent = SectionAdd
 
     local RootList = Instance.new("UIListLayout")
-    RootList.Padding = UDim.new(0, 6)
+    RootList.Padding = UDim.new(0, 10)
     RootList.SortOrder = Enum.SortOrder.LayoutOrder
     RootList.Parent = Root
 
@@ -5392,7 +5392,7 @@ end
             local h = 0
             for _, c in Root:GetChildren() do
                 if c:IsA("GuiObject") then
-                    h = h + c.Size.Y.Offset + 6
+                    h = h + c.Size.Y.Offset + 10
                 end
             end
             Root.Size = UDim2.new(1, 0, 0, h)
@@ -5418,25 +5418,31 @@ end
 
     local InputBlock = Instance.new("Frame")
     InputBlock.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    InputBlock.BackgroundTransparency = 0.965
+    InputBlock.BackgroundTransparency = 0.955
     InputBlock.Size = UDim2.new(1, 0, 0, 40)
     InputBlock.LayoutOrder = 1
     InputBlock.Name = "InputBlock"
     InputBlock.Parent = Root
 
     local InputCorner = Instance.new("UICorner")
-    InputCorner.CornerRadius = UDim.new(0, 6)
+    InputCorner.CornerRadius = UDim.new(0, 8)
     InputCorner.Parent = InputBlock
 
+    local InputStroke = Instance.new("UIStroke")
+    InputStroke.Color = GuiConfig.Color
+    InputStroke.Thickness = 1
+    InputStroke.Transparency = 0.85
+    InputStroke.Parent = InputBlock
+
     local InputPad = Instance.new("UIPadding")
-    InputPad.PaddingTop = UDim.new(0, 8)
-    InputPad.PaddingBottom = UDim.new(0, 8)
-    InputPad.PaddingLeft = UDim.new(0, 8)
-    InputPad.PaddingRight = UDim.new(0, 8)
+    InputPad.PaddingTop = UDim.new(0, 12)
+    InputPad.PaddingBottom = UDim.new(0, 12)
+    InputPad.PaddingLeft = UDim.new(0, 12)
+    InputPad.PaddingRight = UDim.new(0, 12)
     InputPad.Parent = InputBlock
 
     local InputList = Instance.new("UIListLayout")
-    InputList.Padding = UDim.new(0, 6)
+    InputList.Padding = UDim.new(0, 10)
     InputList.SortOrder = Enum.SortOrder.LayoutOrder
     InputList.Parent = InputBlock
 
@@ -5444,17 +5450,26 @@ end
     InputTitle.Font = Enum.Font.GothamBold
     InputTitle.Text = FruitTargetConfig.Title
     InputTitle.TextColor3 = GuiConfig.Color
-    InputTitle.TextSize = 13
+    InputTitle.TextSize = 15
     InputTitle.TextXAlignment = Enum.TextXAlignment.Left
     InputTitle.BackgroundTransparency = 1
-    InputTitle.Size = UDim2.new(1, 0, 0, 14)
+    InputTitle.Size = UDim2.new(1, 0, 0, 18)
     InputTitle.LayoutOrder = 0
     InputTitle.Parent = InputBlock
+
+    local InputTitleDivider = Instance.new("Frame")
+    InputTitleDivider.BackgroundColor3 = GuiConfig.Color
+    InputTitleDivider.BackgroundTransparency = 0.8
+    InputTitleDivider.BorderSizePixel = 0
+    InputTitleDivider.Size = UDim2.new(1, 0, 0, 1)
+    InputTitleDivider.LayoutOrder = 1
+    InputTitleDivider.Name = "InputTitleDivider"
+    InputTitleDivider.Parent = InputBlock
 
     local SeedPickRow = Instance.new("Frame")
     SeedPickRow.BackgroundTransparency = 1
     SeedPickRow.Size = UDim2.new(1, 0, 0, 26)
-    SeedPickRow.LayoutOrder = 1
+    SeedPickRow.LayoutOrder = 2
     SeedPickRow.Parent = InputBlock
 
     local selectedSeedName = nil
@@ -5481,7 +5496,7 @@ end
     local ValuesRow = Instance.new("Frame")
     ValuesRow.BackgroundTransparency = 1
     ValuesRow.Size = UDim2.new(1, 0, 0, 26)
-    ValuesRow.LayoutOrder = 2
+    ValuesRow.LayoutOrder = 3
     ValuesRow.Parent = InputBlock
 
     local ValuesLayout = Instance.new("UIListLayout")
@@ -5491,7 +5506,8 @@ end
 
     local function ResizeInputBlock()
         task.defer(function()
-            InputBlock.Size = UDim2.new(1, 0, 0, 72)
+            -- padding(12*2) + title(18) + divider(1) + row1(26) + row2(26) + gaps(10*3)
+            InputBlock.Size = UDim2.new(1, 0, 0, 24 + 18 + 1 + 26 + 26 + 30)
             ResizeRoot()
         end)
     end
@@ -5590,15 +5606,40 @@ end
         })
     end)
 
+    local ListWrapper = Instance.new("Frame")
+    ListWrapper.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ListWrapper.BackgroundTransparency = 0.965
+    ListWrapper.Size = UDim2.new(1, 0, 0, 0)
+    ListWrapper.LayoutOrder = 2
+    ListWrapper.Name = "FruitTargetListWrapper"
+    ListWrapper.Visible = false
+    ListWrapper.Parent = Root
+
+    local ListWrapperCorner = Instance.new("UICorner")
+    ListWrapperCorner.CornerRadius = UDim.new(0, 8)
+    ListWrapperCorner.Parent = ListWrapper
+
+    local ListWrapperStroke = Instance.new("UIStroke")
+    ListWrapperStroke.Color = Color3.fromRGB(255, 255, 255)
+    ListWrapperStroke.Thickness = 1
+    ListWrapperStroke.Transparency = 0.92
+    ListWrapperStroke.Parent = ListWrapper
+
+    local ListWrapperPad = Instance.new("UIPadding")
+    ListWrapperPad.PaddingTop = UDim.new(0, 8)
+    ListWrapperPad.PaddingBottom = UDim.new(0, 8)
+    ListWrapperPad.PaddingLeft = UDim.new(0, 8)
+    ListWrapperPad.PaddingRight = UDim.new(0, 8)
+    ListWrapperPad.Parent = ListWrapper
+
     local ListFrame = Instance.new("Frame")
     ListFrame.BackgroundTransparency = 1
     ListFrame.Size = UDim2.new(1, 0, 0, 0)
-    ListFrame.LayoutOrder = 2
     ListFrame.Name = "FruitTargetListFrame"
-    ListFrame.Parent = Root
+    ListFrame.Parent = ListWrapper
 
     local ListLayout2 = Instance.new("UIListLayout")
-    ListLayout2.Padding = UDim.new(0, 4)
+    ListLayout2.Padding = UDim.new(0, 6)
     ListLayout2.SortOrder = Enum.SortOrder.LayoutOrder
     ListLayout2.Parent = ListFrame
 
@@ -5606,9 +5647,17 @@ end
         task.defer(function()
             local h = 0
             for _, c in ListFrame:GetChildren() do
-                if c:IsA("GuiObject") then h = h + c.Size.Y.Offset + 4 end
+                if c:IsA("GuiObject") then h = h + c.Size.Y.Offset + 6 end
             end
             ListFrame.Size = UDim2.new(1, 0, 0, h)
+
+            local hasEntries = #State.Entries > 0
+            ListWrapper.Visible = hasEntries
+            if hasEntries then
+                ListWrapper.Size = UDim2.new(1, 0, 0, h + 16)
+            else
+                ListWrapper.Size = UDim2.new(1, 0, 0, 0)
+            end
             ResizeRoot()
         end)
     end
@@ -5618,8 +5667,8 @@ end
     local function RenderEntryRow(entry, index)
         local Row = Instance.new("Frame")
         Row.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        Row.BackgroundTransparency = 0.965
-        Row.Size = UDim2.new(1, 0, 0, 30)
+        Row.BackgroundTransparency = 0.94
+        Row.Size = UDim2.new(1, 0, 0, 32)
         Row.Name = "FruitTargetRow"
         Row.Parent = ListFrame
 
@@ -5634,7 +5683,7 @@ end
         NameLbl.TextSize = 12
         NameLbl.TextXAlignment = Enum.TextXAlignment.Left
         NameLbl.BackgroundTransparency = 1
-        NameLbl.Position = UDim2.new(0, 8, 0, 3)
+        NameLbl.Position = UDim2.new(0, 8, 0, 4)
         NameLbl.Size = UDim2.new(1, -120, 0, 12)
         NameLbl.Parent = Row
 
@@ -5645,7 +5694,7 @@ end
         DetailLbl.TextSize = 10
         DetailLbl.TextXAlignment = Enum.TextXAlignment.Left
         DetailLbl.BackgroundTransparency = 1
-        DetailLbl.Position = UDim2.new(0, 8, 0, 16)
+        DetailLbl.Position = UDim2.new(0, 8, 0, 18)
         DetailLbl.Size = UDim2.new(1, -120, 0, 10)
         DetailLbl.Parent = Row
 
