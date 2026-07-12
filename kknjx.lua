@@ -5967,8 +5967,8 @@ function Chloex:CreateProgressPanel(PanelConfig)
     ScreenGui.Parent = game:GetService("CoreGui")
 
     local Root = Instance.new("Frame")
-    Root.AnchorPoint = Vector2.new(0, 0)
-    Root.Position = PanelConfig.Position or UDim2.new(0, 20, 0, 400)
+    Root.AnchorPoint = Vector2.new(0.5, 0.5)
+    Root.Position = PanelConfig.Position or UDim2.new(0.5, 0, 0.5, 0)
     Root.Size = UDim2.new(0, 260, 0, 200)
     Root.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
     Root.BackgroundTransparency = 0.05
