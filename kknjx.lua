@@ -5959,6 +5959,8 @@ function Chloex:CreateProgressPanel(PanelConfig)
     PanelConfig = PanelConfig or {}
     PanelConfig.Title = PanelConfig.Title or "Progress"
     PanelConfig.Color = PanelConfig.Color or Color3.fromRGB(100, 200, 255)
+    PanelConfig.GetPlayerPlot = PanelConfig.GetPlayerPlot or function() return nil end
+    PanelConfig.SprinklerRefreshInterval = PanelConfig.SprinklerRefreshInterval or 1
 
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "HydraProgressPanel"
@@ -6121,7 +6123,148 @@ function Chloex:CreateProgressPanel(PanelConfig)
         return seedName .. "_" .. tostring(kg)
     end
 
+    -- Sprinkler section: nempel di panel yang sama, LayoutOrder tinggi biar di bawah progress rows
+    local SprinklerHeader = Instance.new("TextLabel")
+    SprinklerHeader.Font = Enum.Font.GothamBold
+    SprinklerHeader.Text = "Active Sprinkler"
+    SprinklerHeader.TextColor3 = PanelConfig.Color
+    SprinklerHeader.TextSize = 11
+    SprinklerHeader.TextXAlignment = Enum.TextXAlignment.Left
+    SprinklerHeader.BackgroundTransparency = 1
+    SprinklerHeader.LayoutOrder = 1000
+    SprinklerHeader.Size = UDim2.new(1, 0, 0, 16)
+    SprinklerHeader.Name = "SprinklerHeader"
+    SprinklerHeader.Parent = Body
+
+    local sprinklerRows = {}
+    local sprinklerRowOrder = {}
+
+    local function sprinklerParseTimer(text)
+        local m, s = text:match("^(%d+):(%d+)$")
+        if m and s then return tonumber(m) * 60 + tonumber(s) end
+        local onlySec = text:match("^(%d+)$")
+        if onlySec then return tonumber(onlySec) end
+        return nil
+    end
+
+    local function sprinklerGetRemaining(sprinklerModel)
+        for _, desc in ipairs(sprinklerModel:GetDescendants()) do
+            if desc.Name == "SprinklerTimerUI" then
+                local lbl = desc:FindFirstChildWhichIsA("TextLabel", true)
+                if lbl then
+                    local secs = sprinklerParseTimer(lbl.Text)
+                    if secs then return secs end
+                end
+            end
+        end
+        return nil
+    end
+
+    local function sprinklerEnsureRow(key)
+        if sprinklerRows[key] then return sprinklerRows[key] end
+
+        local Row = Instance.new("Frame")
+        Row.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Row.BackgroundTransparency = 0.94
+        Row.Size = UDim2.new(1, 0, 0, 20)
+        Row.LayoutOrder = 1001 + #sprinklerRowOrder
+        Row.Name = "Sprinkler_" .. key
+        Row.Parent = Body
+
+        local RowCorner = Instance.new("UICorner")
+        RowCorner.CornerRadius = UDim.new(0, 4)
+        RowCorner.Parent = Row
+
+        local NameLbl = Instance.new("TextLabel")
+        NameLbl.Font = Enum.Font.GothamBold
+        NameLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+        NameLbl.TextSize = 11
+        NameLbl.TextXAlignment = Enum.TextXAlignment.Left
+        NameLbl.BackgroundTransparency = 1
+        NameLbl.Position = UDim2.new(0, 6, 0, 0)
+        NameLbl.Size = UDim2.new(0.6, 0, 1, 0)
+        NameLbl.Name = "NameLbl"
+        NameLbl.Parent = Row
+
+        local TimeLbl = Instance.new("TextLabel")
+        TimeLbl.Font = Enum.Font.GothamBold
+        TimeLbl.TextColor3 = PanelConfig.Color
+        TimeLbl.TextSize = 11
+        TimeLbl.TextXAlignment = Enum.TextXAlignment.Right
+        TimeLbl.BackgroundTransparency = 1
+        TimeLbl.AnchorPoint = Vector2.new(1, 0)
+        TimeLbl.Position = UDim2.new(1, -6, 0, 0)
+        TimeLbl.Size = UDim2.new(0.35, 0, 1, 0)
+        TimeLbl.Name = "TimeLbl"
+        TimeLbl.Parent = Row
+
+        sprinklerRows[key] = { row = Row, nameLbl = NameLbl, timeLbl = TimeLbl }
+        table.insert(sprinklerRowOrder, key)
+        return sprinklerRows[key]
+    end
+
+    local function sprinklerClearUnusedRows(usedKeys)
+        for key, data in pairs(sprinklerRows) do
+            if not usedKeys[key] then
+                if data.row and data.row.Parent then data.row:Destroy() end
+                sprinklerRows[key] = nil
+            end
+        end
+    end
+
     local Panel = {}
+
+    function Panel:RefreshSprinklers()
+        local plot = PanelConfig.GetPlayerPlot()
+        local sprinklerFolder = plot and plot:FindFirstChild("Sprinklers")
+
+        if not sprinklerFolder then
+            SprinklerHeader.Text = "Active Sprinkler (tidak ditemukan)"
+            sprinklerClearUnusedRows({})
+            return
+        end
+
+        local myUserId = game:GetService("Players").LocalPlayer.UserId
+        local usedKeys = {}
+        local count = 0
+
+        for _, obj in ipairs(sprinklerFolder:GetChildren()) do
+            if obj:IsA("Model") then
+                local objUserId = obj:GetAttribute("UserId")
+                if not objUserId or objUserId == myUserId then
+                    local sprinklerName = obj:GetAttribute("SprinklerName") or obj.Name
+                    local remaining = sprinklerGetRemaining(obj)
+                    local remainingStr = remaining and (math.floor(remaining) .. "s") or "?"
+
+                    count = count + 1
+                    local key = sprinklerName .. "_" .. tostring(count)
+                    usedKeys[key] = true
+
+                    local data = sprinklerEnsureRow(key)
+                    data.nameLbl.Text = sprinklerName
+                    data.timeLbl.Text = remainingStr
+                end
+            end
+        end
+
+        sprinklerClearUnusedRows(usedKeys)
+        SprinklerHeader.Text = count > 0 and "Active Sprinkler" or "Active Sprinkler (kosong)"
+    end
+
+    local sprinklerLoopStarted = false
+    function Panel:StartSprinklerRealtime()
+        if sprinklerLoopStarted then return end
+        sprinklerLoopStarted = true
+        task.spawn(function()
+            while ScreenGui.Parent do
+                local ok, err = pcall(function() Panel:RefreshSprinklers() end)
+                if not ok then
+                    warn("[ProgressPanel][Sprinkler] refresh error:", err)
+                end
+                task.wait(PanelConfig.SprinklerRefreshInterval)
+            end
+        end)
+    end
 
     function Panel:UpdateStatus(text)
         StatusLbl.Text = text or ""
@@ -6252,296 +6395,10 @@ function Chloex:CreateProgressPanel(PanelConfig)
         end)
     end
 
-    return Panel
-end
-
-function Chloex:CreateSprinklerPanel(PanelConfig)
-    PanelConfig = PanelConfig or {}
-    PanelConfig.Title = PanelConfig.Title or "Active Sprinkler"
-    PanelConfig.Color = PanelConfig.Color or Color3.fromRGB(100, 200, 255)
-    PanelConfig.RefreshInterval = PanelConfig.RefreshInterval or 1
-    PanelConfig.GetPlayerPlot = PanelConfig.GetPlayerPlot or function() return nil end
-
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "HydraSprinklerPanel"
-    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ScreenGui.ResetOnSpawn = false
-    ScreenGui.Parent = game:GetService("CoreGui")
-
-    local Root = Instance.new("Frame")
-    Root.AnchorPoint = Vector2.new(0.5, 0.5)
-    Root.Position = PanelConfig.Position or UDim2.new(0.5, 0, 0.35, 0)
-    Root.Size = UDim2.new(0, 240, 0, 130)
-    Root.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
-    Root.BackgroundTransparency = 0.05
-    Root.BorderSizePixel = 0
-    Root.ClipsDescendants = true
-    Root.Name = "Root"
-    Root.Parent = ScreenGui
-
-    local RootCorner = Instance.new("UICorner")
-    RootCorner.CornerRadius = UDim.new(0, 8)
-    RootCorner.Parent = Root
-
-    local RootStroke = Instance.new("UIStroke")
-    RootStroke.Color = PanelConfig.Color
-    RootStroke.Thickness = 1
-    RootStroke.Transparency = 0.6
-    RootStroke.Parent = Root
-
-    local Header = Instance.new("Frame")
-    Header.Size = UDim2.new(1, 0, 0, 30)
-    Header.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Header.BackgroundTransparency = 0.94
-    Header.BorderSizePixel = 0
-    Header.Name = "Header"
-    Header.Parent = Root
-
-    local HeaderCorner = Instance.new("UICorner")
-    HeaderCorner.CornerRadius = UDim.new(0, 8)
-    HeaderCorner.Parent = Header
-
-    local HeaderFix = Instance.new("Frame")
-    HeaderFix.Position = UDim2.new(0, 0, 1, -8)
-    HeaderFix.Size = UDim2.new(1, 0, 0, 8)
-    HeaderFix.BackgroundColor3 = Header.BackgroundColor3
-    HeaderFix.BackgroundTransparency = Header.BackgroundTransparency
-    HeaderFix.BorderSizePixel = 0
-    HeaderFix.Parent = Header
-
-    local TitleLbl = Instance.new("TextLabel")
-    TitleLbl.Font = Enum.Font.GothamBold
-    TitleLbl.Text = PanelConfig.Title
-    TitleLbl.TextColor3 = PanelConfig.Color
-    TitleLbl.TextSize = 13
-    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-    TitleLbl.BackgroundTransparency = 1
-    TitleLbl.Position = UDim2.new(0, 10, 0, 0)
-    TitleLbl.Size = UDim2.new(1, -40, 1, 0)
-    TitleLbl.Parent = Header
-
-    local CloseBtn = Instance.new("TextButton")
-    CloseBtn.Font = Enum.Font.GothamBold
-    CloseBtn.Text = "x"
-    CloseBtn.TextColor3 = Color3.fromRGB(255, 107, 107)
-    CloseBtn.TextSize = 14
-    CloseBtn.AnchorPoint = Vector2.new(1, 0.5)
-    CloseBtn.Position = UDim2.new(1, -6, 0.5, 0)
-    CloseBtn.BackgroundColor3 = Color3.fromRGB(226, 75, 74)
-    CloseBtn.BackgroundTransparency = 0.88
-    CloseBtn.Size = UDim2.new(0, 22, 0, 22)
-    CloseBtn.Parent = Header
-
-    local CloseCorner = Instance.new("UICorner")
-    CloseCorner.CornerRadius = UDim.new(0, 5)
-    CloseCorner.Parent = CloseBtn
-
-    local Body = Instance.new("ScrollingFrame")
-    Body.Position = UDim2.new(0, 0, 0, 32)
-    Body.Size = UDim2.new(1, 0, 1, -34)
-    Body.BackgroundTransparency = 1
-    Body.BorderSizePixel = 0
-    Body.ScrollBarThickness = 3
-    Body.ScrollBarImageColor3 = PanelConfig.Color
-    Body.CanvasSize = UDim2.new(0, 0, 0, 0)
-    Body.Name = "Body"
-    Body.Parent = Root
-
-    local BodyPad = Instance.new("UIPadding")
-    BodyPad.PaddingTop = UDim.new(0, 6)
-    BodyPad.PaddingBottom = UDim.new(0, 6)
-    BodyPad.PaddingLeft = UDim.new(0, 8)
-    BodyPad.PaddingRight = UDim.new(0, 8)
-    BodyPad.Parent = Body
-
-    local BodyList = Instance.new("UIListLayout")
-    BodyList.Padding = UDim.new(0, 4)
-    BodyList.SortOrder = Enum.SortOrder.LayoutOrder
-    BodyList.Parent = Body
-
-    BodyList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        Body.CanvasSize = UDim2.new(0, 0, 0, BodyList.AbsoluteContentSize.Y + 8)
-    end)
-
-    local EmptyLbl = Instance.new("TextLabel")
-    EmptyLbl.Font = Enum.Font.Gotham
-    EmptyLbl.Text = "Tidak ada sprinkler aktif"
-    EmptyLbl.TextColor3 = Color3.fromRGB(150, 150, 150)
-    EmptyLbl.TextSize = 11
-    EmptyLbl.TextXAlignment = Enum.TextXAlignment.Left
-    EmptyLbl.BackgroundTransparency = 1
-    EmptyLbl.LayoutOrder = 0
-    EmptyLbl.Size = UDim2.new(1, 0, 0, 18)
-    EmptyLbl.Name = "EmptyLbl"
-    EmptyLbl.Parent = Body
-
-    local function parseTimer(text)
-        local m, s = text:match("^(%d+):(%d+)$")
-        if m and s then return tonumber(m) * 60 + tonumber(s) end
-        local onlySec = text:match("^(%d+)$")
-        if onlySec then return tonumber(onlySec) end
-        return nil
-    end
-
-    local function getSprinklerRemaining(sprinklerModel)
-        for _, desc in ipairs(sprinklerModel:GetDescendants()) do
-            if desc.Name == "SprinklerTimerUI" then
-                local lbl = desc:FindFirstChildWhichIsA("TextLabel", true)
-                if lbl then
-                    local secs = parseTimer(lbl.Text)
-                    if secs then return secs end
-                end
-            end
-        end
-        return nil
-    end
-
-    local rows = {}
-    local rowOrder = {}
-
-    local function ensureRow(key)
-        if rows[key] then return rows[key] end
-
-        local Row = Instance.new("Frame")
-        Row.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        Row.BackgroundTransparency = 0.94
-        Row.Size = UDim2.new(1, 0, 0, 20)
-        Row.LayoutOrder = #rowOrder + 1
-        Row.Name = key
-        Row.Parent = Body
-
-        local RowCorner = Instance.new("UICorner")
-        RowCorner.CornerRadius = UDim.new(0, 4)
-        RowCorner.Parent = Row
-
-        local NameLbl = Instance.new("TextLabel")
-        NameLbl.Font = Enum.Font.GothamBold
-        NameLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
-        NameLbl.TextSize = 11
-        NameLbl.TextXAlignment = Enum.TextXAlignment.Left
-        NameLbl.BackgroundTransparency = 1
-        NameLbl.Position = UDim2.new(0, 6, 0, 0)
-        NameLbl.Size = UDim2.new(0.6, 0, 1, 0)
-        NameLbl.Name = "NameLbl"
-        NameLbl.Parent = Row
-
-        local TimeLbl = Instance.new("TextLabel")
-        TimeLbl.Font = Enum.Font.GothamBold
-        TimeLbl.TextColor3 = PanelConfig.Color
-        TimeLbl.TextSize = 11
-        TimeLbl.TextXAlignment = Enum.TextXAlignment.Right
-        TimeLbl.BackgroundTransparency = 1
-        TimeLbl.AnchorPoint = Vector2.new(1, 0)
-        TimeLbl.Position = UDim2.new(1, -6, 0, 0)
-        TimeLbl.Size = UDim2.new(0.35, 0, 1, 0)
-        TimeLbl.Name = "TimeLbl"
-        TimeLbl.Parent = Row
-
-        rows[key] = { row = Row, nameLbl = NameLbl, timeLbl = TimeLbl }
-        table.insert(rowOrder, key)
-        return rows[key]
-    end
-
-    local function clearUnusedRows(usedKeys)
-        for key, data in pairs(rows) do
-            if not usedKeys[key] then
-                if data.row and data.row.Parent then data.row:Destroy() end
-                rows[key] = nil
-            end
-        end
-    end
-
-    local Panel = {}
-    local refreshConn = nil
-
-    function Panel:Refresh()
-        local plot = PanelConfig.GetPlayerPlot()
-        local sprinklerFolder = plot and plot:FindFirstChild("Sprinklers")
-
-        if not sprinklerFolder then
-            EmptyLbl.Visible = true
-            EmptyLbl.Text = "Plot/Sprinklers tidak ditemukan"
-            clearUnusedRows({})
-            return
-        end
-
-        local myUserId = game:GetService("Players").LocalPlayer.UserId
-        local usedKeys = {}
-        local count = 0
-
-        for _, obj in ipairs(sprinklerFolder:GetChildren()) do
-            if obj:IsA("Model") then
-                local objUserId = obj:GetAttribute("UserId")
-                if not objUserId or objUserId == myUserId then
-                    local sprinklerName = obj:GetAttribute("SprinklerName") or obj.Name
-                    local remaining = getSprinklerRemaining(obj)
-                    local remainingStr = remaining and (math.floor(remaining) .. "s") or "?"
-
-                    count = count + 1
-                    local key = sprinklerName .. "_" .. tostring(count)
-                    usedKeys[key] = true
-
-                    local data = ensureRow(key)
-                    data.nameLbl.Text = sprinklerName
-                    data.timeLbl.Text = remainingStr
-                end
-            end
-        end
-
-        clearUnusedRows(usedKeys)
-        EmptyLbl.Visible = count == 0
-        if count == 0 then
-            EmptyLbl.Text = "Tidak ada sprinkler aktif"
-        end
-    end
-
-    function Panel:StartRealtime()
-        if refreshConn then return end
-        refreshConn = task.spawn(function()
-            while ScreenGui.Parent do
-                local ok, err = pcall(function() Panel:Refresh() end)
-                if not ok then
-                    warn("[SprinklerPanel] refresh error:", err)
-                end
-                task.wait(PanelConfig.RefreshInterval)
-            end
-        end)
-    end
-
-    function Panel:Destroy()
-        refreshConn = nil
-        ScreenGui:Destroy()
-    end
-
-    CloseBtn.Activated:Connect(function()
-        Panel:Destroy()
-    end)
-
-    do
-        local dragging, dragStart, startPos
-        Header.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                dragStart = input.Position
-                startPos = Root.Position
-                input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then
-                        dragging = false
-                    end
-                end)
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                local delta = input.Position - dragStart
-                Root.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            end
-        end)
-    end
-
-    Panel:StartRealtime()
+    Panel:StartSprinklerRealtime()
 
     return Panel
 end
+
 
 return Chloex
