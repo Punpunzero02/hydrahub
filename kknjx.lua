@@ -5969,7 +5969,7 @@ function Chloex:CreateProgressPanel(PanelConfig)
     local Root = Instance.new("Frame")
     Root.AnchorPoint = Vector2.new(0.5, 0.5)
     Root.Position = PanelConfig.Position or UDim2.new(0.5, 0, 0.5, 0)
-    Root.Size = UDim2.new(0, 260, 0, 200)
+    Root.Size = UDim2.new(0, 260, 0, 400)
     Root.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
     Root.BackgroundTransparency = 0.05
     Root.BorderSizePixel = 0
@@ -6219,7 +6219,7 @@ function Chloex:CreateProgressPanel(PanelConfig)
     end)
 
     CloseBtn.Activated:Connect(function()
-        Panel:Destroy()
+        ScreenGui.Enabled = false
     end)
 
     do
