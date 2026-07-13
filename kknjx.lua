@@ -5959,8 +5959,6 @@ function Chloex:CreateProgressPanel(PanelConfig)
     PanelConfig = PanelConfig or {}
     PanelConfig.Title = PanelConfig.Title or "Progress"
     PanelConfig.Color = PanelConfig.Color or Color3.fromRGB(100, 200, 255)
-    PanelConfig.GetPlayerPlot = PanelConfig.GetPlayerPlot or function() return nil end
-    PanelConfig.SprinklerRefreshInterval = PanelConfig.SprinklerRefreshInterval or 1
 
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "HydraProgressPanel"
@@ -5971,7 +5969,7 @@ function Chloex:CreateProgressPanel(PanelConfig)
     local Root = Instance.new("Frame")
     Root.AnchorPoint = Vector2.new(0.5, 0.5)
     Root.Position = PanelConfig.Position or UDim2.new(0.5, 0, 0.5, 0)
-    Root.Size = UDim2.new(0, 260, 0, 220)
+    Root.Size = UDim2.new(0, 260, 0, 400)
     Root.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
     Root.BackgroundTransparency = 0.05
     Root.BorderSizePixel = 0
@@ -6123,148 +6121,7 @@ function Chloex:CreateProgressPanel(PanelConfig)
         return seedName .. "_" .. tostring(kg)
     end
 
-    -- Sprinkler section: nempel di panel yang sama, LayoutOrder tinggi biar di bawah progress rows
-    local SprinklerHeader = Instance.new("TextLabel")
-    SprinklerHeader.Font = Enum.Font.GothamBold
-    SprinklerHeader.Text = "Active Sprinkler"
-    SprinklerHeader.TextColor3 = PanelConfig.Color
-    SprinklerHeader.TextSize = 11
-    SprinklerHeader.TextXAlignment = Enum.TextXAlignment.Left
-    SprinklerHeader.BackgroundTransparency = 1
-    SprinklerHeader.LayoutOrder = 1000
-    SprinklerHeader.Size = UDim2.new(1, 0, 0, 16)
-    SprinklerHeader.Name = "SprinklerHeader"
-    SprinklerHeader.Parent = Body
-
-    local sprinklerRows = {}
-    local sprinklerRowOrder = {}
-
-    local function sprinklerParseTimer(text)
-        local m, s = text:match("^(%d+):(%d+)$")
-        if m and s then return tonumber(m) * 60 + tonumber(s) end
-        local onlySec = text:match("^(%d+)$")
-        if onlySec then return tonumber(onlySec) end
-        return nil
-    end
-
-    local function sprinklerGetRemaining(sprinklerModel)
-        for _, desc in ipairs(sprinklerModel:GetDescendants()) do
-            if desc.Name == "SprinklerTimerUI" then
-                local lbl = desc:FindFirstChildWhichIsA("TextLabel", true)
-                if lbl then
-                    local secs = sprinklerParseTimer(lbl.Text)
-                    if secs then return secs end
-                end
-            end
-        end
-        return nil
-    end
-
-    local function sprinklerEnsureRow(key)
-        if sprinklerRows[key] then return sprinklerRows[key] end
-
-        local Row = Instance.new("Frame")
-        Row.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        Row.BackgroundTransparency = 0.94
-        Row.Size = UDim2.new(1, 0, 0, 20)
-        Row.LayoutOrder = 1001 + #sprinklerRowOrder
-        Row.Name = "Sprinkler_" .. key
-        Row.Parent = Body
-
-        local RowCorner = Instance.new("UICorner")
-        RowCorner.CornerRadius = UDim.new(0, 4)
-        RowCorner.Parent = Row
-
-        local NameLbl = Instance.new("TextLabel")
-        NameLbl.Font = Enum.Font.GothamBold
-        NameLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
-        NameLbl.TextSize = 11
-        NameLbl.TextXAlignment = Enum.TextXAlignment.Left
-        NameLbl.BackgroundTransparency = 1
-        NameLbl.Position = UDim2.new(0, 6, 0, 0)
-        NameLbl.Size = UDim2.new(0.6, 0, 1, 0)
-        NameLbl.Name = "NameLbl"
-        NameLbl.Parent = Row
-
-        local TimeLbl = Instance.new("TextLabel")
-        TimeLbl.Font = Enum.Font.GothamBold
-        TimeLbl.TextColor3 = PanelConfig.Color
-        TimeLbl.TextSize = 11
-        TimeLbl.TextXAlignment = Enum.TextXAlignment.Right
-        TimeLbl.BackgroundTransparency = 1
-        TimeLbl.AnchorPoint = Vector2.new(1, 0)
-        TimeLbl.Position = UDim2.new(1, -6, 0, 0)
-        TimeLbl.Size = UDim2.new(0.35, 0, 1, 0)
-        TimeLbl.Name = "TimeLbl"
-        TimeLbl.Parent = Row
-
-        sprinklerRows[key] = { row = Row, nameLbl = NameLbl, timeLbl = TimeLbl }
-        table.insert(sprinklerRowOrder, key)
-        return sprinklerRows[key]
-    end
-
-    local function sprinklerClearUnusedRows(usedKeys)
-        for key, data in pairs(sprinklerRows) do
-            if not usedKeys[key] then
-                if data.row and data.row.Parent then data.row:Destroy() end
-                sprinklerRows[key] = nil
-            end
-        end
-    end
-
     local Panel = {}
-
-    function Panel:RefreshSprinklers()
-        local plot = PanelConfig.GetPlayerPlot()
-        local sprinklerFolder = plot and plot:FindFirstChild("Sprinklers")
-
-        if not sprinklerFolder then
-            SprinklerHeader.Text = "Active Sprinkler (tidak ditemukan)"
-            sprinklerClearUnusedRows({})
-            return
-        end
-
-        local myUserId = game:GetService("Players").LocalPlayer.UserId
-        local usedKeys = {}
-        local count = 0
-
-        for _, obj in ipairs(sprinklerFolder:GetChildren()) do
-            if obj:IsA("Model") then
-                local objUserId = obj:GetAttribute("UserId")
-                if not objUserId or objUserId == myUserId then
-                    local sprinklerName = obj:GetAttribute("SprinklerName") or obj.Name
-                    local remaining = sprinklerGetRemaining(obj)
-                    local remainingStr = remaining and (math.floor(remaining) .. "s") or "?"
-
-                    count = count + 1
-                    local key = sprinklerName .. "_" .. tostring(count)
-                    usedKeys[key] = true
-
-                    local data = sprinklerEnsureRow(key)
-                    data.nameLbl.Text = sprinklerName
-                    data.timeLbl.Text = remainingStr
-                end
-            end
-        end
-
-        sprinklerClearUnusedRows(usedKeys)
-        SprinklerHeader.Text = count > 0 and "Active Sprinkler" or "Active Sprinkler (kosong)"
-    end
-
-    local sprinklerLoopStarted = false
-    function Panel:StartSprinklerRealtime()
-        if sprinklerLoopStarted then return end
-        sprinklerLoopStarted = true
-        task.spawn(function()
-            while ScreenGui.Parent do
-                local ok, err = pcall(function() Panel:RefreshSprinklers() end)
-                if not ok then
-                    warn("[ProgressPanel][Sprinkler] refresh error:", err)
-                end
-                task.wait(PanelConfig.SprinklerRefreshInterval)
-            end
-        end)
-    end
 
     function Panel:UpdateStatus(text)
         StatusLbl.Text = text or ""
@@ -6395,10 +6252,232 @@ function Chloex:CreateProgressPanel(PanelConfig)
         end)
     end
 
-    Panel:StartSprinklerRealtime()
-
     return Panel
 end
 
+
+function Chloex:CreateFruitESP(ESPConfig)
+    ESPConfig = ESPConfig or {}
+    ESPConfig.Enabled = ESPConfig.Enabled ~= false
+    ESPConfig.MaxDistance = ESPConfig.MaxDistance or 250
+    ESPConfig.BoxSize = ESPConfig.BoxSize or UDim2.new(0, 210, 0, 20)
+    ESPConfig.RefreshRate = ESPConfig.RefreshRate or 0.5
+    ESPConfig.Color = ESPConfig.Color or Color3.fromRGB(20, 20, 20)
+
+    local Players = game:GetService("Players")
+    local RS = game:GetService("ReplicatedStorage")
+    local LocalPlayer = Players.LocalPlayer
+
+    local FruitValueCalc = nil
+    pcall(function()
+        FruitValueCalc = require(RS.SharedModules.FruitValueCalc)
+    end)
+
+    local FruitVisualizerController = nil
+    pcall(function()
+        FruitVisualizerController = require(LocalPlayer.PlayerScripts.Controllers.FruitVisualizerController)
+    end)
+
+    local function getWeight(fruit)
+        if not FruitVisualizerController or not FruitVisualizerController.CalculateFruitWeight then
+            return nil
+        end
+        local ok, w = pcall(function()
+            return FruitVisualizerController:CalculateFruitWeight(fruit)
+        end)
+        if ok and type(w) == "number" then return w end
+        return nil
+    end
+
+    local function getValue(seedName, sizeMulti, mutation, decayAlpha)
+        if not FruitValueCalc then return nil end
+        local ok, price = pcall(function()
+            return FruitValueCalc(seedName, sizeMulti, mutation, LocalPlayer, decayAlpha)
+        end)
+        if ok and type(price) == "number" then return price end
+        return nil
+    end
+
+    local function abbreviatePrice(n)
+        if not n or type(n) ~= "number" then return "?" end
+        if n >= 1e9 then return string.format("%.1fb", n / 1e9) end
+        if n >= 1e6 then return string.format("%.1fm", n / 1e6) end
+        if n >= 1e3 then return string.format("%.1fk", n / 1e3) end
+        return tostring(math.floor(n))
+    end
+
+    local function getAnchorPart(fruit)
+        if fruit:IsA("BasePart") then return fruit end
+        return fruit:FindFirstChildWhichIsA("BasePart")
+            or fruit:FindFirstChild("HarvestPart Part")
+            or fruit:FindFirstChild("Base Part")
+            or fruit.PrimaryPart
+    end
+
+    local ESP = { Enabled = ESPConfig.Enabled }
+    local trackedFruits = {}
+
+    local function buildGuiForFruit(fruit, plant)
+        local anchor = getAnchorPart(fruit)
+        if not anchor then return nil end
+
+        local gui = Instance.new("BillboardGui")
+        gui.Name = "FruitESP"
+        gui.Adornee = anchor
+        gui.Size = ESPConfig.BoxSize
+        gui.StudsOffset = Vector3.new(0, 1.5, 0)
+        gui.AlwaysOnTop = true
+        gui.MaxDistance = ESPConfig.MaxDistance
+
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, 0, 1, 0)
+        frame.BackgroundColor3 = ESPConfig.Color
+        frame.BackgroundTransparency = 0.25
+        frame.BorderSizePixel = 0
+        frame.Parent = gui
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 4)
+        corner.Parent = frame
+
+        local label = Instance.new("TextLabel")
+        label.BackgroundTransparency = 1
+        label.Size = UDim2.new(1, -6, 1, 0)
+        label.Position = UDim2.new(0, 3, 0, 0)
+        label.Font = Enum.Font.GothamBold
+        label.TextScaled = true
+        local sizeConstraint = Instance.new("UITextSizeConstraint")
+        sizeConstraint.MaxTextSize = 12
+        sizeConstraint.MinTextSize = 6
+        sizeConstraint.Parent = label
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = frame
+
+        gui.Parent = anchor
+
+        return { gui = gui, label = label, fruit = fruit, plant = plant }
+    end
+
+    local function updateLabel(entry)
+        local fruit = entry.fruit
+        local plant = entry.plant
+        if not fruit.Parent or not plant.Parent then return false end
+
+        local seedName = plant:GetAttribute("SeedName") or "?"
+        local sizeMulti = fruit:GetAttribute("SizeMulti") or 1
+        local mutation = fruit:GetAttribute("Mutation")
+        local decayAlpha = fruit:GetAttribute("DecayAlpha")
+
+        local weight = getWeight(fruit)
+        local price = getValue(seedName, sizeMulti, mutation, decayAlpha)
+
+        local weightStr = weight and string.format("%.2fkg", weight) or "?kg"
+        local priceStr = price and (abbreviatePrice(price) .. "¢") or "?¢"
+        local mutationStr = mutation or "Normal"
+
+        entry.label.Text = string.format("%s | %s | %s | %s", seedName, weightStr, mutationStr, priceStr)
+        return true
+    end
+
+    local function scanAllFruits()
+        local plotId = LocalPlayer:GetAttribute("PlotId")
+        if not plotId then return {} end
+        local plot = workspace.Gardens:FindFirstChild("Plot" .. plotId)
+        if not plot then return {} end
+        local plantsFolder = plot:FindFirstChild("Plants")
+        if not plantsFolder then return {} end
+
+        local result = {}
+        for _, plant in ipairs(plantsFolder:GetChildren()) do
+            if plant:IsA("Model") then
+                local fruitsFolder = plant:FindFirstChild("Fruits")
+                if fruitsFolder then
+                    for _, fruit in ipairs(fruitsFolder:GetChildren()) do
+                        table.insert(result, { fruit = fruit, plant = plant })
+                    end
+                end
+            end
+        end
+        return result
+    end
+
+    local loopRunning = false
+
+    function ESP:Refresh()
+        local currentFruits = scanAllFruits()
+        local seen = {}
+
+        for _, data in ipairs(currentFruits) do
+            local fruit = data.fruit
+            seen[fruit] = true
+
+            if not trackedFruits[fruit] then
+                local entry = buildGuiForFruit(fruit, data.plant)
+                if entry then
+                    trackedFruits[fruit] = entry
+                    updateLabel(entry)
+
+                    fruit.AncestryChanged:Connect(function(_, parent)
+                        if not parent then
+                            local e = trackedFruits[fruit]
+                            if e then
+                                if e.gui then e.gui:Destroy() end
+                                trackedFruits[fruit] = nil
+                            end
+                        end
+                    end)
+                end
+            else
+                updateLabel(trackedFruits[fruit])
+            end
+        end
+
+        for fruit, entry in pairs(trackedFruits) do
+            if not seen[fruit] or not fruit.Parent then
+                if entry.gui then entry.gui:Destroy() end
+                trackedFruits[fruit] = nil
+            end
+        end
+    end
+
+    function ESP:Start()
+        ESP.Enabled = true
+        if loopRunning then return end
+        loopRunning = true
+        task.spawn(function()
+            while ESP.Enabled do
+                local ok, err = pcall(function()
+                    ESP:Refresh()
+                end)
+                if not ok then warn("FruitESP refresh error:", err) end
+                task.wait(ESPConfig.RefreshRate)
+            end
+            loopRunning = false
+        end)
+    end
+
+    function ESP:Stop()
+        ESP.Enabled = false
+        for fruit, entry in pairs(trackedFruits) do
+            if entry.gui then entry.gui:Destroy() end
+        end
+        trackedFruits = {}
+    end
+
+    function ESP:SetEnabled(state)
+        if state then
+            ESP:Start()
+        else
+            ESP:Stop()
+        end
+    end
+
+    if ESPConfig.Enabled then
+        ESP:Start()
+    end
+
+    return ESP
+end
 
 return Chloex
