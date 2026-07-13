@@ -6219,7 +6219,7 @@ function Chloex:CreateProgressPanel(PanelConfig)
     end)
 
     CloseBtn.Activated:Connect(function()
-        ScreenGui.Enabled = false
+        Panel:Destroy()
     end)
 
     do
