@@ -5959,6 +5959,8 @@ function Chloex:CreateProgressPanel(PanelConfig)
     PanelConfig = PanelConfig or {}
     PanelConfig.Title = PanelConfig.Title or "Progress"
     PanelConfig.Color = PanelConfig.Color or Color3.fromRGB(100, 200, 255)
+    PanelConfig.GetPlayerPlot = PanelConfig.GetPlayerPlot or function() return nil end
+    PanelConfig.SprinklerRefreshInterval = PanelConfig.SprinklerRefreshInterval or 1
 
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "HydraProgressPanel"
@@ -5969,7 +5971,7 @@ function Chloex:CreateProgressPanel(PanelConfig)
     local Root = Instance.new("Frame")
     Root.AnchorPoint = Vector2.new(0.5, 0.5)
     Root.Position = PanelConfig.Position or UDim2.new(0.5, 0, 0.5, 0)
-    Root.Size = UDim2.new(0, 260, 0, 400)
+    Root.Size = UDim2.new(0, 260, 0, 220)
     Root.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
     Root.BackgroundTransparency = 0.05
     Root.BorderSizePixel = 0
@@ -6202,6 +6204,149 @@ function Chloex:CreateProgressPanel(PanelConfig)
         progressRows = {}
         progressOrder = {}
     end
+
+    -- Sprinkler section: nempel di panel yang sama, LayoutOrder tinggi biar di bawah progress rows
+    local SprinklerHeader = Instance.new("TextLabel")
+    SprinklerHeader.Font = Enum.Font.GothamBold
+    SprinklerHeader.Text = "Active Sprinkler"
+    SprinklerHeader.TextColor3 = PanelConfig.Color
+    SprinklerHeader.TextSize = 11
+    SprinklerHeader.TextXAlignment = Enum.TextXAlignment.Left
+    SprinklerHeader.BackgroundTransparency = 1
+    SprinklerHeader.LayoutOrder = 1000
+    SprinklerHeader.Size = UDim2.new(1, 0, 0, 16)
+    SprinklerHeader.Name = "SprinklerHeader"
+    SprinklerHeader.Parent = Body
+
+    local sprinklerRows = {}
+    local sprinklerRowOrder = {}
+
+    local function sprinklerParseTimer(text)
+        local m, s = text:match("^(%d+):(%d+)$")
+        if m and s then return tonumber(m) * 60 + tonumber(s) end
+        local onlySec = text:match("^(%d+)$")
+        if onlySec then return tonumber(onlySec) end
+        return nil
+    end
+
+    local function sprinklerGetRemaining(sprinklerModel)
+        for _, desc in ipairs(sprinklerModel:GetDescendants()) do
+            if desc.Name == "SprinklerTimerUI" then
+                local lbl = desc:FindFirstChildWhichIsA("TextLabel", true)
+                if lbl then
+                    local secs = sprinklerParseTimer(lbl.Text)
+                    if secs then return secs end
+                end
+            end
+        end
+        return nil
+    end
+
+    local function sprinklerEnsureRow(key)
+        if sprinklerRows[key] then return sprinklerRows[key] end
+
+        local Row = Instance.new("Frame")
+        Row.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Row.BackgroundTransparency = 0.94
+        Row.Size = UDim2.new(1, 0, 0, 20)
+        Row.LayoutOrder = 1001 + #sprinklerRowOrder
+        Row.Name = "Sprinkler_" .. key
+        Row.Parent = Body
+
+        local RowCorner = Instance.new("UICorner")
+        RowCorner.CornerRadius = UDim.new(0, 4)
+        RowCorner.Parent = Row
+
+        local NameLbl = Instance.new("TextLabel")
+        NameLbl.Font = Enum.Font.GothamBold
+        NameLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+        NameLbl.TextSize = 11
+        NameLbl.TextXAlignment = Enum.TextXAlignment.Left
+        NameLbl.BackgroundTransparency = 1
+        NameLbl.Position = UDim2.new(0, 6, 0, 0)
+        NameLbl.Size = UDim2.new(0.6, 0, 1, 0)
+        NameLbl.Name = "NameLbl"
+        NameLbl.Parent = Row
+
+        local TimeLbl = Instance.new("TextLabel")
+        TimeLbl.Font = Enum.Font.GothamBold
+        TimeLbl.TextColor3 = PanelConfig.Color
+        TimeLbl.TextSize = 11
+        TimeLbl.TextXAlignment = Enum.TextXAlignment.Right
+        TimeLbl.BackgroundTransparency = 1
+        TimeLbl.AnchorPoint = Vector2.new(1, 0)
+        TimeLbl.Position = UDim2.new(1, -6, 0, 0)
+        TimeLbl.Size = UDim2.new(0.35, 0, 1, 0)
+        TimeLbl.Name = "TimeLbl"
+        TimeLbl.Parent = Row
+
+        sprinklerRows[key] = { row = Row, nameLbl = NameLbl, timeLbl = TimeLbl }
+        table.insert(sprinklerRowOrder, key)
+        return sprinklerRows[key]
+    end
+
+    local function sprinklerClearUnusedRows(usedKeys)
+        for key, data in pairs(sprinklerRows) do
+            if not usedKeys[key] then
+                if data.row and data.row.Parent then data.row:Destroy() end
+                sprinklerRows[key] = nil
+            end
+        end
+    end
+
+    function Panel:RefreshSprinklers()
+        local plot = PanelConfig.GetPlayerPlot()
+        local sprinklerFolder = plot and plot:FindFirstChild("Sprinklers")
+
+        if not sprinklerFolder then
+            SprinklerHeader.Text = "Active Sprinkler (tidak ditemukan)"
+            sprinklerClearUnusedRows({})
+            return
+        end
+
+        local myUserId = game:GetService("Players").LocalPlayer.UserId
+        local usedKeys = {}
+        local count = 0
+
+        for _, obj in ipairs(sprinklerFolder:GetChildren()) do
+            if obj:IsA("Model") then
+                local objUserId = obj:GetAttribute("UserId")
+                if not objUserId or objUserId == myUserId then
+                    local sprinklerName = obj:GetAttribute("SprinklerName") or obj.Name
+                    local remaining = sprinklerGetRemaining(obj)
+                    local remainingStr = remaining and (math.floor(remaining) .. "s") or "?"
+
+                    count = count + 1
+                    local key = sprinklerName .. "_" .. tostring(count)
+                    usedKeys[key] = true
+
+                    local data = sprinklerEnsureRow(key)
+                    data.nameLbl.Text = sprinklerName
+                    data.timeLbl.Text = remainingStr
+                end
+            end
+        end
+
+        sprinklerClearUnusedRows(usedKeys)
+        SprinklerHeader.Text = count > 0 and "Active Sprinkler" or "Active Sprinkler (kosong)"
+    end
+
+    local sprinklerLoopStarted = false
+    function Panel:StartSprinklerRealtime()
+        if sprinklerLoopStarted then return end
+        sprinklerLoopStarted = true
+        task.spawn(function()
+            while ScreenGui.Parent do
+                local ok, err = pcall(function() Panel:RefreshSprinklers() end)
+                if not ok then
+                    warn("[ProgressPanel][Sprinkler] refresh error:", err)
+                end
+                task.wait(PanelConfig.SprinklerRefreshInterval)
+            end
+        end)
+    end
+
+    Panel:StartSprinklerRealtime()
 
     function Panel:Destroy()
         ScreenGui:Destroy()
