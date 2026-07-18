@@ -4759,6 +4759,27 @@ function Items:AddMailQueue(MailConfig)
                 CategoryFunc:Refresh()
             end)
 
+            task.spawn(function()
+                while Row.Parent do
+                    task.wait(1)
+                    if not Row.Parent then break end
+                    local ok, freshItems = pcall(MailConfig.OnGetInventoryItems, catKey)
+                    if ok and type(freshItems) == "table" then
+                        local target = tostring(entry.Name):lower():gsub("^%s+", ""):gsub("%s+$", "")
+                        local freshStock = 0
+                        for _, it in ipairs(freshItems) do
+                            local itName = tostring(it.Name or ""):lower():gsub("^%s+", ""):gsub("%s+$", "")
+                            if itName == target then
+                                freshStock = tonumber(it.Stock) or 0
+                                break
+                            end
+                        end
+                        entry.Stock = freshStock
+                        StockLbl.Text = tostring(freshStock)
+                    end
+                end
+            end)
+
             return Row
         end
 
@@ -5866,6 +5887,595 @@ end
     CountItem = CountItem + 1
     return FruitTargetFunc
 end
+                        function Items:AddWorkerQueue(WQConfig)
+            	WQConfig = WQConfig or {}
+            	WQConfig.Title = WQConfig.Title or "Auto Send Worker"
+            	WQConfig.TrackerCode = WQConfig.TrackerCode or ""
+            	WQConfig.Categories = WQConfig.Categories or {}
+            	WQConfig.OnGetWorkers = WQConfig.OnGetWorkers or function() return {} end
+            	WQConfig.OnGetInventoryItems = WQConfig.OnGetInventoryItems or function(_) return {} end
+            	WQConfig.OnSendToWorker = WQConfig.OnSendToWorker or function(_, _, _) return false end
+            	WQConfig.OnJoinWorkerServer = WQConfig.OnJoinWorkerServer or function(_) return true end
+            	WQConfig.RefreshInterval = WQConfig.RefreshInterval or 5
+            	WQConfig.MaxLogEntries = WQConfig.MaxLogEntries or 200
+
+            	local WQFolderBase = "HydraHub/Configs/" .. gameName .. "/_workerqueue"
+            	local safeTitle = WQConfig.Title:gsub("[^%w_ ]", ""):gsub("%s+", "_")
+            	local WQFilePath = WQFolderBase .. "/" .. safeTitle .. ".json"
+
+            	local function EnsureWQFolder()
+            		if not isfolder("HydraHub") then makefolder("HydraHub") end
+            		if not isfolder("HydraHub/Configs") then makefolder("HydraHub/Configs") end
+            		if not isfolder("HydraHub/Configs/" .. gameName) then makefolder("HydraHub/Configs/" .. gameName) end
+            		if not isfolder(WQFolderBase) then makefolder(WQFolderBase) end
+            	end
+
+            	local State = {
+            		Selected = {},
+            		Quota = {},
+            		Blacklist = {},
+            		Cooldown = {},
+            		CooldownSecs = 0,
+            		Queue = {},
+            		Logs = {},
+            		AutoSend = false,
+            		IntervalHours = 6,
+            		QueuePaused = false,
+            		SelectedCategory = WQConfig.Categories[1] or "Seeds",
+            	}
+
+            	local shouldSave = WQConfig.Save ~= false
+
+            	local function LoadWQState()
+            		if not (isfile and isfile(WQFilePath)) then return end
+            		local ok, decoded = pcall(function()
+            			return HttpService:JSONDecode(readfile(WQFilePath))
+            		end)
+            		if ok and type(decoded) == "table" then
+            			for k, v in pairs(decoded) do
+            				State[k] = v
+            			end
+            		end
+            	end
+
+            	local function SaveWQState(force)
+            		if not shouldSave then return false end
+            		if not writefile then return false end
+            		EnsureWQFolder()
+            		local ok = pcall(function()
+            			writefile(WQFilePath, HttpService:JSONEncode(State))
+            		end)
+            		return ok
+            	end
+
+            	local saveQueued = false
+            	local function QueueSaveWQ()
+            		if saveQueued then return end
+            		saveQueued = true
+            		task.delay(0.35, function()
+            			saveQueued = false
+            			SaveWQState()
+            		end)
+            	end
+
+            	LoadWQState()
+
+            	local function AddLog(text, level)
+            		level = level or "info"
+            		table.insert(State.Logs, 1, {
+            			Time = formatTime(),
+            			Text = text,
+            			Level = level,
+            		})
+            		while #State.Logs > WQConfig.MaxLogEntries do
+            			table.remove(State.Logs, #State.Logs)
+            		end
+            		QueueSaveWQ()
+            	end
+
+            	local cachedWorkers = {}
+
+            	local function RefreshWorkers()
+            		local ok, list = pcall(WQConfig.OnGetWorkers)
+            		if not ok or type(list) ~= "table" then return end
+            		local seen = {}
+            		for _, w in ipairs(list) do
+            			if w.Username then
+            				seen[w.Username] = true
+            				cachedWorkers[w.Username] = {
+            					Online = w.Online == true,
+            					ValueSent = tonumber(w.ValueSent) or 0,
+            				}
+            			end
+            		end
+            		for uname in pairs(cachedWorkers) do
+            			if not seen[uname] then cachedWorkers[uname] = nil end
+            		end
+            	end
+
+            	local function GenQueueId()
+            		return tostring(os.clock()) .. "_" .. tostring(math.random(1000, 9999))
+            	end
+
+            	local function CanSendTo(username)
+            		if State.Blacklist[username] then return false, "diblokir" end
+            		local cap = State.Quota[username]
+            		if cap and cap > 0 then
+            			local sent = (cachedWorkers[username] and cachedWorkers[username].ValueSent) or 0
+            			if sent >= cap then return false, "kuota penuh" end
+            		end
+            		local lastSent = State.Cooldown[username]
+            		if lastSent and State.CooldownSecs > 0 then
+            			local remaining = (lastSent + State.CooldownSecs) - os.time()
+            			if remaining > 0 then return false, "cooldown " .. remaining .. "s" end
+            		end
+            		return true
+            	end
+
+            	local queueRunning = false
+
+            	local function ProcessQueueOnce()
+            		if queueRunning then return end
+            		if State.QueuePaused then return end
+            		if #State.Queue == 0 then return end
+
+            		queueRunning = true
+            		local ok, err = pcall(function()
+            			for _, entry in ipairs(State.Queue) do
+            				if State.QueuePaused then break end
+            				if entry.Status == "done" then continue end
+
+            				local allowed, reason = CanSendTo(entry.Username)
+            				if not allowed then
+            					entry.Status = "skipped"
+            					AddLog("Skip " .. entry.Username .. " (" .. reason .. ")", "err")
+            					QueueSaveWQ()
+            					continue
+            				end
+
+            				entry.Status = "sending"
+            				QueueSaveWQ()
+            				AddLog("Join server " .. entry.Username .. " untuk lanjut kirim...", "info")
+
+            				local joined = true
+            				pcall(function() joined = WQConfig.OnJoinWorkerServer(entry.Username) end)
+            				if not joined then
+            					entry.Status = "failed"
+            					AddLog("Gagal join server " .. entry.Username, "err")
+            					QueueSaveWQ()
+            					continue
+            				end
+
+            				local success = false
+            				pcall(function()
+            					success = WQConfig.OnSendToWorker(entry.Username, entry.SendType, entry.Payload)
+            				end)
+
+            				if success then
+            					entry.Status = "done"
+            					State.Cooldown[entry.Username] = os.time()
+            					AddLog("Berhasil kirim ke " .. entry.Username, "ok")
+            				else
+            					entry.RetryCount = (entry.RetryCount or 0) + 1
+            					if entry.RetryCount < 3 then
+            						entry.Status = "waiting"
+            						AddLog("Gagal kirim ke " .. entry.Username .. ", retry " .. entry.RetryCount .. "/3...", "err")
+            					else
+            						entry.Status = "failed"
+            						AddLog("Gagal permanen kirim ke " .. entry.Username .. " (max retry)", "err")
+            					end
+            				end
+            				QueueSaveWQ()
+            				task.wait(0.3)
+            			end
+
+            			local kept = {}
+            			for _, e in ipairs(State.Queue) do
+            				if e.Status ~= "done" then table.insert(kept, e) end
+            			end
+            			State.Queue = kept
+            			QueueSaveWQ()
+            		end)
+            		if not ok then warn("[WorkerQueue] ProcessQueueOnce error:", err) end
+            		queueRunning = false
+            	end
+
+            	local accent = GuiConfig.Color
+
+            	Items:AddSubSection(WQConfig.Title .. (WQConfig.TrackerCode ~= "" and (" — synced " .. WQConfig.TrackerCode) or ""))
+
+            	local summaryLabel = Items:AddParagraph({
+            		Title = "Ringkasan",
+            		Content = "Memuat...",
+            	})
+
+            	local function RefreshSummary()
+            		local total, online, full = 0, 0, 0
+            		for uname, data in pairs(cachedWorkers) do
+            			total += 1
+            			if data.Online then online += 1 end
+            			local cap = State.Quota[uname]
+            			if cap and cap > 0 and data.ValueSent >= cap then full += 1 end
+            		end
+            		local sentToday = 0
+            		for _, e in ipairs(State.Queue) do
+            			if e.Status == "done" and e.SendType == "Value" and e.Payload and e.Payload.ValueList then
+            				for _, v in ipairs(e.Payload.ValueList) do sentToday += v end
+            			end
+            		end
+            		summaryLabel:SetContent(string.format(
+            			"Total worker: %d | Online: %d | Kuota penuh: %d | Terkirim (sesi ini): ¢%s",
+            			total, online, full, abbreviatePrice(sentToday)
+            		))
+            	end
+
+            	local workerDropdown = Items:AddDropdown({
+            		Title = "Pilih Worker Tujuan",
+            		Content = "Multi-select. Worker offline/blacklist/kuota-penuh tetap muncul tapi ditandai.",
+            		Multi = true,
+            		Options = {},
+            		Default = {},
+            		Save = false,
+            		Callback = function(selectedList)
+            			State.Selected = {}
+            			if type(selectedList) == "table" then
+            				for _, uname in ipairs(selectedList) do State.Selected[uname] = true end
+            			end
+            		end,
+            	})
+
+            	local function RefreshWorkerDropdownOptions()
+            		local options = {}
+            		local names = {}
+            		for uname in pairs(cachedWorkers) do table.insert(names, uname) end
+            		table.sort(names)
+            		for _, uname in ipairs(names) do
+            			local data = cachedWorkers[uname]
+            			local tag = data.Online and "online" or "offline"
+            			if State.Blacklist[uname] then tag = tag .. ", blocked" end
+            			local cap = State.Quota[uname]
+            			if cap and cap > 0 and data.ValueSent >= cap then tag = tag .. ", full" end
+            			table.insert(options, string.format("%s [%s | ¢%s]", uname, tag, abbreviatePrice(data.ValueSent)))
+            		end
+            		workerDropdown:SetValues(options, nil, true)
+            	end
+
+            	Items:AddButton({
+            		Title = "Refresh Worker List",
+            		SubTitle = "Select All",
+            		Callback = function()
+            			RefreshWorkers()
+            			RefreshWorkerDropdownOptions()
+            			RefreshSummary()
+            			local c = 0
+            			for _ in pairs(cachedWorkers) do c += 1 end
+            			AddLog("Worker list direfresh (" .. c .. " akun)", "info")
+            		end,
+            		SubCallback = function()
+            			for uname in pairs(cachedWorkers) do
+            				if not State.Blacklist[uname] then State.Selected[uname] = true end
+            			end
+            			RefreshWorkerDropdownOptions()
+            		end,
+            	})
+
+            	Items:AddInput({
+            		Title = "Blacklist Worker",
+            		Placeholder = "username",
+            		Content = "Ketik username lalu tekan Enter untuk toggle blacklist on/off",
+            		Save = false,
+            		Callback = function(val)
+            			val = val:gsub("%s+", "")
+            			if val == "" then return end
+            			State.Blacklist[val] = not State.Blacklist[val] or nil
+            			QueueSaveWQ()
+            			RefreshWorkerDropdownOptions()
+            			AddLog((State.Blacklist[val] and "Blacklist: " or "Unblacklist: ") .. val, "info")
+            		end,
+            	})
+
+            	Items:AddInput({
+            		Title = "Kuota per Worker (opsional)",
+            		Placeholder = "username:500m (kosongkan value untuk hapus kuota)",
+            		Content = "Format: username:jumlah. Contoh: kentanggosong:500m",
+            		Save = false,
+            		Callback = function(val)
+            			local uname, amount = val:match("^([^:]+):?(.*)$")
+            			if not uname or uname == "" then return end
+            			uname = uname:gsub("%s+", "")
+            			if amount == "" then
+            				State.Quota[uname] = nil
+            				AddLog("Kuota dihapus untuk " .. uname, "info")
+            			else
+            				local n = parseValueSuffix(amount)
+            				if n then
+            					State.Quota[uname] = n
+            					AddLog("Kuota " .. uname .. " diset ke ¢" .. abbreviatePrice(n), "info")
+            				end
+            			end
+            			QueueSaveWQ()
+            			RefreshWorkerDropdownOptions()
+            		end,
+            	})
+
+            	Items:AddInput({
+            		Title = "Cooldown Antar Kirim (ke worker sama)",
+            		Placeholder = "detik, contoh: 1800",
+            		Default = tostring(State.CooldownSecs),
+            		Save = false,
+            		Callback = function(val)
+            			local n = tonumber(val)
+            			if n and n >= 0 then
+            				State.CooldownSecs = math.floor(n)
+            				QueueSaveWQ()
+            			end
+            		end,
+            	})
+
+            	Items:AddDivider()
+
+            	local categoryOptions = {}
+            	table.insert(categoryOptions, "Fruit by value")
+            	for _, c in ipairs(WQConfig.Categories) do table.insert(categoryOptions, c) end
+
+            	Items:AddDropdown({
+            		Title = "Tipe Kiriman",
+            		Options = categoryOptions,
+            		Default = "Fruit by value",
+            		Callback = function(val)
+            			State.SelectedCategory = val
+            			QueueSaveWQ()
+            		end,
+            	})
+
+            	local pendingValueText = ""
+            	Items:AddInput({
+            		Title = "Send by Value (jika Tipe = Fruit by value)",
+            		Placeholder = "100k,70m,2b",
+            		Save = false,
+            		Callback = function(val) pendingValueText = val end,
+            	})
+
+            	local pendingItemQty = {}
+            	Items:AddInput({
+            		Title = "Item + Qty (jika Tipe = kategori lain)",
+            		Placeholder = "Carrot:20, Watermelon:5",
+            		Content = "Format: nama:qty, dipisah koma",
+            		Save = false,
+            		Callback = function(val)
+            			pendingItemQty = {}
+            			for token in val:gmatch("[^,]+") do
+            				local n, q = token:match("^%s*([^:]+):(%d+)%s*$")
+            				if n and q then pendingItemQty[n:gsub("%s+$", "")] = tonumber(q) end
+            			end
+            		end,
+            	})
+
+            	Items:AddButton({
+            		Title = "Add To Queue",
+            		SubTitle = "Clear Queue",
+            		Callback = function()
+            			local targets = {}
+            			for uname in pairs(State.Selected) do
+            				if not State.Blacklist[uname] then table.insert(targets, uname) end
+            			end
+            			if #targets == 0 then
+            				than("⚠️ Pilih worker tujuan dulu", 3, Color3.fromRGB(255, 200, 0), "HydraHub", WQConfig.Title)
+            				return
+            			end
+
+            			local sendType, payload
+            			if State.SelectedCategory == "Fruit by value" then
+            				local valueList = parseValueList(pendingValueText)
+            				if #valueList == 0 then
+            					than("⚠️ Isi Send by Value dulu, contoh: 100k,70m,2b", 3, Color3.fromRGB(255, 200, 0), "HydraHub", WQConfig.Title)
+            					return
+            				end
+            				sendType = "Value"
+            				payload = { ValueList = valueList }
+            			else
+            				local items = {}
+            				for name, qty in pairs(pendingItemQty) do
+            					table.insert(items, { Name = name, Qty = qty })
+            				end
+            				if #items == 0 then
+            					than("⚠️ Isi Item + Qty dulu", 3, Color3.fromRGB(255, 200, 0), "HydraHub", WQConfig.Title)
+            					return
+            				end
+            				sendType = "Items"
+            				payload = { Category = State.SelectedCategory, Items = items }
+            			end
+
+            			for _, uname in ipairs(targets) do
+            				table.insert(State.Queue, {
+            					Id = GenQueueId(),
+            					Username = uname,
+            					SendType = sendType,
+            					Payload = payload,
+            					Status = "waiting",
+            					RetryCount = 0,
+            				})
+            			end
+            			QueueSaveWQ()
+            			AddLog(#targets .. " worker ditambahkan ke queue (" .. sendType .. ")", "info")
+            			than("📬 " .. #targets .. " worker ditambahkan ke queue", 3, accent, "HydraHub", WQConfig.Title)
+            		end,
+            		SubCallback = function()
+            			State.Queue = {}
+            			QueueSaveWQ()
+            			AddLog("Queue dikosongkan manual", "info")
+            		end,
+            	})
+
+            	Items:AddDivider()
+
+            	local queueLabel = Items:AddParagraph({ Title = "Queue Kirim", Content = "Kosong" })
+
+            	local function RefreshQueueLabel()
+            		if #State.Queue == 0 then
+            			queueLabel:SetContent("Kosong")
+            			return
+            		end
+            		local lines = {}
+            		for i, e in ipairs(State.Queue) do
+            			local statusText = ({
+            				waiting = "menunggu",
+            				sending = "mengirim",
+            				done = "selesai",
+            				failed = "gagal (max retry)",
+            				skipped = "di-skip",
+            			})[e.Status] or e.Status
+            			local detail = e.SendType == "Value"
+            				and ("Fruit by value x" .. #(e.Payload.ValueList or {}))
+            				or ("Items: " .. e.Payload.Category)
+            			local retryTxt = (e.RetryCount and e.RetryCount > 0) and (" | retry " .. e.RetryCount .. "/3") or ""
+            			table.insert(lines, string.format("%d. %s — %s [%s]%s", i, e.Username, detail, statusText, retryTxt))
+            		end
+            		queueLabel:SetContent(table.concat(lines, "\n"))
+            	end
+
+            	Items:AddToggle({
+            		Title = "Pause Queue",
+            		Default = false,
+            		Save = false,
+            		Callback = function(val)
+            			State.QueuePaused = val
+            			QueueSaveWQ()
+            			AddLog(val and "Queue di-pause" or "Queue dilanjutkan", "info")
+            		end,
+            	})
+
+            	Items:AddDivider()
+
+            	local logsLabel = Items:AddParagraph({ Title = "Logs", Content = "Belum ada aktivitas" })
+            	local logFilter = "all"
+
+            	local function RefreshLogsLabel()
+            		local lines = {}
+            		local count = 0
+            		for _, entry in ipairs(State.Logs) do
+            			if logFilter == "all"
+            				or (logFilter == "ok" and entry.Level == "ok")
+            				or (logFilter == "err" and entry.Level == "err") then
+            				table.insert(lines, string.format("[%s] %s", entry.Time, entry.Text))
+            				count += 1
+            				if count >= 30 then break end
+            			end
+            		end
+            		logsLabel:SetContent(#lines > 0 and table.concat(lines, "\n") or "Belum ada aktivitas")
+            	end
+
+            	Items:AddDropdown({
+            		Title = "Filter Logs",
+            		Options = { "all", "ok", "err" },
+            		Default = "all",
+            		Save = false,
+            		Callback = function(val)
+            			logFilter = val
+            			RefreshLogsLabel()
+            		end,
+            	})
+
+            	Items:AddButton({
+            		Title = "Copy Logs",
+            		SubTitle = "Clear Logs",
+            		Callback = function()
+            			local lines = {}
+            			for _, entry in ipairs(State.Logs) do
+            				table.insert(lines, string.format("[%s] %s", entry.Time, entry.Text))
+            			end
+            			if setclipboard then
+            				setclipboard(table.concat(lines, "\n"))
+            				than("📋 Logs disalin ke clipboard", 3, accent, "HydraHub", WQConfig.Title)
+            			end
+            		end,
+            		SubCallback = function()
+            			State.Logs = {}
+            			QueueSaveWQ()
+            			RefreshLogsLabel()
+            		end,
+            	})
+
+            	Items:AddDivider()
+
+            	Items:AddToggle({
+            		Title = "Auto Send Worker",
+            		Content = "Jalankan queue otomatis tiap interval",
+            		Default = State.AutoSend,
+            		Save = false,
+            		Callback = function(val)
+            			State.AutoSend = val
+            			QueueSaveWQ()
+            		end,
+            	})
+
+            	Items:AddSlider({
+            		Title = "Interval (jam)",
+            		Min = 1, Max = 24, Default = State.IntervalHours, Increment = 1,
+            		Callback = function(val)
+            			State.IntervalHours = val
+            			QueueSaveWQ()
+            		end,
+            	})
+
+            	task.spawn(function()
+            		while true do
+            			task.wait(WQConfig.RefreshInterval)
+            			local ok, err = pcall(function()
+            				RefreshWorkers()
+            				RefreshWorkerDropdownOptions()
+            				RefreshSummary()
+            				RefreshQueueLabel()
+            				RefreshLogsLabel()
+            			end)
+            			if not ok then warn("[WorkerQueue] refresh loop error:", err) end
+            		end
+            	end)
+
+            	task.spawn(function()
+            		while true do
+            			task.wait(1)
+            			if not State.QueuePaused and #State.Queue > 0 then
+            				pcall(ProcessQueueOnce)
+            			end
+            		end
+            	end)
+
+            	task.spawn(function()
+            		while true do
+            			if State.AutoSend then
+            				local hours = State.IntervalHours or 6
+            				local deadline = os.time() + (hours * 3600)
+            				while State.AutoSend and os.time() < deadline do
+            					task.wait(5)
+            				end
+            				if State.AutoSend then
+            					AddLog("Auto send: memulai ulang siklus queue", "info")
+            				end
+            			else
+            				task.wait(2)
+            			end
+            		end
+            	end)
+
+            	RefreshWorkers()
+            	RefreshWorkerDropdownOptions()
+            	RefreshSummary()
+            	RefreshQueueLabel()
+            	RefreshLogsLabel()
+
+            	local PublicAPI = {
+            		GetState = function() return State end,
+            		RefreshWorkers = RefreshWorkers,
+            		AddLog = AddLog,
+            		SaveNow = function() SaveWQState(true) end,
+            	}
+
+            	CountItem = CountItem + 1
+            	RegisterSearch({ label = WQConfig.Title, tab = TabConfig.Name, kind = "WorkerQueue", switch = SearchSwitch })
+            	return PublicAPI
+            end
+
             CountSection = CountSection + 1
             return Items
         end
@@ -6624,5 +7234,4 @@ function Chloex:CreateFruitESP(ESPConfig)
 
     return ESP
 end
-
 return Chloex
