@@ -1712,6 +1712,138 @@ function Chloex:Window(GuiConfig)
         end
     end
 
+    -- Kotak konfirmasi universal (Yes/Cancel), reusable dari mana aja di script.
+    -- config = { Title, Message, YesText, CancelText, OnYes, OnCancel }
+    -- Parent ke CoreGui langsung (bukan DropShadowHolder) biar tetep muncul walau window di-minimize/tersembunyi.
+    function GuiFunc:Confirm(config)
+        config = config or {}
+
+        local ConfirmGui = Instance.new("ScreenGui")
+        ConfirmGui.Name = "HydraHubConfirm"
+        ConfirmGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        ConfirmGui.DisplayOrder = 999
+        ConfirmGui.Parent = CoreGui
+
+        local Overlay = Instance.new("Frame")
+        Overlay.Size = UDim2.new(1, 0, 1, 0)
+        Overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        Overlay.BackgroundTransparency = 0.3
+        Overlay.ZIndex = 50
+        Overlay.Parent = ConfirmGui
+
+        local Dialog = Instance.new("ImageLabel")
+        Dialog.Size = UDim2.new(0, 320, 0, 170)
+        Dialog.Position = UDim2.new(0.5, -160, 0.5, -85)
+        Dialog.Image = "rbxassetid://9542022979"
+        Dialog.ImageTransparency = 0
+        Dialog.BorderSizePixel = 0
+        Dialog.ZIndex = 51
+        Dialog.Parent = Overlay
+        local UICorner = Instance.new("UICorner", Dialog)
+        UICorner.CornerRadius = UDim.new(0, 8)
+
+        local DialogGlow = Instance.new("Frame")
+        DialogGlow.Size = UDim2.new(0, 330, 0, 180)
+        DialogGlow.Position = UDim2.new(0.5, -165, 0.5, -90)
+        DialogGlow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        DialogGlow.BackgroundTransparency = 0.75
+        DialogGlow.BorderSizePixel = 0
+        DialogGlow.ZIndex = 50
+        DialogGlow.Parent = Overlay
+
+        local GlowCorner = Instance.new("UICorner", DialogGlow)
+        GlowCorner.CornerRadius = UDim.new(0, 10)
+
+        local Gradient = Instance.new("UIGradient")
+        Gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0.0, Color3.fromRGB(0, 191, 255)),
+            ColorSequenceKeypoint.new(0.25, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 140, 255)),
+            ColorSequenceKeypoint.new(0.75, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(1.0, Color3.fromRGB(0, 191, 255))
+        })
+        Gradient.Rotation = 90
+        Gradient.Parent = DialogGlow
+
+        local Title = Instance.new("TextLabel")
+        Title.Size = UDim2.new(1, 0, 0, 30)
+        Title.Position = UDim2.new(0, 0, 0, 4)
+        Title.BackgroundTransparency = 1
+        Title.Font = Enum.Font.GothamBold
+        Title.Text = config.Title or "HydraHub Confirm"
+        Title.TextSize = 20
+        Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Title.ZIndex = 52
+        Title.Parent = Dialog
+
+        local Message = Instance.new("TextLabel")
+        Message.Size = UDim2.new(1, -20, 0, 90)
+        Message.Position = UDim2.new(0, 10, 0, 34)
+        Message.BackgroundTransparency = 1
+        Message.Font = Enum.Font.Gotham
+        Message.Text = config.Message or "Lanjutkan?"
+        Message.TextSize = 14
+        Message.TextColor3 = Color3.fromRGB(210, 210, 210)
+        Message.TextWrapped = true
+        Message.TextYAlignment = Enum.TextYAlignment.Top
+        Message.ZIndex = 52
+        Message.Parent = Dialog
+
+        local Close = Instance.new("TextButton")
+        Close.Size = UDim2.new(0, 24, 0, 24)
+        Close.Position = UDim2.new(1, -30, 0, 6)
+        Close.BackgroundTransparency = 1
+        Close.Text = "X"
+        Close.Font = Enum.Font.GothamBold
+        Close.TextSize = 16
+        Close.TextColor3 = Color3.fromRGB(220, 220, 220)
+        Close.ZIndex = 52
+        Close.Name = "Close"
+        Close.Parent = Dialog
+
+        local Yes = Instance.new("TextButton")
+        Yes.Size = UDim2.new(0.45, -10, 0, 35)
+        Yes.Position = UDim2.new(0.05, 0, 1, -50)
+        Yes.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Yes.BackgroundTransparency = 0.9
+        Yes.Text = config.YesText or "Yes"
+        Yes.Font = Enum.Font.GothamBold
+        Yes.TextSize = 15
+        Yes.TextColor3 = Color3.fromRGB(120, 255, 160)
+        Yes.ZIndex = 52
+        Yes.Name = "Yes"
+        Yes.Parent = Dialog
+        Instance.new("UICorner", Yes).CornerRadius = UDim.new(0, 6)
+
+        local Cancel = Instance.new("TextButton")
+        Cancel.Size = UDim2.new(0.45, -10, 0, 35)
+        Cancel.Position = UDim2.new(0.5, 10, 1, -50)
+        Cancel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Cancel.BackgroundTransparency = 0.9
+        Cancel.Text = config.CancelText or "Cancel"
+        Cancel.Font = Enum.Font.GothamBold
+        Cancel.TextSize = 15
+        Cancel.TextColor3 = Color3.fromRGB(255, 130, 130)
+        Cancel.ZIndex = 52
+        Cancel.Name = "Cancel"
+        Cancel.Parent = Dialog
+        Instance.new("UICorner", Cancel).CornerRadius = UDim.new(0, 6)
+
+        local resolved = false
+        local function resolve(fn)
+            if resolved then return end
+            resolved = true
+            ConfirmGui:Destroy()
+            if fn then pcall(fn) end
+        end
+
+        Yes.MouseButton1Click:Connect(function() resolve(config.OnYes) end)
+        Cancel.MouseButton1Click:Connect(function() resolve(config.OnCancel) end)
+        Close.MouseButton1Click:Connect(function() resolve(config.OnCancel) end)
+
+        return ConfirmGui
+    end
+
     Min.Activated:Connect(function()
         CircleClick(Min, Mouse.X, Mouse.Y)
         DropShadowHolder.Visible = false
@@ -6532,6 +6664,7 @@ end
     Tabs.Window = GuiFunc
     Tabs.ExportConfig = function() return GuiFunc:ExportConfig() end
     Tabs.ImportConfig = function(_, str) return GuiFunc:ImportConfig(str) end
+    Tabs.Confirm = function(_, config) return GuiFunc:Confirm(config) end
 
     if GuiConfig.Search then
         UserInputService.InputBegan:Connect(function(input, gpe)
