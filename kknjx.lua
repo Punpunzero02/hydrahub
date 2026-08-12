@@ -5504,6 +5504,652 @@ end
                 return SubSection
             end
 
+            -- =========================================================
+            -- AddLogPanel: scrolling log history (append-based)
+            -- Simple API: Items:AddLogPanel({Title, MaxLines, Timestamps})
+            -- Returned handle: Log:Push(text, color) / Log:Clear()
+            -- =========================================================
+            function Items:AddLogPanel(LogConfig)
+                LogConfig = LogConfig or {}
+                LogConfig.Title = LogConfig.Title or "Logs"
+                LogConfig.Height = LogConfig.Height or 160
+                LogConfig.MaxLines = LogConfig.MaxLines or 100
+                LogConfig.Timestamps = LogConfig.Timestamps ~= false
+
+                local LogFunc = { Lines = {} }
+
+                local Root = Instance.new("Frame")
+                Root.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                Root.BackgroundTransparency = 0.955
+                Root.BorderSizePixel = 0
+                Root.LayoutOrder = CountItem
+                Root.Size = UDim2.new(1, 0, 0, LogConfig.Height)
+                Root.Name = "LogPanel"
+                Root.Parent = SectionAdd
+
+                local RootCorner = Instance.new("UICorner")
+                RootCorner.CornerRadius = UDim.new(0, 6)
+                RootCorner.Parent = Root
+
+                local RootStroke = Instance.new("UIStroke")
+                RootStroke.Color = GuiConfig.Color
+                RootStroke.Thickness = 1
+                RootStroke.Transparency = 0.85
+                RootStroke.Parent = Root
+
+                local Header = Instance.new("Frame")
+                Header.BackgroundTransparency = 1
+                Header.Size = UDim2.new(1, 0, 0, 24)
+                Header.Parent = Root
+
+                local Title = Instance.new("TextLabel")
+                Title.Font = Enum.Font.GothamBold
+                Title.Text = LogConfig.Title
+                Title.TextColor3 = GuiConfig.Color
+                Title.TextSize = 13
+                Title.TextXAlignment = Enum.TextXAlignment.Left
+                Title.BackgroundTransparency = 1
+                Title.Position = UDim2.new(0, 10, 0, 0)
+                Title.Size = UDim2.new(1, -60, 1, 0)
+                Title.Parent = Header
+
+                local ClearBtn = Instance.new("TextButton")
+                ClearBtn.Font = Enum.Font.GothamBold
+                ClearBtn.Text = "Clear"
+                ClearBtn.TextSize = 11
+                ClearBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                ClearBtn.TextTransparency = 0.3
+                ClearBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                ClearBtn.BackgroundTransparency = 0.9
+                ClearBtn.AnchorPoint = Vector2.new(1, 0.5)
+                ClearBtn.Position = UDim2.new(1, -8, 0.5, 0)
+                ClearBtn.Size = UDim2.new(0, 44, 0, 18)
+                ClearBtn.Parent = Header
+
+                local ClearCorner = Instance.new("UICorner")
+                ClearCorner.CornerRadius = UDim.new(0, 4)
+                ClearCorner.Parent = ClearBtn
+
+                local ScrollLog = Instance.new("ScrollingFrame")
+                ScrollLog.BackgroundTransparency = 1
+                ScrollLog.BorderSizePixel = 0
+                ScrollLog.Position = UDim2.new(0, 0, 0, 26)
+                ScrollLog.Size = UDim2.new(1, 0, 1, -30)
+                ScrollLog.ScrollBarThickness = 3
+                ScrollLog.ScrollBarImageTransparency = 0.5
+                ScrollLog.CanvasSize = UDim2.new(0, 0, 0, 0)
+                ScrollLog.AutomaticCanvasSize = Enum.AutomaticSize.Y
+                ScrollLog.Parent = Root
+
+                local LogPad = Instance.new("UIPadding")
+                LogPad.PaddingLeft = UDim.new(0, 10)
+                LogPad.PaddingRight = UDim.new(0, 8)
+                LogPad.Parent = ScrollLog
+
+                local LogList = Instance.new("UIListLayout")
+                LogList.Padding = UDim.new(0, 2)
+                LogList.SortOrder = Enum.SortOrder.LayoutOrder
+                LogList.Parent = ScrollLog
+
+                local logOrder = 0
+
+                local function ScrollToBottom()
+                    task.defer(function()
+                        ScrollLog.CanvasPosition = Vector2.new(0, math.max(0, ScrollLog.AbsoluteCanvasSize.Y))
+                    end)
+                end
+
+                function LogFunc:Push(text, color)
+                    text = tostring(text or "")
+                    logOrder = logOrder + 1
+
+                    local prefix = ""
+                    if LogConfig.Timestamps then
+                        prefix = os.date("[%H:%M:%S] ")
+                    end
+
+                    local Line = Instance.new("TextLabel")
+                    Line.Font = Enum.Font.Code
+                    Line.Text = prefix .. text
+                    Line.TextColor3 = color or Color3.fromRGB(220, 220, 220)
+                    Line.TextSize = 12
+                    Line.TextXAlignment = Enum.TextXAlignment.Left
+                    Line.TextWrapped = true
+                    Line.BackgroundTransparency = 1
+                    Line.Size = UDim2.new(1, 0, 0, 14)
+                    Line.LayoutOrder = logOrder
+                    Line.Parent = ScrollLog
+
+                    local function fit()
+                        Line.Size = UDim2.new(1, 0, 0, math.max(14, Line.TextBounds.Y))
+                    end
+                    Line:GetPropertyChangedSignal("TextBounds"):Connect(fit)
+                    fit()
+
+                    table.insert(LogFunc.Lines, prefix .. text)
+
+                    local children = ScrollLog:GetChildren()
+                    local count = 0
+                    for _, c in children do
+                        if c:IsA("TextLabel") then count = count + 1 end
+                    end
+                    if count > LogConfig.MaxLines then
+                        local oldest, oldestOrder = nil, math.huge
+                        for _, c in children do
+                            if c:IsA("TextLabel") and c.LayoutOrder < oldestOrder then
+                                oldest, oldestOrder = c, c.LayoutOrder
+                            end
+                        end
+                        if oldest then oldest:Destroy() end
+                        table.remove(LogFunc.Lines, 1)
+                    end
+
+                    ScrollToBottom()
+                end
+
+                function LogFunc:Clear()
+                    for _, c in ScrollLog:GetChildren() do
+                        if c:IsA("TextLabel") then c:Destroy() end
+                    end
+                    LogFunc.Lines = {}
+                    logOrder = 0
+                end
+
+                ClearBtn.MouseButton1Click:Connect(function()
+                    LogFunc:Clear()
+                end)
+
+                CountItem = CountItem + 1
+                RegisterSearch({ label = LogConfig.Title, tab = TabConfig.Name, kind = "Log", switch = SearchSwitch })
+                return LogFunc
+            end
+
+            -- =========================================================
+            -- AddListView: generic reusable searchable list (rows)
+            -- Replacement for old buildPetList — data-agnostic.
+            -- Simple API:
+            --   Items:AddListView({
+            --       Title, Height, Search = true,
+            --       RenderRow = function(item, RowAPI) ... end,  -- build row content into RowAPI.Container, use RowAPI.SetHighlight(bool)
+            --       OnSelect = function(item) end,
+            --       GetLabel = function(item) return string end, -- used for search filtering
+            --   })
+            -- Handle: List:SetItems(items) / List:Refresh() / List:Clear()
+            -- =========================================================
+            function Items:AddListView(ListConfig)
+                ListConfig = ListConfig or {}
+                ListConfig.Title = ListConfig.Title or "List"
+                ListConfig.Height = ListConfig.Height or 220
+                ListConfig.Search = ListConfig.Search ~= false
+                ListConfig.RenderRow = ListConfig.RenderRow or function(item, RowAPI)
+                    local Label = Instance.new("TextLabel")
+                    Label.Font = Enum.Font.Gotham
+                    Label.Text = tostring(item)
+                    Label.TextColor3 = Color3.fromRGB(230, 230, 230)
+                    Label.TextSize = 12
+                    Label.TextXAlignment = Enum.TextXAlignment.Left
+                    Label.BackgroundTransparency = 1
+                    Label.Size = UDim2.new(1, -16, 1, 0)
+                    Label.Position = UDim2.new(0, 8, 0, 0)
+                    Label.Parent = RowAPI.Container
+                end
+                ListConfig.GetLabel = ListConfig.GetLabel or function(item) return tostring(item) end
+                ListConfig.OnSelect = ListConfig.OnSelect or function(item) end
+                ListConfig.RowHeight = ListConfig.RowHeight or 34
+
+                local ListFunc = { Items = {} }
+
+                local Root = Instance.new("Frame")
+                Root.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                Root.BackgroundTransparency = 0.955
+                Root.BorderSizePixel = 0
+                Root.LayoutOrder = CountItem
+                Root.Size = UDim2.new(1, 0, 0, ListConfig.Height)
+                Root.Name = "ListView"
+                Root.Parent = SectionAdd
+
+                local RootCorner = Instance.new("UICorner")
+                RootCorner.CornerRadius = UDim.new(0, 6)
+                RootCorner.Parent = Root
+
+                local RootStroke = Instance.new("UIStroke")
+                RootStroke.Color = GuiConfig.Color
+                RootStroke.Thickness = 1
+                RootStroke.Transparency = 0.85
+                RootStroke.Parent = Root
+
+                local topOffset = 8
+                local Title = Instance.new("TextLabel")
+                Title.Font = Enum.Font.GothamBold
+                Title.Text = ListConfig.Title
+                Title.TextColor3 = GuiConfig.Color
+                Title.TextSize = 13
+                Title.TextXAlignment = Enum.TextXAlignment.Left
+                Title.BackgroundTransparency = 1
+                Title.Position = UDim2.new(0, 10, 0, topOffset)
+                Title.Size = UDim2.new(1, -20, 0, 16)
+                Title.Parent = Root
+                topOffset = topOffset + 20
+
+                local SearchBox
+                if ListConfig.Search then
+                    SearchBox = Instance.new("TextBox")
+                    SearchBox.PlaceholderText = "Search..."
+                    SearchBox.Font = Enum.Font.Gotham
+                    SearchBox.Text = ""
+                    SearchBox.TextSize = 12
+                    SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    SearchBox.ClearTextOnFocus = false
+                    SearchBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    SearchBox.BackgroundTransparency = 0.9
+                    SearchBox.BorderSizePixel = 0
+                    SearchBox.Position = UDim2.new(0, 8, 0, topOffset)
+                    SearchBox.Size = UDim2.new(1, -16, 0, 24)
+                    SearchBox.Parent = Root
+
+                    local SearchCorner = Instance.new("UICorner")
+                    SearchCorner.CornerRadius = UDim.new(0, 4)
+                    SearchCorner.Parent = SearchBox
+
+                    local SearchPad = Instance.new("UIPadding")
+                    SearchPad.PaddingLeft = UDim.new(0, 8)
+                    SearchPad.Parent = SearchBox
+
+                    topOffset = topOffset + 30
+                end
+
+                local ScrollList = Instance.new("ScrollingFrame")
+                ScrollList.BackgroundTransparency = 1
+                ScrollList.BorderSizePixel = 0
+                ScrollList.Position = UDim2.new(0, 0, 0, topOffset)
+                ScrollList.Size = UDim2.new(1, 0, 1, -(topOffset + 6))
+                ScrollList.ScrollBarThickness = 3
+                ScrollList.ScrollBarImageTransparency = 0.5
+                ScrollList.CanvasSize = UDim2.new(0, 0, 0, 0)
+                ScrollList.Parent = Root
+
+                local ListPad = Instance.new("UIPadding")
+                ListPad.PaddingLeft = UDim.new(0, 8)
+                ListPad.PaddingRight = UDim.new(0, 8)
+                ListPad.Parent = ScrollList
+
+                local RowsList = Instance.new("UIListLayout")
+                RowsList.Padding = UDim.new(0, 4)
+                RowsList.SortOrder = Enum.SortOrder.LayoutOrder
+                RowsList.Parent = ScrollList
+
+                RowsList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    ScrollList.CanvasSize = UDim2.new(0, 0, 0, RowsList.AbsoluteContentSize.Y)
+                end)
+
+                local selectedRow = nil
+
+                local function BuildRow(item, order)
+                    local RowFrame = Instance.new("Frame")
+                    RowFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                    RowFrame.BackgroundTransparency = 0.94
+                    RowFrame.BorderSizePixel = 0
+                    RowFrame.Size = UDim2.new(1, 0, 0, ListConfig.RowHeight)
+                    RowFrame.LayoutOrder = order
+                    RowFrame.Name = "Row"
+                    RowFrame.Parent = ScrollList
+
+                    local RowCorner = Instance.new("UICorner")
+                    RowCorner.CornerRadius = UDim.new(0, 4)
+                    RowCorner.Parent = RowFrame
+
+                    local RowStroke = Instance.new("UIStroke")
+                    RowStroke.Color = GuiConfig.Color
+                    RowStroke.Thickness = 1
+                    RowStroke.Transparency = 1
+                    RowStroke.Parent = RowFrame
+
+                    local RowBtn = Instance.new("TextButton")
+                    RowBtn.Text = ""
+                    RowBtn.BackgroundTransparency = 1
+                    RowBtn.Size = UDim2.new(1, 0, 1, 0)
+                    RowBtn.ZIndex = 1
+                    RowBtn.Parent = RowFrame
+
+                    local RowAPI = {
+                        Container = RowFrame,
+                        SetHighlight = function(on)
+                            RowStroke.Transparency = on and 0.4 or 1
+                            RowFrame.BackgroundTransparency = on and 0.85 or 0.94
+                        end,
+                    }
+
+                    ListConfig.RenderRow(item, RowAPI)
+
+                    RowBtn.MouseButton1Click:Connect(function()
+                        if selectedRow and selectedRow ~= RowAPI then
+                            selectedRow.SetHighlight(false)
+                        end
+                        RowAPI.SetHighlight(true)
+                        selectedRow = RowAPI
+                        ListConfig.OnSelect(item)
+                    end)
+
+                    return RowFrame
+                end
+
+                function ListFunc:Clear()
+                    for _, c in ScrollList:GetChildren() do
+                        if c.Name == "Row" then c:Destroy() end
+                    end
+                    selectedRow = nil
+                end
+
+                function ListFunc:SetItems(items)
+                    ListFunc.Items = items or {}
+                    ListFunc:Refresh()
+                end
+
+                function ListFunc:Refresh()
+                    ListFunc:Clear()
+                    local query = SearchBox and string.lower(SearchBox.Text) or ""
+                    local order = 0
+                    for _, item in ipairs(ListFunc.Items) do
+                        local label = string.lower(ListConfig.GetLabel(item))
+                        if query == "" or string.find(label, query, 1, true) then
+                            order = order + 1
+                            BuildRow(item, order)
+                        end
+                    end
+                end
+
+                if SearchBox then
+                    local searchTicket = 0
+                    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+                        searchTicket = searchTicket + 1
+                        local ticket = searchTicket
+                        task.delay(0.08, function()
+                            if ticket == searchTicket then
+                                ListFunc:Refresh()
+                            end
+                        end)
+                    end)
+                end
+
+                CountItem = CountItem + 1
+                RegisterSearch({ label = ListConfig.Title, tab = TabConfig.Name, kind = "List", switch = SearchSwitch })
+                return ListFunc
+            end
+
+            -- =========================================================
+            -- AddInlinePicker: collapsible inline picker (NOT a modal popup,
+            -- unlike ShowInventoryPicker). Expands/collapses directly below
+            -- its own button, inline within the section flow.
+            -- Simple API:
+            --   Items:AddInlinePicker({
+            --       Title, Options = {"A","B",...}, Multi = false,
+            --       Default = nil or {},
+            --       Callback = function(value) end,  -- string or {string=true}
+            --   })
+            -- Handle: Picker:Get() / Picker:Set(value) / Picker:SetOptions(list)
+            -- =========================================================
+            function Items:AddInlinePicker(PickerConfig)
+                PickerConfig = PickerConfig or {}
+                PickerConfig.Title = PickerConfig.Title or "Picker"
+                PickerConfig.Options = PickerConfig.Options or {}
+                PickerConfig.Multi = PickerConfig.Multi or false
+                PickerConfig.Callback = PickerConfig.Callback or function(_) end
+                PickerConfig.Default = PickerConfig.Default or (PickerConfig.Multi and {} or nil)
+
+                local configKey = "InlinePicker_" .. PickerConfig.Title
+                local shouldSave = PickerConfig.Save ~= false
+                if shouldSave and ConfigData[configKey] ~= nil then
+                    PickerConfig.Default = ConfigData[configKey]
+                end
+
+                local PickerFunc = { Value = PickerConfig.Default, Options = PickerConfig.Options }
+
+                local function Persist()
+                    if not shouldSave then return end
+                    ConfigData[configKey] = PickerFunc.Value
+                    QueueSaveConfig()
+                end
+
+                local function CurrentLabel()
+                    if PickerConfig.Multi then
+                        local n = 0
+                        for _ in pairs(PickerFunc.Value or {}) do n = n + 1 end
+                        return n == 0 and "None selected" or (n .. " selected")
+                    else
+                        return PickerFunc.Value and tostring(PickerFunc.Value) or "None selected"
+                    end
+                end
+
+                local Root = Instance.new("Frame")
+                Root.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                Root.BackgroundTransparency = 0.935
+                Root.BorderSizePixel = 0
+                Root.LayoutOrder = CountItem
+                Root.ClipsDescendants = true
+                Root.Size = UDim2.new(1, 0, 0, 46)
+                Root.Name = "InlinePicker"
+                Root.Parent = SectionAdd
+
+                local RootCorner = Instance.new("UICorner")
+                RootCorner.CornerRadius = UDim.new(0, 4)
+                RootCorner.Parent = Root
+
+                local HeaderBtn = Instance.new("TextButton")
+                HeaderBtn.Text = ""
+                HeaderBtn.BackgroundTransparency = 1
+                HeaderBtn.Size = UDim2.new(1, 0, 0, 46)
+                HeaderBtn.Parent = Root
+
+                local PTitle = Instance.new("TextLabel")
+                PTitle.Font = Enum.Font.GothamBold
+                PTitle.Text = PickerConfig.Title
+                PTitle.TextColor3 = Color3.fromRGB(230, 230, 230)
+                PTitle.TextSize = 13
+                PTitle.TextXAlignment = Enum.TextXAlignment.Left
+                PTitle.BackgroundTransparency = 1
+                PTitle.Position = UDim2.new(0, 10, 0, 10)
+                PTitle.Size = UDim2.new(1, -160, 0, 13)
+                PTitle.Parent = Root
+
+                local PValue = Instance.new("TextLabel")
+                PValue.Font = Enum.Font.Gotham
+                PValue.Text = CurrentLabel()
+                PValue.TextColor3 = Color3.fromRGB(255, 255, 255)
+                PValue.TextTransparency = 0.6
+                PValue.TextSize = 12
+                PValue.TextXAlignment = Enum.TextXAlignment.Left
+                PValue.BackgroundTransparency = 1
+                PValue.Position = UDim2.new(0, 10, 0, 25)
+                PValue.Size = UDim2.new(1, -160, 0, 12)
+                PValue.Parent = Root
+
+                local Chevron = Instance.new("TextLabel")
+                Chevron.Font = Enum.Font.GothamBold
+                Chevron.Text = "▾"
+                Chevron.TextColor3 = GuiConfig.Color
+                Chevron.TextSize = 16
+                Chevron.AnchorPoint = Vector2.new(1, 0.5)
+                Chevron.BackgroundTransparency = 1
+                Chevron.Position = UDim2.new(1, -10, 0, 23)
+                Chevron.Size = UDim2.new(0, 20, 0, 20)
+                Chevron.Parent = Root
+
+                local Body = Instance.new("Frame")
+                Body.BackgroundTransparency = 1
+                Body.Position = UDim2.new(0, 0, 0, 46)
+                Body.Size = UDim2.new(1, 0, 0, 0)
+                Body.Parent = Root
+
+                local BodyPad = Instance.new("UIPadding")
+                BodyPad.PaddingLeft = UDim.new(0, 8)
+                BodyPad.PaddingRight = UDim.new(0, 8)
+                BodyPad.PaddingBottom = UDim.new(0, 8)
+                BodyPad.Parent = Body
+
+                local SearchBox = Instance.new("TextBox")
+                SearchBox.PlaceholderText = "Search..."
+                SearchBox.Font = Enum.Font.Gotham
+                SearchBox.Text = ""
+                SearchBox.TextSize = 12
+                SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+                SearchBox.ClearTextOnFocus = false
+                SearchBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                SearchBox.BackgroundTransparency = 0.9
+                SearchBox.BorderSizePixel = 0
+                SearchBox.Position = UDim2.new(0, 0, 0, 0)
+                SearchBox.Size = UDim2.new(1, 0, 0, 24)
+                SearchBox.Parent = Body
+
+                local SearchCorner = Instance.new("UICorner")
+                SearchCorner.CornerRadius = UDim.new(0, 4)
+                SearchCorner.Parent = SearchBox
+
+                local SearchPad = Instance.new("UIPadding")
+                SearchPad.PaddingLeft = UDim.new(0, 8)
+                SearchPad.Parent = SearchBox
+
+                local OptList = Instance.new("Frame")
+                OptList.BackgroundTransparency = 1
+                OptList.Position = UDim2.new(0, 0, 0, 30)
+                OptList.Size = UDim2.new(1, 0, 0, 0)
+                OptList.AutomaticSize = Enum.AutomaticSize.Y
+                OptList.Parent = Body
+
+                local OptListLayout = Instance.new("UIListLayout")
+                OptListLayout.Padding = UDim.new(0, 3)
+                OptListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                OptListLayout.Parent = OptList
+
+                local expanded = false
+                local optionButtons = {}
+
+                local function IsSelected(opt)
+                    if PickerConfig.Multi then
+                        return PickerFunc.Value and PickerFunc.Value[opt] == true
+                    else
+                        return PickerFunc.Value == opt
+                    end
+                end
+
+                local function RefreshVisuals()
+                    PValue.Text = CurrentLabel()
+                    for opt, btn in pairs(optionButtons) do
+                        if btn and btn.Parent then
+                            btn.BackgroundTransparency = IsSelected(opt) and 0.75 or 0.94
+                        end
+                    end
+                end
+
+                local function Resize()
+                    task.defer(function()
+                        local bodyH = expanded and (30 + OptListLayout.AbsoluteContentSize.Y + 8) or 0
+                        Body.Size = UDim2.new(1, 0, 0, bodyH)
+                        Root.Size = UDim2.new(1, 0, 0, 46 + bodyH)
+                        UpdateSizeSection()
+                    end)
+                end
+
+                local function SelectOption(opt)
+                    if PickerConfig.Multi then
+                        PickerFunc.Value = PickerFunc.Value or {}
+                        if PickerFunc.Value[opt] then
+                            PickerFunc.Value[opt] = nil
+                        else
+                            PickerFunc.Value[opt] = true
+                        end
+                    else
+                        PickerFunc.Value = opt
+                    end
+                    RefreshVisuals()
+                    Persist()
+                    PickerConfig.Callback(PickerFunc.Value)
+                end
+
+                local function BuildOptions()
+                    for _, c in OptList:GetChildren() do
+                        if c:IsA("GuiObject") then c:Destroy() end
+                    end
+                    optionButtons = {}
+
+                    local query = string.lower(SearchBox.Text)
+                    local order = 0
+                    for _, opt in ipairs(PickerConfig.Options) do
+                        local label = string.lower(tostring(opt))
+                        if query == "" or string.find(label, query, 1, true) then
+                            order = order + 1
+                            local OptBtn = Instance.new("TextButton")
+                            OptBtn.Font = Enum.Font.Gotham
+                            OptBtn.Text = tostring(opt)
+                            OptBtn.TextColor3 = Color3.fromRGB(230, 230, 230)
+                            OptBtn.TextSize = 12
+                            OptBtn.TextXAlignment = Enum.TextXAlignment.Left
+                            OptBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                            OptBtn.BackgroundTransparency = IsSelected(opt) and 0.75 or 0.94
+                            OptBtn.Size = UDim2.new(1, 0, 0, 24)
+                            OptBtn.LayoutOrder = order
+                            OptBtn.Parent = OptList
+
+                            local OptPad = Instance.new("UIPadding")
+                            OptPad.PaddingLeft = UDim.new(0, 8)
+                            OptPad.Parent = OptBtn
+
+                            local OptCorner = Instance.new("UICorner")
+                            OptCorner.CornerRadius = UDim.new(0, 4)
+                            OptCorner.Parent = OptBtn
+
+                            optionButtons[opt] = OptBtn
+
+                            OptBtn.MouseButton1Click:Connect(function()
+                                SelectOption(opt)
+                            end)
+                        end
+                    end
+                    Resize()
+                end
+
+                HeaderBtn.MouseButton1Click:Connect(function()
+                    expanded = not expanded
+                    Chevron.Text = expanded and "▴" or "▾"
+                    Root.ClipsDescendants = not expanded
+                    if expanded then
+                        BuildOptions()
+                    else
+                        Resize()
+                    end
+                end)
+
+                local searchTicket = 0
+                SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+                    searchTicket = searchTicket + 1
+                    local ticket = searchTicket
+                    task.delay(0.08, function()
+                        if ticket == searchTicket then
+                            BuildOptions()
+                        end
+                    end)
+                end)
+
+                function PickerFunc:Get()
+                    return PickerFunc.Value
+                end
+
+                function PickerFunc:Set(value)
+                    PickerFunc.Value = value
+                    RefreshVisuals()
+                    Persist()
+                end
+
+                function PickerFunc:SetOptions(list)
+                    PickerConfig.Options = list or {}
+                    PickerFunc.Options = PickerConfig.Options
+                    if expanded then BuildOptions() end
+                end
+
+                CountItem = CountItem + 1
+                RegisterSearch({ label = PickerConfig.Title, tab = TabConfig.Name, kind = "Picker", switch = SearchSwitch })
+                return PickerFunc
+            end
+
             function Items:AddFruitTargetList(FruitTargetConfig)
     FruitTargetConfig = FruitTargetConfig or {}
     FruitTargetConfig.Title = FruitTargetConfig.Title or "Fruit Targets"
