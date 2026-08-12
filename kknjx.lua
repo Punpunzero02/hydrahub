@@ -6676,6 +6676,9 @@ end
             	WQConfig.OnJoinWorkerServer = WQConfig.OnJoinWorkerServer or function(_) return true end
             	WQConfig.RefreshInterval = WQConfig.RefreshInterval or 5
             	WQConfig.MaxLogEntries = WQConfig.MaxLogEntries or 200
+            	if WQConfig.RealtimeRefresh == nil then WQConfig.RealtimeRefresh = true end
+            	if WQConfig.RealtimeQueue == nil then WQConfig.RealtimeQueue = true end
+            	if WQConfig.RealtimeAutoSend == nil then WQConfig.RealtimeAutoSend = true end
 
             	local WQFolderBase = "HydraHub/Configs/" .. gameName .. "/_workerqueue"
             	local safeTitle = WQConfig.Title:gsub("[^%w_ ]", ""):gsub("%s+", "_")
@@ -7196,45 +7199,82 @@ end
             		end,
             	})
 
-            	task.spawn(function()
-            		while true do
-            			task.wait(WQConfig.RefreshInterval)
-            			local ok, err = pcall(function()
-            				RefreshWorkers()
-            				RefreshWorkerDropdownOptions()
-            				RefreshSummary()
-            				RefreshQueueLabel()
-            				RefreshLogsLabel()
-            			end)
-            			if not ok then warn("[WorkerQueue] refresh loop error:", err) end
-            		end
-            	end)
+            	local function DoFullRefresh()
+            		local ok, err = pcall(function()
+            			RefreshWorkers()
+            			RefreshWorkerDropdownOptions()
+            			RefreshSummary()
+            			RefreshQueueLabel()
+            			RefreshLogsLabel()
+            		end)
+            		if not ok then warn("[WorkerQueue] refresh error:", err) end
+            	end
 
-            	task.spawn(function()
-            		while true do
-            			task.wait(1)
-            			if not State.QueuePaused and #State.Queue > 0 then
-            				pcall(ProcessQueueOnce)
+            	if WQConfig.RealtimeRefresh then
+            		task.spawn(function()
+            			while true do
+            				task.wait(WQConfig.RefreshInterval)
+            				DoFullRefresh()
             			end
-            		end
-            	end)
+            		end)
+            	else
+            		Items:AddButton({
+            			Title = "Refresh Sekarang",
+            			SubTitle = "Realtime refresh dimatikan",
+            			Callback = DoFullRefresh,
+            		})
+            	end
 
-            	task.spawn(function()
-            		while true do
-            			if State.AutoSend then
-            				local hours = State.IntervalHours or 6
-            				local deadline = os.time() + (hours * 3600)
-            				while State.AutoSend and os.time() < deadline do
-            					task.wait(5)
+            	if WQConfig.RealtimeQueue then
+            		task.spawn(function()
+            			while true do
+            				task.wait(1)
+            				if not State.QueuePaused and #State.Queue > 0 then
+            					pcall(ProcessQueueOnce)
             				end
+            			end
+            		end)
+            	else
+            		Items:AddButton({
+            			Title = "Proses Queue Sekarang",
+            			SubTitle = "Realtime queue dimatikan",
+            			Callback = function()
+            				if not State.QueuePaused and #State.Queue > 0 then
+            					pcall(ProcessQueueOnce)
+            				end
+            			end,
+            		})
+            	end
+
+            	if WQConfig.RealtimeAutoSend then
+            		task.spawn(function()
+            			while true do
             				if State.AutoSend then
-            					AddLog("Auto send: memulai ulang siklus queue", "info")
+            					local hours = State.IntervalHours or 6
+            					local deadline = os.time() + (hours * 3600)
+            					while State.AutoSend and os.time() < deadline do
+            						task.wait(5)
+            					end
+            					if State.AutoSend then
+            						AddLog("Auto send: memulai ulang siklus queue", "info")
+            					end
+            				else
+            					task.wait(2)
             				end
-            			else
-            				task.wait(2)
             			end
-            		end
-            	end)
+            		end)
+            	else
+            		Items:AddButton({
+            			Title = "Jalankan Auto Send Sekarang",
+            			SubTitle = "Realtime auto-send dimatikan",
+            			Callback = function()
+            				if State.AutoSend then
+            					AddLog("Auto send: dijalankan manual", "info")
+            					pcall(ProcessQueueOnce)
+            				end
+            			end,
+            		})
+            	end
 
             	RefreshWorkers()
             	RefreshWorkerDropdownOptions()
