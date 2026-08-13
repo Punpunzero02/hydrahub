@@ -894,7 +894,7 @@ function Chloex:Window(GuiConfig)
     GuiConfig.Title        = GuiConfig.Title or "HydraHub"
     GuiConfig.Footer       = GuiConfig.Footer or ""
     GuiConfig.Color        = GuiConfig.Color or Color3.fromRGB(255, 0, 255)
-    GuiConfig["Tab Width"] = GuiConfig["Tab Width"] or 120
+    GuiConfig["Tab Width"] = GuiConfig["Tab Width"] or 156
     GuiConfig.Version      = GuiConfig.Version or 1
     if GuiConfig.Search == nil then GuiConfig.Search = true end
 
@@ -2197,20 +2197,20 @@ function Chloex:Window(GuiConfig)
         local UIStroke2 = Instance.new("UIStroke");
         local UICorner4 = Instance.new("UICorner");
 
-        Tab.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Tab.BackgroundColor3 = GuiConfig.Color
         if CountTab == 0 then
-            Tab.BackgroundTransparency = 0.9200000166893005
+            Tab.BackgroundTransparency = 0.8799999952316284
         else
-            Tab.BackgroundTransparency = 0.9990000128746033
+            Tab.BackgroundTransparency = 1
         end
         Tab.BorderColor3 = Color3.fromRGB(0, 0, 0)
         Tab.BorderSizePixel = 0
         Tab.LayoutOrder = CountTab
-        Tab.Size = UDim2.new(1, 0, 0, 36)
+        Tab.Size = UDim2.new(1, 0, 0, 44)
         Tab.Name = "Tab"
         Tab.Parent = ScrollTab
 
-        UICorner3.CornerRadius = UDim.new(0, 4)
+        UICorner3.CornerRadius = UDim.new(0, 8)
         UICorner3.Parent = Tab
 
         TabButton.Font = Enum.Font.GothamBold
@@ -2219,7 +2219,7 @@ function Chloex:Window(GuiConfig)
         TabButton.TextSize = 13
         TabButton.TextXAlignment = Enum.TextXAlignment.Left
         TabButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        TabButton.BackgroundTransparency = 0.9990000128746033
+        TabButton.BackgroundTransparency = 1
         TabButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
         TabButton.BorderSizePixel = 0
         TabButton.Size = UDim2.new(1, 0, 1, 0)
@@ -2227,44 +2227,53 @@ function Chloex:Window(GuiConfig)
         TabButton.Parent = Tab
 
         TabName.Font = Enum.Font.GothamBold
-        TabName.Text = "[ " .. tostring(TabConfig.Name) .. " ]"
-        TabName.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TabName.Text = tostring(TabConfig.Name)
+        if CountTab == 0 then
+            TabName.TextColor3 = Color3.fromRGB(255, 255, 255)
+        else
+            TabName.TextColor3 = Color3.fromRGB(150, 154, 168)
+        end
         TabName.TextSize = 14
         TabName.TextXAlignment = Enum.TextXAlignment.Left
         TabName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        TabName.BackgroundTransparency = 0.9990000128746033
+        TabName.BackgroundTransparency = 1
         TabName.BorderColor3 = Color3.fromRGB(0, 0, 0)
         TabName.BorderSizePixel = 0
-        TabName.Size = UDim2.new(1, 0, 1, 0)
-        TabName.Position = UDim2.new(0, 34, 0, 0)
+        TabName.Size = UDim2.new(1, -46, 1, 0)
+        TabName.Position = UDim2.new(0, 44, 0, 0)
         TabName.Name = "TabName"
         TabName.Parent = Tab
 
         FeatureImg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        FeatureImg.BackgroundTransparency = 0.9990000128746033
+        FeatureImg.BackgroundTransparency = 1
         FeatureImg.BorderColor3 = Color3.fromRGB(0, 0, 0)
         FeatureImg.BorderSizePixel = 0
-        FeatureImg.Position = UDim2.new(0, 10, 0, 9)
-        FeatureImg.Size = UDim2.new(0, 18, 0, 18)
+        FeatureImg.Position = UDim2.new(0, 14, 0.5, -10)
+        FeatureImg.Size = UDim2.new(0, 20, 0, 20)
+        FeatureImg.ImageColor3 = (CountTab == 0) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 154, 168)
         FeatureImg.Name = "FeatureImg"
         FeatureImg.Parent = Tab
+
+        local ChooseFrame = Instance.new("Frame");
+        ChooseFrame.BackgroundColor3 = GuiConfig.Color
+        ChooseFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        ChooseFrame.BorderSizePixel = 0
+        ChooseFrame.AnchorPoint = Vector2.new(0, 0.5)
+        ChooseFrame.Position = UDim2.new(0, 0, 0.5, 0)
+        if CountTab == 0 then
+            ChooseFrame.Size = UDim2.new(0, 3, 0, 26)
+        else
+            ChooseFrame.Size = UDim2.new(0, 3, 0, 0)
+        end
+        ChooseFrame.Name = "ChooseFrame"
+        ChooseFrame.Parent = Tab
+
+        UICorner4.CornerRadius = UDim.new(1, 0)
+        UICorner4.Parent = ChooseFrame
+
         if CountTab == 0 then
             LayersPageLayout:JumpToIndex(0)
             NameTab.Text = TabConfig.Name
-            local ChooseFrame = Instance.new("Frame");
-            ChooseFrame.BackgroundColor3 = GuiConfig.Color
-            ChooseFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-            ChooseFrame.BorderSizePixel = 0
-            ChooseFrame.Position = UDim2.new(0, 2, 0, 9)
-            ChooseFrame.Size = UDim2.new(0, 1, 0, 12)
-            ChooseFrame.Name = "ChooseFrame"
-            ChooseFrame.Parent = Tab
-
-            UIStroke2.Color = GuiConfig.Color
-            UIStroke2.Thickness = 1.600000023841858
-            UIStroke2.Parent = ChooseFrame
-
-            UICorner4.Parent = ChooseFrame
         end
 
         if TabConfig.Icon ~= "" then
@@ -2276,49 +2285,52 @@ function Chloex:Window(GuiConfig)
         end
 
         local function switchToTab(force)
-            local FrameChoose
-            for a, s in ScrollTab:GetChildren() do
-                for i, v in s:GetChildren() do
-                    if v.Name == "ChooseFrame" then
-                        FrameChoose = v
-                        break
-                    end
-                end
-            end
-            if FrameChoose ~= nil and (force or Tab.LayoutOrder ~= LayersPageLayout.CurrentPage.LayoutOrder) then
+            local FrameChoose = Tab:FindFirstChild("ChooseFrame")
+            if force or Tab.LayoutOrder ~= LayersPageLayout.CurrentPage.LayoutOrder then
                 for _, TabFrame in ScrollTab:GetChildren() do
                     if TabFrame.Name == "Tab" then
                         TweenService:Create(
                             TabFrame,
-                            TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
-                            { BackgroundTransparency = 0.9990000128746033 }
+                            TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                            { BackgroundTransparency = 1 }
                         ):Play()
+                        local lbl = TabFrame:FindFirstChild("TabName")
+                        local img = TabFrame:FindFirstChild("FeatureImg")
+                        local chz = TabFrame:FindFirstChild("ChooseFrame")
+                        if lbl then
+                            TweenService:Create(lbl, TweenInfo.new(0.25), { TextColor3 = Color3.fromRGB(150, 154, 168) }):Play()
+                        end
+                        if img then
+                            TweenService:Create(img, TweenInfo.new(0.25), { ImageColor3 = Color3.fromRGB(150, 154, 168) }):Play()
+                        end
+                        if chz then
+                            TweenService:Create(chz, TweenInfo.new(0.25), { Size = UDim2.new(0, 3, 0, 0) }):Play()
+                        end
                     end
                 end
                 TweenService:Create(
                     Tab,
-                    TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
-                    { BackgroundTransparency = 0.9200000166893005 }
+                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                    { BackgroundTransparency = 0.8799999952316284 }
+                ):Play()
+                TweenService:Create(
+                    TabName,
+                    TweenInfo.new(0.3),
+                    { TextColor3 = Color3.fromRGB(255, 255, 255) }
+                ):Play()
+                TweenService:Create(
+                    FeatureImg,
+                    TweenInfo.new(0.3),
+                    { ImageColor3 = Color3.fromRGB(255, 255, 255) }
                 ):Play()
                 TweenService:Create(
                     FrameChoose,
-                    TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-                    { Position = UDim2.new(0, 2, 0, 9 + (39 * Tab.LayoutOrder)) }
+                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                    { Size = UDim2.new(0, 3, 0, 26) }
                 ):Play()
                 LayersPageLayout:JumpToIndex(Tab.LayoutOrder)
                 task.wait(0.05)
                 NameTab.Text = TabConfig.Name
-                TweenService:Create(
-                    FrameChoose,
-                    TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-                    { Size = UDim2.new(0, 1, 0, 20) }
-                ):Play()
-                task.wait(0.2)
-                TweenService:Create(
-                    FrameChoose,
-                    TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-                    { Size = UDim2.new(0, 1, 0, 12) }
-                ):Play()
             end
         end
 
