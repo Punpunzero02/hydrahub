@@ -176,6 +176,16 @@ local Icons = {
     fish      = "rbxassetid://97167558235554",
 }
 
+local Theme = {
+    Bg        = Color3.fromRGB(18, 14, 28),
+    Sidebar   = Color3.fromRGB(16, 12, 24),
+    Panel     = Color3.fromRGB(24, 19, 36),
+    Panel2    = Color3.fromRGB(28, 22, 42),
+    Border    = Color3.fromRGB(45, 38, 60),
+    Text      = Color3.fromRGB(235, 232, 240),
+    SubText   = Color3.fromRGB(150, 143, 165),
+}
+
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -894,7 +904,7 @@ function Chloex:Window(GuiConfig)
     GuiConfig.Title        = GuiConfig.Title or "HydraHub"
     GuiConfig.Footer       = GuiConfig.Footer or ""
     GuiConfig.Color        = GuiConfig.Color or Color3.fromRGB(255, 0, 255)
-    GuiConfig["Tab Width"] = GuiConfig["Tab Width"] or 156
+    GuiConfig["Tab Width"] = GuiConfig["Tab Width"] or 120
     GuiConfig.Version      = GuiConfig.Version or 1
     if GuiConfig.Search == nil then GuiConfig.Search = true end
 
@@ -1180,8 +1190,8 @@ function Chloex:Window(GuiConfig)
         Main.BackgroundTransparency = 1
         Main.ImageTransparency = GuiConfig.ThemeTransparency or 0.15
     else
-        Main.BackgroundColor3 = Color3.fromRGB(9, 10, 16)
-        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.03
+        Main.BackgroundColor3 = Theme.Bg
+        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0
     end
 
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -1192,23 +1202,36 @@ function Chloex:Window(GuiConfig)
     Main.Name = "Main"
     Main.Parent = DropShadow
 
+    UICorner.CornerRadius = UDim.new(0, 12)
     UICorner.Parent = Main
 
     if not GuiConfig.Theme then
         local GlassStroke = Instance.new("UIStroke")
-        GlassStroke.Color = GuiConfig.Color or Color3.fromRGB(90, 140, 255)
+        GlassStroke.Color = Theme.Border
         GlassStroke.Thickness = 1
-        GlassStroke.Transparency = 0.55
+        GlassStroke.Transparency = 0
         GlassStroke.Parent = Main
     end
 
-    Top.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    Top.BackgroundTransparency = 0.9990000128746033
+    Top.BackgroundColor3 = Theme.Sidebar
+    Top.BackgroundTransparency = 0
     Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Top.BorderSizePixel = 0
     Top.Size = UDim2.new(1, 0, 0, 38)
     Top.Name = "Top"
     Top.Parent = Main
+
+    local TopCorner = Instance.new("UICorner")
+    TopCorner.CornerRadius = UDim.new(0, 12)
+    TopCorner.Parent = Top
+    local TopFix = Instance.new("Frame")
+    TopFix.Size = UDim2.new(1, 0, 0, 12)
+    TopFix.Position = UDim2.new(0, 0, 1, -12)
+    TopFix.BackgroundColor3 = Theme.Sidebar
+    TopFix.BorderSizePixel = 0
+    TopFix.ZIndex = 0
+    TopFix.Name = "TopFix"
+    TopFix.Parent = Top
 
     local HeaderLogo = Instance.new("ImageLabel")
     HeaderLogo.BackgroundTransparency = 1
@@ -1379,23 +1402,30 @@ function Chloex:Window(GuiConfig)
     Close.TextColor3 = Color3.fromRGB(0, 0, 0)
     Close.TextSize = 14
     Close.AnchorPoint = Vector2.new(1, 0.5)
-    Close.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Close.BackgroundTransparency = 0.9990000128746033
+    Close.BackgroundColor3 = Theme.Panel
+    Close.BackgroundTransparency = 0
+    Close.AutoButtonColor = false
     Close.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Close.BorderSizePixel = 0
     Close.Position = UDim2.new(1, -8, 0.5, 0)
-    Close.Size = UDim2.new(0, 25, 0, 25)
+    Close.Size = UDim2.new(0, 24, 0, 24)
     Close.Name = "Close"
     Close.Parent = Top
+    do
+        local CloseCorner = Instance.new("UICorner")
+        CloseCorner.CornerRadius = UDim.new(0, 6)
+        CloseCorner.Parent = Close
+    end
 
     ImageLabel1.Image = "rbxassetid://9886659671"
     ImageLabel1.AnchorPoint = Vector2.new(0.5, 0.5)
     ImageLabel1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     ImageLabel1.BackgroundTransparency = 0.9990000128746033
+    ImageLabel1.ImageColor3 = Theme.SubText
     ImageLabel1.BorderColor3 = Color3.fromRGB(0, 0, 0)
     ImageLabel1.BorderSizePixel = 0
     ImageLabel1.Position = UDim2.new(0.49, 0, 0.5, 0)
-    ImageLabel1.Size = UDim2.new(1, -8, 1, -8)
+    ImageLabel1.Size = UDim2.new(1, -12, 1, -12)
     ImageLabel1.Parent = Close
 
     Min.Font = Enum.Font.SourceSans
@@ -1403,41 +1433,48 @@ function Chloex:Window(GuiConfig)
     Min.TextColor3 = Color3.fromRGB(0, 0, 0)
     Min.TextSize = 14
     Min.AnchorPoint = Vector2.new(1, 0.5)
-    Min.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Min.BackgroundTransparency = 0.9990000128746033
+    Min.BackgroundColor3 = Theme.Panel
+    Min.BackgroundTransparency = 0
+    Min.AutoButtonColor = false
     Min.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Min.BorderSizePixel = 0
     Min.Position = UDim2.new(1, -38, 0.5, 0)
-    Min.Size = UDim2.new(0, 25, 0, 25)
+    Min.Size = UDim2.new(0, 24, 0, 24)
     Min.Name = "Min"
     Min.Parent = Top
+    do
+        local MinCorner = Instance.new("UICorner")
+        MinCorner.CornerRadius = UDim.new(0, 6)
+        MinCorner.Parent = Min
+    end
 
     ImageLabel2.Image = "rbxassetid://9886659276"
     ImageLabel2.AnchorPoint = Vector2.new(0.5, 0.5)
     ImageLabel2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     ImageLabel2.BackgroundTransparency = 0.9990000128746033
-    ImageLabel2.ImageTransparency = 0.2
+    ImageLabel2.ImageTransparency = 0
+    ImageLabel2.ImageColor3 = Theme.SubText
     ImageLabel2.BorderColor3 = Color3.fromRGB(0, 0, 0)
     ImageLabel2.BorderSizePixel = 0
     ImageLabel2.Position = UDim2.new(0.5, 0, 0.5, 0)
-    ImageLabel2.Size = UDim2.new(1, -9, 1, -9)
+    ImageLabel2.Size = UDim2.new(1, -12, 1, -12)
     ImageLabel2.Parent = Min
 
-    LayersTab.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    LayersTab.BackgroundTransparency = 0.9990000128746033
+    LayersTab.BackgroundColor3 = Theme.Sidebar
+    LayersTab.BackgroundTransparency = 0
     LayersTab.BorderColor3 = Color3.fromRGB(0, 0, 0)
     LayersTab.BorderSizePixel = 0
-    LayersTab.Position = UDim2.new(0, 9, 0, 50)
-    LayersTab.Size = UDim2.new(0, GuiConfig["Tab Width"], 1, -59)
+    LayersTab.Position = UDim2.new(0, 9, 0, 47)
+    LayersTab.Size = UDim2.new(0, GuiConfig["Tab Width"], 1, -56)
     LayersTab.Name = "LayersTab"
     LayersTab.Parent = Main
 
-    UICorner2.CornerRadius = UDim.new(0, 2)
+    UICorner2.CornerRadius = UDim.new(0, 8)
     UICorner2.Parent = LayersTab
 
     DecideFrame.AnchorPoint = Vector2.new(0.5, 0)
     DecideFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    DecideFrame.BackgroundTransparency = 0.85
+    DecideFrame.BackgroundTransparency = 1
     DecideFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
     DecideFrame.BorderSizePixel = 0
     DecideFrame.Position = UDim2.new(0.5, 0, 0, 38)
@@ -1446,7 +1483,7 @@ function Chloex:Window(GuiConfig)
     DecideFrame.Parent = Main
 
     Layers.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    Layers.BackgroundTransparency = 0.9990000128746033
+    Layers.BackgroundTransparency = 1
     Layers.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Layers.BorderSizePixel = 0
     Layers.Position = UDim2.new(0, GuiConfig["Tab Width"] + 18, 0, 50)
@@ -1454,7 +1491,7 @@ function Chloex:Window(GuiConfig)
     Layers.Name = "Layers"
     Layers.Parent = Main
 
-    UICorner6.CornerRadius = UDim.new(0, 2)
+    UICorner6.CornerRadius = UDim.new(0, 8)
     UICorner6.Parent = Layers
 
     NameTab.Font = Enum.Font.GothamBold
@@ -1500,7 +1537,7 @@ function Chloex:Window(GuiConfig)
     ScrollTab.ScrollBarThickness = 0
     ScrollTab.Active = true
     ScrollTab.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    ScrollTab.BackgroundTransparency = 0.9990000128746033
+    ScrollTab.BackgroundTransparency = 1
     ScrollTab.BorderColor3 = Color3.fromRGB(0, 0, 0)
     ScrollTab.BorderSizePixel = 0
     if GuiConfig.Search then
@@ -2197,20 +2234,20 @@ function Chloex:Window(GuiConfig)
         local UIStroke2 = Instance.new("UIStroke");
         local UICorner4 = Instance.new("UICorner");
 
-        Tab.BackgroundColor3 = GuiConfig.Color
+        Tab.BackgroundColor3 = Theme.Panel
         if CountTab == 0 then
-            Tab.BackgroundTransparency = 0.8799999952316284
+            Tab.BackgroundTransparency = 0
         else
             Tab.BackgroundTransparency = 1
         end
         Tab.BorderColor3 = Color3.fromRGB(0, 0, 0)
         Tab.BorderSizePixel = 0
         Tab.LayoutOrder = CountTab
-        Tab.Size = UDim2.new(1, 0, 0, 44)
+        Tab.Size = UDim2.new(1, 0, 0, 34)
         Tab.Name = "Tab"
         Tab.Parent = ScrollTab
 
-        UICorner3.CornerRadius = UDim.new(0, 8)
+        UICorner3.CornerRadius = UDim.new(0, 6)
         UICorner3.Parent = Tab
 
         TabButton.Font = Enum.Font.GothamBold
@@ -2220,60 +2257,54 @@ function Chloex:Window(GuiConfig)
         TabButton.TextXAlignment = Enum.TextXAlignment.Left
         TabButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         TabButton.BackgroundTransparency = 1
+        TabButton.AutoButtonColor = false
         TabButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
         TabButton.BorderSizePixel = 0
         TabButton.Size = UDim2.new(1, 0, 1, 0)
         TabButton.Name = "TabButton"
         TabButton.Parent = Tab
 
-        TabName.Font = Enum.Font.GothamBold
+        TabName.Font = CountTab == 0 and Enum.Font.GothamBold or Enum.Font.Gotham
         TabName.Text = tostring(TabConfig.Name)
-        if CountTab == 0 then
-            TabName.TextColor3 = Color3.fromRGB(255, 255, 255)
-        else
-            TabName.TextColor3 = Color3.fromRGB(150, 154, 168)
-        end
-        TabName.TextSize = 14
+        TabName.TextColor3 = CountTab == 0 and Theme.Text or Theme.SubText
+        TabName.TextSize = 13
         TabName.TextXAlignment = Enum.TextXAlignment.Left
         TabName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         TabName.BackgroundTransparency = 1
         TabName.BorderColor3 = Color3.fromRGB(0, 0, 0)
         TabName.BorderSizePixel = 0
-        TabName.Size = UDim2.new(1, -46, 1, 0)
-        TabName.Position = UDim2.new(0, 44, 0, 0)
+        TabName.Size = UDim2.new(1, -40, 1, 0)
+        TabName.Position = UDim2.new(0, 34, 0, 0)
         TabName.Name = "TabName"
         TabName.Parent = Tab
 
         FeatureImg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         FeatureImg.BackgroundTransparency = 1
+        FeatureImg.ImageColor3 = CountTab == 0 and GuiConfig.Color or Theme.SubText
         FeatureImg.BorderColor3 = Color3.fromRGB(0, 0, 0)
         FeatureImg.BorderSizePixel = 0
-        FeatureImg.Position = UDim2.new(0, 14, 0.5, -10)
-        FeatureImg.Size = UDim2.new(0, 20, 0, 20)
-        FeatureImg.ImageColor3 = (CountTab == 0) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(150, 154, 168)
+        FeatureImg.Position = UDim2.new(0, 10, 0, 8)
+        FeatureImg.Size = UDim2.new(0, 18, 0, 18)
         FeatureImg.Name = "FeatureImg"
         FeatureImg.Parent = Tab
-
-        local ChooseFrame = Instance.new("Frame");
-        ChooseFrame.BackgroundColor3 = GuiConfig.Color
-        ChooseFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-        ChooseFrame.BorderSizePixel = 0
-        ChooseFrame.AnchorPoint = Vector2.new(0, 0.5)
-        ChooseFrame.Position = UDim2.new(0, 0, 0.5, 0)
-        if CountTab == 0 then
-            ChooseFrame.Size = UDim2.new(0, 3, 0, 26)
-        else
-            ChooseFrame.Size = UDim2.new(0, 3, 0, 0)
-        end
-        ChooseFrame.Name = "ChooseFrame"
-        ChooseFrame.Parent = Tab
-
-        UICorner4.CornerRadius = UDim.new(1, 0)
-        UICorner4.Parent = ChooseFrame
-
         if CountTab == 0 then
             LayersPageLayout:JumpToIndex(0)
             NameTab.Text = TabConfig.Name
+            local ChooseFrame = Instance.new("Frame");
+            ChooseFrame.BackgroundColor3 = GuiConfig.Color
+            ChooseFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+            ChooseFrame.BorderSizePixel = 0
+            ChooseFrame.Position = UDim2.new(0, 2, 0, 8)
+            ChooseFrame.Size = UDim2.new(0, 3, 0, 18)
+            ChooseFrame.Name = "ChooseFrame"
+            ChooseFrame.Parent = Tab
+
+            UIStroke2.Thickness = 0
+            UIStroke2.Transparency = 1
+            UIStroke2.Parent = ChooseFrame
+
+            UICorner4.CornerRadius = UDim.new(1, 0)
+            UICorner4.Parent = ChooseFrame
         end
 
         if TabConfig.Icon ~= "" then
@@ -2285,52 +2316,49 @@ function Chloex:Window(GuiConfig)
         end
 
         local function switchToTab(force)
-            local FrameChoose = Tab:FindFirstChild("ChooseFrame")
-            if force or Tab.LayoutOrder ~= LayersPageLayout.CurrentPage.LayoutOrder then
+            local FrameChoose
+            for a, s in ScrollTab:GetChildren() do
+                for i, v in s:GetChildren() do
+                    if v.Name == "ChooseFrame" then
+                        FrameChoose = v
+                        break
+                    end
+                end
+            end
+            if FrameChoose ~= nil and (force or Tab.LayoutOrder ~= LayersPageLayout.CurrentPage.LayoutOrder) then
                 for _, TabFrame in ScrollTab:GetChildren() do
                     if TabFrame.Name == "Tab" then
                         TweenService:Create(
                             TabFrame,
-                            TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-                            { BackgroundTransparency = 1 }
+                            TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
+                            { BackgroundTransparency = 0.9990000128746033 }
                         ):Play()
-                        local lbl = TabFrame:FindFirstChild("TabName")
-                        local img = TabFrame:FindFirstChild("FeatureImg")
-                        local chz = TabFrame:FindFirstChild("ChooseFrame")
-                        if lbl then
-                            TweenService:Create(lbl, TweenInfo.new(0.25), { TextColor3 = Color3.fromRGB(150, 154, 168) }):Play()
-                        end
-                        if img then
-                            TweenService:Create(img, TweenInfo.new(0.25), { ImageColor3 = Color3.fromRGB(150, 154, 168) }):Play()
-                        end
-                        if chz then
-                            TweenService:Create(chz, TweenInfo.new(0.25), { Size = UDim2.new(0, 3, 0, 0) }):Play()
-                        end
                     end
                 end
                 TweenService:Create(
                     Tab,
-                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-                    { BackgroundTransparency = 0.8799999952316284 }
-                ):Play()
-                TweenService:Create(
-                    TabName,
-                    TweenInfo.new(0.3),
-                    { TextColor3 = Color3.fromRGB(255, 255, 255) }
-                ):Play()
-                TweenService:Create(
-                    FeatureImg,
-                    TweenInfo.new(0.3),
-                    { ImageColor3 = Color3.fromRGB(255, 255, 255) }
+                    TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
+                    { BackgroundTransparency = 0.9200000166893005 }
                 ):Play()
                 TweenService:Create(
                     FrameChoose,
-                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-                    { Size = UDim2.new(0, 3, 0, 26) }
+                    TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                    { Position = UDim2.new(0, 2, 0, 8 + (37 * Tab.LayoutOrder)) }
                 ):Play()
                 LayersPageLayout:JumpToIndex(Tab.LayoutOrder)
                 task.wait(0.05)
                 NameTab.Text = TabConfig.Name
+                TweenService:Create(
+                    FrameChoose,
+                    TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                    { Size = UDim2.new(0, 3, 0, 24) }
+                ):Play()
+                task.wait(0.2)
+                TweenService:Create(
+                    FrameChoose,
+                    TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                    { Size = UDim2.new(0, 3, 0, 18) }
+                ):Play()
             end
         end
 
@@ -2378,8 +2406,8 @@ function Chloex:Window(GuiConfig)
             local SectionTitle = Instance.new("TextLabel");
 
             SectionReal.AnchorPoint = Vector2.new(0.5, 0)
-            SectionReal.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            SectionReal.BackgroundTransparency = 0.9350000023841858
+            SectionReal.BackgroundColor3 = Theme.Panel
+            SectionReal.BackgroundTransparency = 0
             SectionReal.BorderColor3 = Color3.fromRGB(0, 0, 0)
             SectionReal.BorderSizePixel = 0
             SectionReal.LayoutOrder = 1
@@ -2388,15 +2416,20 @@ function Chloex:Window(GuiConfig)
             SectionReal.Name = "SectionReal"
             SectionReal.Parent = Section
 
-            UICorner.CornerRadius = UDim.new(0, 4)
+            UICorner.CornerRadius = UDim.new(0, 8)
             UICorner.Parent = SectionReal
+
+            UIStroke.Color = Theme.Border
+            UIStroke.Thickness = 1
+            UIStroke.Transparency = 0
+            UIStroke.Parent = SectionReal
 
             SectionButton.Font = Enum.Font.SourceSans
             SectionButton.Text = ""
             SectionButton.TextColor3 = Color3.fromRGB(0, 0, 0)
             SectionButton.TextSize = 14
             SectionButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            SectionButton.BackgroundTransparency = 0.9990000128746033
+            SectionButton.BackgroundTransparency = 1
             SectionButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
             SectionButton.BorderSizePixel = 0
             SectionButton.Size = UDim2.new(1, 0, 1, 0)
@@ -2405,7 +2438,7 @@ function Chloex:Window(GuiConfig)
 
             FeatureFrame.AnchorPoint = Vector2.new(1, 0.5)
             FeatureFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-            FeatureFrame.BackgroundTransparency = 0.9990000128746033
+            FeatureFrame.BackgroundTransparency = 1
             FeatureFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
             FeatureFrame.BorderSizePixel = 0
             FeatureFrame.Position = UDim2.new(1, -5, 0.5, 0)
@@ -2416,7 +2449,8 @@ function Chloex:Window(GuiConfig)
             FeatureImg.Image = "rbxassetid://16851841101"
             FeatureImg.AnchorPoint = Vector2.new(0.5, 0.5)
             FeatureImg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            FeatureImg.BackgroundTransparency = 0.9990000128746033
+            FeatureImg.BackgroundTransparency = 1
+            FeatureImg.ImageColor3 = Theme.SubText
             FeatureImg.BorderColor3 = Color3.fromRGB(0, 0, 0)
             FeatureImg.BorderSizePixel = 0
             FeatureImg.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -2427,13 +2461,13 @@ function Chloex:Window(GuiConfig)
 
             SectionTitle.Font = Enum.Font.GothamBold
             SectionTitle.Text = Title
-            SectionTitle.TextColor3 = Color3.fromRGB(230.77499270439148, 230.77499270439148, 230.77499270439148)
+            SectionTitle.TextColor3 = Theme.Text
             SectionTitle.TextSize = 13
             SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
             SectionTitle.TextYAlignment = Enum.TextYAlignment.Top
             SectionTitle.AnchorPoint = Vector2.new(0, 0.5)
             SectionTitle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            SectionTitle.BackgroundTransparency = 0.9990000128746033
+            SectionTitle.BackgroundTransparency = 1
             SectionTitle.BorderColor3 = Color3.fromRGB(0, 0, 0)
             SectionTitle.BorderSizePixel = 0
             SectionTitle.Position = UDim2.new(0, 10, 0.5, 0)
@@ -2441,22 +2475,19 @@ function Chloex:Window(GuiConfig)
             SectionTitle.Name = "SectionTitle"
             SectionTitle.Parent = SectionReal
 
-            SectionDecideFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            SectionDecideFrame.BackgroundColor3 = Theme.Border
+            SectionDecideFrame.BackgroundTransparency = 0
             SectionDecideFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
             SectionDecideFrame.AnchorPoint = Vector2.new(0.5, 0)
             SectionDecideFrame.BorderSizePixel = 0
             SectionDecideFrame.Position = UDim2.new(0.5, 0, 0, 33)
-            SectionDecideFrame.Size = UDim2.new(0, 0, 0, 2)
+            SectionDecideFrame.Size = UDim2.new(0, 0, 0, 1)
             SectionDecideFrame.Name = "SectionDecideFrame"
             SectionDecideFrame.Parent = Section
 
             UICorner1.Parent = SectionDecideFrame
 
-            UIGradient.Color = ColorSequence.new {
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
-                ColorSequenceKeypoint.new(0.5, GuiConfig.Color),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
-            }
+            UIGradient.Enabled = false
             UIGradient.Parent = SectionDecideFrame
 
             local SectionAdd = Instance.new("Frame");
@@ -2464,8 +2495,8 @@ function Chloex:Window(GuiConfig)
             local UIListLayout2 = Instance.new("UIListLayout");
 
             SectionAdd.AnchorPoint = Vector2.new(0.5, 0)
-            SectionAdd.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            SectionAdd.BackgroundTransparency = 0.9990000128746033
+            SectionAdd.BackgroundColor3 = Theme.Panel2
+            SectionAdd.BackgroundTransparency = 0
             SectionAdd.BorderColor3 = Color3.fromRGB(0, 0, 0)
             SectionAdd.BorderSizePixel = 0
             SectionAdd.ClipsDescendants = true
@@ -2475,7 +2506,7 @@ function Chloex:Window(GuiConfig)
             SectionAdd.Name = "SectionAdd"
             SectionAdd.Parent = Section
 
-            UICorner8.CornerRadius = UDim.new(0, 2)
+            UICorner8.CornerRadius = UDim.new(0, 6)
             UICorner8.Parent = SectionAdd
 
             UIListLayout2.Padding = UDim.new(0, 3)
@@ -2515,7 +2546,7 @@ function Chloex:Window(GuiConfig)
                         :Play()
                     TweenService:Create(SectionAdd, TweenInfo.new(0.3),
                         { Size = UDim2.new(1, 0, 0, SectionSizeYWitdh - 38) }):Play()
-                    TweenService:Create(SectionDecideFrame, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 2) }):Play()
+                    TweenService:Create(SectionDecideFrame, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 1) }):Play()
                     UpdateSizeScroll()
                 end)
             end
@@ -2538,7 +2569,7 @@ function Chloex:Window(GuiConfig)
                     if OpenSection then
                         TweenService:Create(FeatureFrame, TweenInfo.new(0.5), { Rotation = 0 }):Play()
                         TweenService:Create(Section, TweenInfo.new(0.5), { Size = UDim2.new(1, 1, 0, 30) }):Play()
-                        TweenService:Create(SectionDecideFrame, TweenInfo.new(0.5), { Size = UDim2.new(0, 0, 0, 2) })
+                        TweenService:Create(SectionDecideFrame, TweenInfo.new(0.5), { Size = UDim2.new(0, 0, 0, 1) })
                             :Play()
                         OpenSection = false
                         task.wait(0.5)
