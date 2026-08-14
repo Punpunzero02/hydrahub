@@ -2197,11 +2197,11 @@ function Chloex:Window(GuiConfig)
         local UIStroke2 = Instance.new("UIStroke");
         local UICorner4 = Instance.new("UICorner");
 
-        Tab.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Tab.BackgroundColor3 = Color3.fromRGB(20, 22, 32)
         if CountTab == 0 then
-            Tab.BackgroundTransparency = 0.9200000166893005
+            Tab.BackgroundTransparency = 0
         else
-            Tab.BackgroundTransparency = 0.9990000128746033
+            Tab.BackgroundTransparency = 1
         end
         Tab.BorderColor3 = Color3.fromRGB(0, 0, 0)
         Tab.BorderSizePixel = 0
@@ -2210,7 +2210,7 @@ function Chloex:Window(GuiConfig)
         Tab.Name = "Tab"
         Tab.Parent = ScrollTab
 
-        UICorner3.CornerRadius = UDim.new(0, 4)
+        UICorner3.CornerRadius = UDim.new(0, 6)
         UICorner3.Parent = Tab
 
         TabButton.Font = Enum.Font.GothamBold
@@ -2227,15 +2227,15 @@ function Chloex:Window(GuiConfig)
         TabButton.Parent = Tab
 
         TabName.Font = Enum.Font.GothamBold
-        TabName.Text = "[ " .. tostring(TabConfig.Name) .. " ]"
-        TabName.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TabName.TextSize = 14
+        TabName.Text = tostring(TabConfig.Name)
+        TabName.TextColor3 = Color3.fromRGB(230, 230, 235)
+        TabName.TextSize = 13
         TabName.TextXAlignment = Enum.TextXAlignment.Left
         TabName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         TabName.BackgroundTransparency = 0.9990000128746033
         TabName.BorderColor3 = Color3.fromRGB(0, 0, 0)
         TabName.BorderSizePixel = 0
-        TabName.Size = UDim2.new(1, 0, 1, 0)
+        TabName.Size = UDim2.new(1, -42, 1, 0)
         TabName.Position = UDim2.new(0, 34, 0, 0)
         TabName.Name = "TabName"
         TabName.Parent = Tab
@@ -2291,14 +2291,14 @@ function Chloex:Window(GuiConfig)
                         TweenService:Create(
                             TabFrame,
                             TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
-                            { BackgroundTransparency = 0.9990000128746033 }
+                            { BackgroundTransparency = 1 }
                         ):Play()
                     end
                 end
                 TweenService:Create(
                     Tab,
                     TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
-                    { BackgroundTransparency = 0.9200000166893005 }
+                    { BackgroundTransparency = 0 }
                 ):Play()
                 TweenService:Create(
                     FrameChoose,
@@ -2945,15 +2945,21 @@ end
                 local ToggleCircle = Instance.new("Frame")
                 local UICorner23 = Instance.new("UICorner")
 
-                Toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                Toggle.BackgroundTransparency = 0.935
+                Toggle.BackgroundColor3 = Color3.fromRGB(20, 22, 32)
+                Toggle.BackgroundTransparency = 0
                 Toggle.BorderSizePixel = 0
                 Toggle.LayoutOrder = CountItem
                 Toggle.Name = "Toggle"
                 Toggle.Parent = SectionAdd
 
-                UICorner20.CornerRadius = UDim.new(0, 4)
+                UICorner20.CornerRadius = UDim.new(0, 6)
                 UICorner20.Parent = Toggle
+
+                local ToggleStroke = Instance.new("UIStroke")
+                ToggleStroke.Color = Color3.fromRGB(40, 43, 58)
+                ToggleStroke.Thickness = 1
+                ToggleStroke.Transparency = 0.2
+                ToggleStroke.Parent = Toggle
 
                 ToggleTitle.Font = Enum.Font.GothamBold
                 ToggleTitle.Text = ToggleConfig.Title
@@ -3555,8 +3561,8 @@ end
                 local OptionSelecting = Instance.new("TextLabel")
                 local OptionImg = Instance.new("ImageLabel")
 
-                Dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                Dropdown.BackgroundTransparency = 0.935
+                Dropdown.BackgroundColor3 = Color3.fromRGB(20, 22, 32)
+                Dropdown.BackgroundTransparency = 0
                 Dropdown.BorderSizePixel = 0
                 Dropdown.LayoutOrder = CountItem
                 Dropdown.Size = UDim2.new(1, 0, 0, 46)
@@ -3569,8 +3575,14 @@ end
                 DropdownButton.Name = "ToggleButton"
                 DropdownButton.Parent = Dropdown
 
-                UICorner10.CornerRadius = UDim.new(0, 4)
+                UICorner10.CornerRadius = UDim.new(0, 6)
                 UICorner10.Parent = Dropdown
+
+                local DropdownStroke = Instance.new("UIStroke")
+                DropdownStroke.Color = Color3.fromRGB(40, 43, 58)
+                DropdownStroke.Thickness = 1
+                DropdownStroke.Transparency = 0.2
+                DropdownStroke.Parent = Dropdown
 
                 DropdownTitle.Font = Enum.Font.GothamBold
                 DropdownTitle.Text = DropdownConfig.Title
