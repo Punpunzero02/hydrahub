@@ -1146,18 +1146,25 @@ function Chloex:Window(GuiConfig)
     DropShadowHolder.BackgroundTransparency = 1
     DropShadowHolder.BorderSizePixel = 0
     DropShadowHolder.AnchorPoint = Vector2.new(0.5, 0.5)
-    DropShadowHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
-    if isMobile then
-        DropShadowHolder.Size = safeSize(480, 320)
-    else
-        DropShadowHolder.Size = safeSize(920, 580)
-    end
+    DropShadowHolder.Position = UDim2.fromScale(0.5, 0.5)
+    DropShadowHolder.Size = UDim2.fromOffset(920, 580)
     DropShadowHolder.ZIndex = 0
     DropShadowHolder.Name = "DropShadowHolder"
     DropShadowHolder.Parent = NatUI
 
-    DropShadowHolder.Position = UDim2.new(0, (NatUI.AbsoluteSize.X // 2 - DropShadowHolder.Size.X.Offset // 2), 0,
-        (NatUI.AbsoluteSize.Y // 2 - DropShadowHolder.Size.Y.Offset // 2))
+    local HolderScale = Instance.new("UIScale")
+    HolderScale.Parent = DropShadowHolder
+    local function updateHolderScale()
+        local vp = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
+        local w, h = DropShadowHolder.Size.X.Offset, DropShadowHolder.Size.Y.Offset
+        local scale = math.min(1, math.min((vp.X - 40) / w, (vp.Y - 40) / h))
+        scale = math.clamp(scale, 0.5, 1)
+        HolderScale.Scale = scale
+    end
+    updateHolderScale()
+    if workspace.CurrentCamera then
+        workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateHolderScale)
+    end
     DropShadow.Image = "rbxassetid://6015897843"
     DropShadow.ImageColor3 = Color3.fromRGB(15, 15, 15)
     DropShadow.ImageTransparency = 1
@@ -1203,13 +1210,25 @@ function Chloex:Window(GuiConfig)
         GlassStroke.Parent = Main
     end
 
-    Top.BackgroundColor3 = Color3.fromRGB(9, 10, 16)
+    Top.BackgroundColor3 = Color3.fromRGB(12, 13, 20)
     Top.BackgroundTransparency = 0
     Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Top.BorderSizePixel = 0
     Top.Size = UDim2.new(1, 0, 0, 46)
     Top.Name = "Top"
     Top.Parent = Main
+
+    UICorner1.CornerRadius = UDim.new(0, 12)
+    UICorner1.Parent = Top
+
+    local TopFix = Instance.new("Frame")
+    TopFix.BackgroundColor3 = Color3.fromRGB(12, 13, 20)
+    TopFix.BorderSizePixel = 0
+    TopFix.Size = UDim2.new(1, 0, 0, 12)
+    TopFix.Position = UDim2.new(0, 0, 1, -12)
+    TopFix.ZIndex = 0
+    TopFix.Name = "TopFix"
+    TopFix.Parent = Top
 
     local HeaderLogo = Instance.new("Frame")
     HeaderLogo.BackgroundColor3 = GuiConfig.Color or Color3.fromRGB(90, 140, 255)
@@ -1260,8 +1279,6 @@ function Chloex:Window(GuiConfig)
     TextLabel.Size = UDim2.new(1, -190, 0, 18)
     TextLabel.Position = UDim2.new(0, 50, 0, 6)
     TextLabel.Parent = Top
-
-    UICorner1.Parent = Top
 
     TextLabel1.Font = Enum.Font.Gotham
     TextLabel1.Text = GuiConfig.Footer
