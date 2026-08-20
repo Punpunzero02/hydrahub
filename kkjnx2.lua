@@ -1148,9 +1148,9 @@ function Chloex:Window(GuiConfig)
     DropShadowHolder.AnchorPoint = Vector2.new(0.5, 0.5)
     DropShadowHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
     if isMobile then
-        DropShadowHolder.Size = safeSize(480, 320)
+        DropShadowHolder.Size = safeSize(760, 560)
     else
-        DropShadowHolder.Size = safeSize(920, 580)
+        DropShadowHolder.Size = safeSize(760, 560)
     end
     DropShadowHolder.ZIndex = 0
     DropShadowHolder.Name = "DropShadowHolder"
@@ -1167,7 +1167,7 @@ function Chloex:Window(GuiConfig)
     DropShadow.BackgroundTransparency = 1
     DropShadow.BorderSizePixel = 0
     DropShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-    DropShadow.Size = UDim2.new(1, 47, 1, 47)
+    DropShadow.Size = UDim2.new(1, 0, 1, 0)
     DropShadow.ZIndex = 0
     DropShadow.Name = "DropShadow"
     DropShadow.Parent = DropShadowHolder
@@ -1181,14 +1181,14 @@ function Chloex:Window(GuiConfig)
         Main.ImageTransparency = GuiConfig.ThemeTransparency or 0.15
     else
         Main.BackgroundColor3 = Color3.fromRGB(9, 10, 16)
-        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.03
+        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0
     end
 
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
     Main.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Main.BorderSizePixel = 0
     Main.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Main.Size = UDim2.new(1, -47, 1, -47)
+    Main.Size = UDim2.new(1, 0, 1, 0)
     Main.Name = "Main"
     Main.Parent = DropShadow
 
