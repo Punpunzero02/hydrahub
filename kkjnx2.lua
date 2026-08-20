@@ -1146,25 +1146,18 @@ function Chloex:Window(GuiConfig)
     DropShadowHolder.BackgroundTransparency = 1
     DropShadowHolder.BorderSizePixel = 0
     DropShadowHolder.AnchorPoint = Vector2.new(0.5, 0.5)
-    DropShadowHolder.Position = UDim2.fromScale(0.5, 0.5)
-    DropShadowHolder.Size = UDim2.fromOffset(920, 580)
+    DropShadowHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
+    if isMobile then
+        DropShadowHolder.Size = safeSize(480, 320)
+    else
+        DropShadowHolder.Size = safeSize(920, 580)
+    end
     DropShadowHolder.ZIndex = 0
     DropShadowHolder.Name = "DropShadowHolder"
     DropShadowHolder.Parent = NatUI
 
-    local HolderScale = Instance.new("UIScale")
-    HolderScale.Parent = DropShadowHolder
-    local function updateHolderScale()
-        local vp = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(1280, 720)
-        local w, h = DropShadowHolder.Size.X.Offset, DropShadowHolder.Size.Y.Offset
-        local scale = math.min(1, math.min((vp.X - 40) / w, (vp.Y - 40) / h))
-        scale = math.clamp(scale, 0.5, 1)
-        HolderScale.Scale = scale
-    end
-    updateHolderScale()
-    if workspace.CurrentCamera then
-        workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateHolderScale)
-    end
+    DropShadowHolder.Position = UDim2.new(0, (NatUI.AbsoluteSize.X // 2 - DropShadowHolder.Size.X.Offset // 2), 0,
+        (NatUI.AbsoluteSize.Y // 2 - DropShadowHolder.Size.Y.Offset // 2))
     DropShadow.Image = "rbxassetid://6015897843"
     DropShadow.ImageColor3 = Color3.fromRGB(15, 15, 15)
     DropShadow.ImageTransparency = 1
