@@ -894,7 +894,7 @@ function Chloex:Window(GuiConfig)
     GuiConfig.Title        = GuiConfig.Title or "HydraHub"
     GuiConfig.Footer       = GuiConfig.Footer or ""
     GuiConfig.Color        = GuiConfig.Color or Color3.fromRGB(255, 0, 255)
-    GuiConfig["Tab Width"] = GuiConfig["Tab Width"] or 120
+    GuiConfig["Tab Width"] = GuiConfig["Tab Width"] or 150
     GuiConfig.Version      = GuiConfig.Version or 1
     if GuiConfig.Search == nil then GuiConfig.Search = true end
 
@@ -2149,7 +2149,7 @@ function Chloex:Window(GuiConfig)
         Tab.BorderColor3 = Color3.fromRGB(0, 0, 0)
         Tab.BorderSizePixel = 0
         Tab.LayoutOrder = CountTab
-        Tab.Size = UDim2.new(1, 0, 0, 36)
+        Tab.Size = UDim2.new(1, 0, 0, 32)
         Tab.Name = "Tab"
         Tab.Parent = ScrollTab
 
@@ -2187,7 +2187,7 @@ function Chloex:Window(GuiConfig)
         FeatureImg.BackgroundTransparency = 0.9990000128746033
         FeatureImg.BorderColor3 = Color3.fromRGB(0, 0, 0)
         FeatureImg.BorderSizePixel = 0
-        FeatureImg.Position = UDim2.new(0, 10, 0, 9)
+        FeatureImg.Position = UDim2.new(0, 10, 0, 7)
         FeatureImg.Size = UDim2.new(0, 18, 0, 18)
         FeatureImg.Name = "FeatureImg"
         FeatureImg.Parent = Tab
@@ -2198,7 +2198,7 @@ function Chloex:Window(GuiConfig)
             ChooseFrame.BackgroundColor3 = GuiConfig.Color
             ChooseFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
             ChooseFrame.BorderSizePixel = 0
-            ChooseFrame.Position = UDim2.new(0, 2, 0, 9)
+            ChooseFrame.Position = UDim2.new(0, 2, 0, 6)
             ChooseFrame.Size = UDim2.new(0, 1, 0, 12)
             ChooseFrame.Name = "ChooseFrame"
             ChooseFrame.Parent = Tab
@@ -2246,7 +2246,7 @@ function Chloex:Window(GuiConfig)
                 TweenService:Create(
                     FrameChoose,
                     TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-                    { Position = UDim2.new(0, 2, 0, 9 + (39 * Tab.LayoutOrder)) }
+                    { Position = UDim2.new(0, 2, 0, 6 + (35 * Tab.LayoutOrder)) }
                 ):Play()
                 LayersPageLayout:JumpToIndex(Tab.LayoutOrder)
                 task.wait(0.05)
