@@ -1251,7 +1251,6 @@ function Chloex:Window(GuiConfig)
                 end)
             end
 
-=
 
             local Items = {}
             local CountItem = 0
