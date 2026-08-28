@@ -3112,8 +3112,14 @@ function Chloex:Window(GuiConfig)
         LoadConfigElements()
     end)
 
+    Chloex._gui = GuiFunc
     return GuiFunc, Tabs
 end
 
+function Chloex:MakeNotify(config)
+    if self._gui and self._gui.MakeNotify then
+        self._gui:MakeNotify(config)
+    end
+end
 
 return Chloex
