@@ -169,6 +169,19 @@ local function isMobileDevice()
 end
 local isMobile = isMobileDevice()
 
+local viewport = workspace.CurrentCamera.ViewportSize
+
+local function safeSize(pxWidth, pxHeight)
+    local scaleX = pxWidth / viewport.X
+    local scaleY = pxHeight / viewport.Y
+
+    if isMobile then
+        if scaleX > 0.5 then scaleX = 0.5 end
+        if scaleY > 0.3 then scaleY = 0.3 end
+    end
+
+    return UDim2.new(scaleX, 0, scaleY, 0)
+end
 
 
 function CircleClick(Button, X, Y)
@@ -400,7 +413,11 @@ function Chloex:Window(GuiConfig)
 
     local Main = Instance.new("Frame")
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
-    Main.Size = UDim2.fromOffset(760, 560)
+    if isMobile then
+        Main.Size = safeSize(470, 270)
+    else
+        Main.Size = safeSize(760, 560)
+    end
     Main.Position = UDim2.fromScale(0.5, 0.5)
     Main.BackgroundColor3 = C_BG
     Main.BorderSizePixel = 0
@@ -481,8 +498,10 @@ function Chloex:Window(GuiConfig)
     CloseBtn.Parent = TopBar
 
 
+    local SidebarWidth = isMobile and 100 or 150
+
     local Sidebar = Instance.new("Frame")
-    Sidebar.Size = UDim2.new(0, 150, 1, -46)
+    Sidebar.Size = UDim2.new(0, SidebarWidth, 1, -46)
     Sidebar.Position = UDim2.new(0, 0, 0, 46)
     Sidebar.BackgroundColor3 = C_SIDEBAR
     Sidebar.BorderSizePixel = 0
@@ -646,8 +665,8 @@ function Chloex:Window(GuiConfig)
 
 
     local Content = Instance.new("Frame")
-    Content.Size = UDim2.new(1, -150, 1, -74)
-    Content.Position = UDim2.new(0, 150, 0, 46)
+    Content.Size = UDim2.new(1, -SidebarWidth, 1, -74)
+    Content.Position = UDim2.new(0, SidebarWidth, 0, 46)
     Content.BackgroundColor3 = C_BG
     Content.BorderSizePixel = 0
     Content.Parent = Main
@@ -743,8 +762,15 @@ function Chloex:Window(GuiConfig)
     ResizeIcon.ZIndex = 10
     ResizeIcon.Parent = ResizeHandle
 
-    local MIN_W, MIN_H = 480, 360
-    local MAX_W, MAX_H = 1100, 800
+    local MIN_W, MIN_H
+    local MAX_W, MAX_H
+    if isMobile then
+        MIN_W, MIN_H = 200, 150
+        MAX_W, MAX_H = 600, 500
+    else
+        MIN_W, MIN_H = 480, 360
+        MAX_W, MAX_H = 1100, 800
+    end
     local resizing, resizeStart, sizeStart
 
     ResizeHandle.InputBegan:Connect(function(input)
