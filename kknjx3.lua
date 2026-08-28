@@ -1301,6 +1301,7 @@ function Chloex:Window(GuiConfig)
                 stroke(Para, C_BORDER, 1)
 
                 local TitleLbl = Instance.new("TextLabel")
+                TitleLbl.LayoutOrder = 0
                 TitleLbl.BackgroundTransparency = 1
                 TitleLbl.Position = UDim2.new(0, 12, 0, 6)
                 TitleLbl.Size = UDim2.new(1, -24, 0, 14)
@@ -1312,6 +1313,7 @@ function Chloex:Window(GuiConfig)
                 TitleLbl.Parent = Para
 
                 local ContentLbl = Instance.new("TextLabel")
+                ContentLbl.LayoutOrder = 1
                 ContentLbl.BackgroundTransparency = 1
                 ContentLbl.Position = UDim2.new(0, 12, 0, 22)
                 ContentLbl.Size = UDim2.new(1, -24, 0, 12)
@@ -1324,7 +1326,26 @@ function Chloex:Window(GuiConfig)
 
                 CountItem = CountItem + 1
                 RegisterSearch({ label = ParagraphConfig.Title, tab = TabConfig.Name, kind = "Paragraph", switch = SearchSwitch })
-                return Para
+
+                -- Return wrapper with SetContent for dynamic updates
+                local ParaAPI = { Frame = Para }
+                function ParaAPI:SetContent(text)
+                    text = tostring(text or "")
+                    for _, child in ipairs(Para:GetChildren()) do
+                        if child:IsA("TextLabel") and child.LayoutOrder == 1 then
+                            child.Text = text
+                        end
+                    end
+                end
+                function ParaAPI:SetTitle(text)
+                    for _, child in ipairs(Para:GetChildren()) do
+                        if child:IsA("TextLabel") and child.LayoutOrder == 0 then
+                            child.Text = tostring(text or "")
+                        end
+                    end
+                end
+                setmetatable(ParaAPI, { __index = Para })
+                return ParaAPI
             end
 
             -- AddButton
@@ -3118,6 +3139,15 @@ end
 
 function Chloex:MakeNotify(config)
     if self._gui and self._gui.MakeNotify then
+        -- Normalize aliases: Delay -> Duration, Description -> Content
+        if config then
+            if config.Delay and not config.Duration then
+                config.Duration = config.Delay
+            end
+            if config.Description and not config.Content then
+                config.Content = config.Description
+            end
+        end
         self._gui:MakeNotify(config)
     end
 end
