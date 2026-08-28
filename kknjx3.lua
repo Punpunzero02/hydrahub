@@ -794,6 +794,10 @@ function Chloex:Window(GuiConfig)
         Main.Visible = not Main.Visible
     end
 
+    -- Expose MakeNotify on GuiFunc so Gui:MakeNotify() works
+    function GuiFunc:MakeNotify(NotifyConfig)
+        Chloex:MakeNotify(NotifyConfig)
+    end
 
 
     function Chloex:MakeNotify(NotifyConfig)
