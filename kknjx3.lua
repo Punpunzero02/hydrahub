@@ -1123,7 +1123,7 @@ function Chloex:Window(GuiConfig)
     NameTab.Font = Enum.Font.GothamBold
     NameTab.Text = ""
     NameTab.TextColor3 = Color3.fromRGB(255, 255, 255)
-    NameTab.TextSize = 24
+    NameTab.TextSize = 18
     NameTab.TextWrapped = true
     NameTab.TextXAlignment = Enum.TextXAlignment.Left
     NameTab.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -1853,7 +1853,7 @@ function Chloex:Window(GuiConfig)
         ScrolLayers.Name = "ScrolLayers"
         ScrolLayers.Parent = LayersFolder
 
-        UIListLayout1.Padding = UDim.new(0, 3)
+        UIListLayout1.Padding = UDim.new(0, 6)
         UIListLayout1.SortOrder = Enum.SortOrder.LayoutOrder
         UIListLayout1.Parent = ScrolLayers
 
@@ -1861,7 +1861,7 @@ function Chloex:Window(GuiConfig)
         local UICorner3 = Instance.new("UICorner");
         local TabButton = Instance.new("TextButton");
         local TabName = Instance.new("TextLabel")
-        local FeatureImg = Instance.new("ImageLabel");
+        local FeatureImg = Instance.new("TextLabel");
         local UIStroke2 = Instance.new("UIStroke");
         local UICorner4 = Instance.new("UICorner");
 
@@ -1894,17 +1894,17 @@ function Chloex:Window(GuiConfig)
         TabButton.Name = "TabButton"
         TabButton.Parent = Tab
 
-        TabName.Font = Enum.Font.GothamBold
+        TabName.Font = CountTab == 0 and Enum.Font.GothamBold or Enum.Font.Gotham
         TabName.Text = tostring(TabConfig.Name)
-        TabName.TextColor3 = Color3.fromRGB(230, 230, 235)
-        TabName.TextSize = 13
+        TabName.TextColor3 = CountTab == 0 and Color3.fromRGB(235, 235, 240) or Color3.fromRGB(140, 145, 165)
+        TabName.TextSize = 12
         TabName.TextXAlignment = Enum.TextXAlignment.Left
         TabName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         TabName.BackgroundTransparency = 0.9990000128746033
         TabName.BorderColor3 = Color3.fromRGB(0, 0, 0)
         TabName.BorderSizePixel = 0
         TabName.Size = UDim2.new(1, -42, 1, 0)
-        TabName.Position = UDim2.new(0, 34, 0, 0)
+        TabName.Position = UDim2.new(0, 36, 0, 0)
         TabName.Name = "TabName"
         TabName.Parent = Tab
 
@@ -1912,10 +1912,16 @@ function Chloex:Window(GuiConfig)
         FeatureImg.BackgroundTransparency = 0.9990000128746033
         FeatureImg.BorderColor3 = Color3.fromRGB(0, 0, 0)
         FeatureImg.BorderSizePixel = 0
-        FeatureImg.Position = UDim2.new(0, 10, 0, 7)
-        FeatureImg.Size = UDim2.new(0, 18, 0, 18)
+        FeatureImg.Position = UDim2.new(0, 12, 0, 0)
+        FeatureImg.Size = UDim2.new(0, 20, 0, 32)
         FeatureImg.Name = "FeatureImg"
         FeatureImg.Parent = Tab
+        FeatureImg.Image = ""
+        FeatureImg.ImageTransparency = 1
+        FeatureImg.Text = "\226\128\162"
+        FeatureImg.TextColor3 = CountTab == 0 and (GuiConfig.Color or Color3.fromRGB(90, 140, 255)) or Color3.fromRGB(140, 145, 165)
+        FeatureImg.TextSize = 13
+        FeatureImg.Font = Enum.Font.GothamBold
         if CountTab == 0 then
             LayersPageLayout:JumpToIndex(0)
             NameTab.Text = TabConfig.Name
@@ -1935,13 +1941,12 @@ function Chloex:Window(GuiConfig)
             UICorner4.Parent = ChooseFrame
         end
 
-        if TabConfig.Icon ~= "" then
-            if Icons[TabConfig.Icon] then
-                FeatureImg.Image = Icons[TabConfig.Icon]
-            else
-                FeatureImg.Image = TabConfig.Icon
-            end
-        end
+        -- dot indicator replaces icon images
+        FeatureImg.Image = ""
+        FeatureImg.ImageTransparency = 1
+        FeatureImg.Text = "\226\128\162"
+        FeatureImg.TextColor3 = CountTab == 0 and (GuiConfig.Color or Color3.fromRGB(90, 140, 255)) or Color3.fromRGB(140, 145, 165)
+        FeatureImg.TextSize = 13
 
         local function switchToTab(force)
             local FrameChoose
@@ -2030,7 +2035,7 @@ function Chloex:Window(GuiConfig)
             local UIStroke = Instance.new("UIStroke");
             local SectionButton = Instance.new("TextButton");
             local FeatureFrame = Instance.new("Frame");
-            local FeatureImg = Instance.new("ImageLabel");
+            local FeatureImg = Instance.new("TextLabel");
             local SectionTitle = Instance.new("TextLabel");
 
             SectionReal.AnchorPoint = Vector2.new(0.5, 0)
@@ -2070,28 +2075,32 @@ function Chloex:Window(GuiConfig)
             FeatureFrame.BackgroundTransparency = 0.9990000128746033
             FeatureFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
             FeatureFrame.BorderSizePixel = 0
-            FeatureFrame.Position = UDim2.new(1, -12, 0.5, 0)
-            FeatureFrame.Size = UDim2.new(0, 16, 0, 16)
+            FeatureFrame.Position = UDim2.new(1, -8, 0.5, 0)
+            FeatureFrame.Size = UDim2.new(0, 20, 0, 38)
             FeatureFrame.Name = "FeatureFrame"
             FeatureFrame.Parent = SectionReal
 
-            FeatureImg.Image = "rbxassetid://16851841101"
+            FeatureImg.Image = ""
+            FeatureImg.ImageTransparency = 1
             FeatureImg.AnchorPoint = Vector2.new(0.5, 0.5)
             FeatureImg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             FeatureImg.BackgroundTransparency = 0.9990000128746033
             FeatureImg.BorderColor3 = Color3.fromRGB(0, 0, 0)
             FeatureImg.BorderSizePixel = 0
-            FeatureImg.ImageColor3 = GuiConfig.Color or Color3.fromRGB(90, 140, 255)
-            FeatureImg.Position = UDim2.new(0.5, 0, 0.5, 0)
-            FeatureImg.Rotation = -90
-            FeatureImg.Size = UDim2.new(1, 6, 1, 6)
+            FeatureImg.TextColor3 = GuiConfig.Color or Color3.fromRGB(90, 140, 255)
+            FeatureImg.Text = ">"
+            FeatureImg.Font = Enum.Font.GothamBold
+            FeatureImg.TextSize = 14
+            FeatureImg.Position = UDim2.new(0, 0, 0, 0)
+            FeatureImg.Size = UDim2.new(1, 0, 1, 0)
+            FeatureImg.Rotation = 0
             FeatureImg.Name = "FeatureImg"
             FeatureImg.Parent = FeatureFrame
 
             SectionTitle.Font = Enum.Font.GothamBold
             SectionTitle.Text = Title
             SectionTitle.TextColor3 = Color3.fromRGB(230, 230, 235)
-            SectionTitle.TextSize = 14
+            SectionTitle.TextSize = 13
             SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
             SectionTitle.TextYAlignment = Enum.TextYAlignment.Top
             SectionTitle.AnchorPoint = Vector2.new(0, 0.5)
@@ -2141,7 +2150,7 @@ function Chloex:Window(GuiConfig)
             UICorner8.CornerRadius = UDim.new(0, 2)
             UICorner8.Parent = SectionAdd
 
-            UIListLayout2.Padding = UDim.new(0, 3)
+            UIListLayout2.Padding = UDim.new(0, 6)
             UIListLayout2.SortOrder = Enum.SortOrder.LayoutOrder
             UIListLayout2.Parent = SectionAdd
 
@@ -2174,7 +2183,7 @@ function Chloex:Window(GuiConfig)
                         end
                     end
                     TweenService:Create(FeatureFrame, TweenInfo.new(0.3), { Rotation = 90 }):Play()
-                    TweenService:Create(Section, TweenInfo.new(0.3), { Size = UDim2.new(1, 1, 0, SectionSizeYWitdh) })
+                    TweenService:Create(Section, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, SectionSizeYWitdh) })
                         :Play()
                     TweenService:Create(SectionAdd, TweenInfo.new(0.3),
                         { Size = UDim2.new(1, 0, 0, SectionSizeYWitdh - 38) }):Play()
@@ -2200,7 +2209,7 @@ function Chloex:Window(GuiConfig)
                     CircleClick(SectionButton, Mouse.X, Mouse.Y)
                     if OpenSection then
                         TweenService:Create(FeatureFrame, TweenInfo.new(0.5), { Rotation = 0 }):Play()
-                        TweenService:Create(Section, TweenInfo.new(0.5), { Size = UDim2.new(1, 1, 0, 38) }):Play()
+                        TweenService:Create(Section, TweenInfo.new(0.5), { Size = UDim2.new(1, 0, 0, 38) }):Play()
                         TweenService:Create(SectionDecideFrame, TweenInfo.new(0.5), { Size = UDim2.new(0, 0, 0, 2) })
                             :Play()
                         OpenSection = false
@@ -2671,8 +2680,8 @@ end
                     ToggleContent.Position = UDim2.new(0, 10, 0, 36)
                     ToggleTitle2.Visible = true
                 else
-                    Toggle.Size = UDim2.new(1, 0, 0, 46)
-                    ToggleContent.Position = UDim2.new(0, 10, 0, 23)
+                    Toggle.Size = UDim2.new(1, 0, 0, 34)
+                    ToggleContent.Position = UDim2.new(0, 10, 0, 20)
                     ToggleTitle2.Visible = false
                 end
 
@@ -2680,9 +2689,9 @@ end
                     12 + (12 * (ToggleContent.TextBounds.X // ToggleContent.AbsoluteSize.X)))
                 ToggleContent.TextWrapped = true
                 if ToggleConfig.Title2 ~= "" then
-                    Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 47)
+                    Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 37)
                 else
-                    Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 33)
+                    Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 25)
                 end
 
                 ToggleContent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
@@ -2690,9 +2699,9 @@ end
                     ToggleContent.Size = UDim2.new(1, -100, 0,
                         12 + (12 * (ToggleContent.TextBounds.X // ToggleContent.AbsoluteSize.X)))
                     if ToggleConfig.Title2 ~= "" then
-                        Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 47)
+                        Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 37)
                     else
-                        Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 33)
+                        Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 25)
                     end
                     ToggleContent.TextWrapped = true
                     UpdateSizeSection()
@@ -2709,7 +2718,7 @@ end
                 FeatureFrame2.BackgroundTransparency = 0.92
                 FeatureFrame2.BorderSizePixel = 0
                 FeatureFrame2.Position = UDim2.new(1, -15, 0.5, 0)
-                FeatureFrame2.Size = UDim2.new(0, 30, 0, 15)
+                FeatureFrame2.Size = UDim2.new(0, 38, 0, 20)
                 FeatureFrame2.Name = "FeatureFrame"
                 FeatureFrame2.Parent = Toggle
 
@@ -2722,11 +2731,11 @@ end
 
                 ToggleCircle.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
                 ToggleCircle.BorderSizePixel = 0
-                ToggleCircle.Size = UDim2.new(0, 14, 0, 14)
+                ToggleCircle.Size = UDim2.new(0, 16, 0, 16)
                 ToggleCircle.Name = "ToggleCircle"
                 ToggleCircle.Parent = FeatureFrame2
 
-                UICorner23.CornerRadius = UDim.new(0, 15)
+                UICorner23.CornerRadius = UDim.new(0, 8)
                 UICorner23.Parent = ToggleCircle
 
                 ToggleButton.Activated:Connect(function()
@@ -2749,7 +2758,7 @@ end
                     end
                     if Value then
                         TweenService:Create(ToggleTitle, TweenInfo.new(0.2), { TextColor3 = GuiConfig.Color }):Play()
-                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 15, 0, 0) })
+                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 20, 0, 2) })
                             :Play()
                         TweenService:Create(UIStroke8, TweenInfo.new(0.2), { Color = GuiConfig.Color, Transparency = 0 })
                             :Play()
@@ -2758,7 +2767,7 @@ end
                     else
                         TweenService:Create(ToggleTitle, TweenInfo.new(0.2),
                             { TextColor3 = Color3.fromRGB(230, 230, 230) }):Play()
-                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 0, 0, 0) }):Play()
+                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 2, 0, 2) }):Play()
                         TweenService:Create(UIStroke8, TweenInfo.new(0.2),
                             { Color = Color3.fromRGB(255, 255, 255), Transparency = 0.9 }):Play()
                         TweenService:Create(FeatureFrame2, TweenInfo.new(0.2),
@@ -2825,7 +2834,7 @@ end
                 Slider.BorderColor3 = Color3.fromRGB(0, 0, 0)
                 Slider.BorderSizePixel = 0
                 Slider.LayoutOrder = CountItem
-                Slider.Size = UDim2.new(1, 0, 0, 46)
+                Slider.Size = UDim2.new(1, 0, 0, 38)
                 Slider.Name = "Slider"
                 Slider.Parent = SectionAdd
 
@@ -2866,13 +2875,13 @@ end
                 SliderContent.Size = UDim2.new(1, -230, 0,
                     12 + (12 * (SliderContent.TextBounds.X // SliderContent.AbsoluteSize.X)))
                 SliderContent.TextWrapped = true
-                Slider.Size = UDim2.new(1, 0, 0, SliderContent.AbsoluteSize.Y + 33)
+                Slider.Size = UDim2.new(1, 0, 0, SliderContent.AbsoluteSize.Y + 25)
 
                 SliderContent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
                     SliderContent.TextWrapped = false
                     SliderContent.Size = UDim2.new(1, -230, 0,
                         12 + (12 * (SliderContent.TextBounds.X // SliderContent.AbsoluteSize.X)))
-                    Slider.Size = UDim2.new(1, 0, 0, SliderContent.AbsoluteSize.Y + 33)
+                    Slider.Size = UDim2.new(1, 0, 0, SliderContent.AbsoluteSize.Y + 25)
                     SliderContent.TextWrapped = true
                     UpdateSizeSection()
                 end)
@@ -3093,7 +3102,7 @@ end
                 Input.BorderColor3 = Color3.fromRGB(0, 0, 0)
                 Input.BorderSizePixel = 0
                 Input.LayoutOrder = CountItem
-                Input.Size = UDim2.new(1, 0, 0, 46)
+                Input.Size = UDim2.new(1, 0, 0, 38)
                 Input.Name = "Input"
                 Input.Parent = SectionAdd
 
@@ -3135,13 +3144,13 @@ end
                 InputContent.Size = UDim2.new(1, -180, 0,
                     12 + (12 * (InputContent.TextBounds.X // InputContent.AbsoluteSize.X)))
                 InputContent.TextWrapped = true
-                Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 33)
+                Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 25)
 
                 InputContent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
                     InputContent.TextWrapped = false
                     InputContent.Size = UDim2.new(1, -180, 0,
                         12 + (12 * (InputContent.TextBounds.X // InputContent.AbsoluteSize.X)))
-                    Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 33)
+                    Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 25)
                     InputContent.TextWrapped = true
                     UpdateSizeSection()
                 end)
@@ -3233,7 +3242,7 @@ end
                 Dropdown.BackgroundTransparency = 0
                 Dropdown.BorderSizePixel = 0
                 Dropdown.LayoutOrder = CountItem
-                Dropdown.Size = UDim2.new(1, 0, 0, 46)
+                Dropdown.Size = UDim2.new(1, 0, 0, 38)
                 Dropdown.Name = "Dropdown"
                 Dropdown.Parent = SectionAdd
 
