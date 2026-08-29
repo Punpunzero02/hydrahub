@@ -821,71 +821,14 @@ function Chloex:Window(GuiConfig)
     end
 
     -- Expose MakeNotify on GuiFunc so Gui:MakeNotify() works
-    function GuiFunc:MakeNotify(NotifyConfig)
-        Chloex:MakeNotify(NotifyConfig)
-    end
-
-
-    function Chloex:MakeNotify(NotifyConfig)
-        NotifyConfig = NotifyConfig or {}
-        NotifyConfig.Title = NotifyConfig.Title or "HydraHub"
-        NotifyConfig.Content = NotifyConfig.Content or "Notification"
-        NotifyConfig.Duration = NotifyConfig.Duration or 3
-        NotifyConfig.Color = NotifyConfig.Color or GuiConfig.Color
-
-        local NotiFrame = Instance.new("Frame")
-        NotiFrame.Size = UDim2.fromOffset(260, 60)
-        NotiFrame.Position = UDim2.new(1, -270, 1, -70)
-        NotiFrame.BackgroundColor3 = C_PANEL
-        NotiFrame.BorderSizePixel = 0
-        NotiFrame.Parent = ScreenGui
-        corner(NotiFrame, 8)
-        stroke(NotiFrame, NotifyConfig.Color, 1)
-
-        local AccentBar = Instance.new("Frame")
-        AccentBar.Size = UDim2.new(0, 3, 1, 0)
-        AccentBar.BackgroundColor3 = NotifyConfig.Color
-        AccentBar.BorderSizePixel = 0
-        AccentBar.Parent = NotiFrame
-
-        local TitleLbl = Instance.new("TextLabel")
-        TitleLbl.BackgroundTransparency = 1
-        TitleLbl.Position = UDim2.fromOffset(12, 6)
-        TitleLbl.Size = UDim2.new(1, -20, 0, 16)
-        TitleLbl.Text = NotifyConfig.Title
-        TitleLbl.TextColor3 = NotifyConfig.Color
-        TitleLbl.Font = Enum.Font.GothamBold
-        TitleLbl.TextSize = 12
-        TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-        TitleLbl.Parent = NotiFrame
-
-        local ContentLbl = Instance.new("TextLabel")
-        ContentLbl.BackgroundTransparency = 1
-        ContentLbl.Position = UDim2.fromOffset(12, 24)
-        ContentLbl.Size = UDim2.new(1, -20, 0, 28)
-        ContentLbl.Text = NotifyConfig.Content
-        ContentLbl.TextColor3 = C_TEXT
-        ContentLbl.Font = Enum.Font.Gotham
-        ContentLbl.TextSize = 11
-        ContentLbl.TextWrapped = true
-        ContentLbl.TextXAlignment = Enum.TextXAlignment.Left
-        ContentLbl.TextYAlignment = Enum.TextYAlignment.Top
-        ContentLbl.Parent = NotiFrame
-
-        TweenService:Create(NotiFrame, TweenInfo.new(0.3), {Position = UDim2.new(1, -270, 1, -70)}):Play()
-        task.delay(NotifyConfig.Duration, function()
-            TweenService:Create(NotiFrame, TweenInfo.new(0.3), {Position = UDim2.new(1, 270, 1, -70)}):Play()
-            task.delay(0.3, function() NotiFrame:Destroy() end)
-        end)
-    end
-
     -- Global notify helper
     function than(text, duration, color, title, kind)
         Chloex:MakeNotify({
             Title = title or "HydraHub",
-            Content = text,
-            Duration = duration or 3,
-            Color = color or GuiConfig.Color,
+            Description = kind or "Notification",
+            Content = text or "Content",
+            Color = color or Color3.fromRGB(0, 208, 255),
+            Delay = duration or 4
         })
     end
 
@@ -3125,6 +3068,8 @@ function Chloex:Window(GuiConfig)
             return Items
         end
 
+        local safeName = TabConfig.Name:gsub("%s+", "_")
+        _G[safeName] = Sections
         return Sections
     end
 
@@ -3133,23 +3078,220 @@ function Chloex:Window(GuiConfig)
         LoadConfigElements()
     end)
 
-    Chloex._gui = GuiFunc
-    return GuiFunc, Tabs
+    Tabs.Window = GuiFunc
+    Tabs.ExportConfig = function() return GuiFunc:ExportConfig() end
+    Tabs.ImportConfig = function(_, str) return GuiFunc:ImportConfig(str) end
+    Tabs.Confirm = function(_, config) return GuiFunc:Confirm(config) end
+
+    return Tabs
 end
 
-function Chloex:MakeNotify(config)
-    if self._gui and self._gui.MakeNotify then
-        -- Normalize aliases: Delay -> Duration, Description -> Content
-        if config then
-            if config.Delay and not config.Duration then
-                config.Duration = config.Delay
-            end
-            if config.Description and not config.Content then
-                config.Content = config.Description
-            end
+function Chloex:MakeNotify(NotifyConfig)
+    local NotifyConfig = NotifyConfig or {}
+    NotifyConfig.Title = NotifyConfig.Title or "HydraHub"
+    NotifyConfig.Description = NotifyConfig.Description or "Notification"
+    NotifyConfig.Content = NotifyConfig.Content or "Content"
+    NotifyConfig.Color = NotifyConfig.Color or Color3.fromRGB(255, 0, 255)
+    NotifyConfig.Time = NotifyConfig.Time or 0.5
+    NotifyConfig.Delay = NotifyConfig.Delay or 5
+    local NotifyFunction = {}
+    spawn(function()
+        if not CoreGui:FindFirstChild("NotifyGui") then
+            local NotifyGui = Instance.new("ScreenGui")
+            NotifyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            NotifyGui.Name = "NotifyGui"
+            NotifyGui.Parent = CoreGui
         end
-        self._gui:MakeNotify(config)
-    end
+        if not CoreGui.NotifyGui:FindFirstChild("NotifyLayout") then
+            local NotifyLayout = Instance.new("Frame")
+            NotifyLayout.AnchorPoint = Vector2.new(1, 1)
+            NotifyLayout.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            NotifyLayout.BackgroundTransparency = 0.9990000128746033
+            NotifyLayout.BorderColor3 = Color3.fromRGB(0, 0, 0)
+            NotifyLayout.BorderSizePixel = 0
+            NotifyLayout.Position = UDim2.new(1, -30, 1, -30)
+            NotifyLayout.Size = UDim2.new(0, 320, 1, 0)
+            NotifyLayout.Name = "NotifyLayout"
+            NotifyLayout.Parent = CoreGui.NotifyGui
+            local Count = 0
+            CoreGui.NotifyGui.NotifyLayout.ChildRemoved:Connect(function()
+                Count = 0
+                for i, v in CoreGui.NotifyGui.NotifyLayout:GetChildren() do
+                    TweenService:Create(
+                        v,
+                        TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+                        { Position = UDim2.new(0, 0, 1, -((v.Size.Y.Offset + 12) * Count)) }
+                    ):Play()
+                    Count = Count + 1
+                end
+            end)
+        end
+        local NotifyPosHeigh = 0
+        for i, v in CoreGui.NotifyGui.NotifyLayout:GetChildren() do
+            NotifyPosHeigh = -(v.Position.Y.Offset) + v.Size.Y.Offset + 12
+        end
+        local NotifyFrame = Instance.new("Frame")
+        local NotifyFrameReal = Instance.new("Frame")
+        local UICorner = Instance.new("UICorner")
+        local DropShadowHolder = Instance.new("Frame")
+        local DropShadow = Instance.new("ImageLabel")
+        local Top = Instance.new("Frame")
+        local TextLabel = Instance.new("TextLabel")
+        local UICorner1 = Instance.new("UICorner")
+        local TextLabel1 = Instance.new("TextLabel")
+        local Close = Instance.new("TextButton")
+        local ImageLabel = Instance.new("ImageLabel")
+        local TextLabel2 = Instance.new("TextLabel")
+
+        NotifyFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        NotifyFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        NotifyFrame.BorderSizePixel = 0
+        NotifyFrame.Size = UDim2.new(1, 0, 0, 150)
+        NotifyFrame.Name = "NotifyFrame"
+        NotifyFrame.BackgroundTransparency = 1
+        NotifyFrame.Parent = CoreGui.NotifyGui.NotifyLayout
+        NotifyFrame.AnchorPoint = Vector2.new(0, 1)
+        NotifyFrame.Position = UDim2.new(0, 0, 1, -(NotifyPosHeigh))
+
+        NotifyFrameReal.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        NotifyFrameReal.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        NotifyFrameReal.BorderSizePixel = 0
+        NotifyFrameReal.Position = UDim2.new(0, 400, 0, 0)
+        NotifyFrameReal.Size = UDim2.new(1, 0, 1, 0)
+        NotifyFrameReal.Name = "NotifyFrameReal"
+        NotifyFrameReal.Parent = NotifyFrame
+
+        UICorner.Parent = NotifyFrameReal
+        UICorner.CornerRadius = UDim.new(0, 8)
+
+        DropShadowHolder.BackgroundTransparency = 1
+        DropShadowHolder.BorderSizePixel = 0
+        DropShadowHolder.Size = UDim2.new(1, 0, 1, 0)
+        DropShadowHolder.ZIndex = 0
+        DropShadowHolder.Name = "DropShadowHolder"
+        DropShadowHolder.Parent = NotifyFrameReal
+
+        Top.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        Top.BackgroundTransparency = 0.9990000128746033
+        Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        Top.BorderSizePixel = 0
+        Top.Size = UDim2.new(1, 0, 0, 36)
+        Top.Name = "Top"
+        Top.Parent = NotifyFrameReal
+
+        TextLabel.Font = Enum.Font.GothamBold
+        TextLabel.Text = NotifyConfig.Title
+        TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TextLabel.TextSize = 14
+        TextLabel.TextXAlignment = Enum.TextXAlignment.Left
+        TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        TextLabel.BackgroundTransparency = 0.9990000128746033
+        TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        TextLabel.BorderSizePixel = 0
+        TextLabel.Size = UDim2.new(1, 0, 1, 0)
+        TextLabel.Parent = Top
+        TextLabel.Position = UDim2.new(0, 10, 0, 0)
+
+        UICorner1.Parent = Top
+        UICorner1.CornerRadius = UDim.new(0, 5)
+
+        TextLabel1.Font = Enum.Font.GothamBold
+        TextLabel1.Text = NotifyConfig.Description
+        TextLabel1.TextColor3 = NotifyConfig.Color
+        TextLabel1.TextSize = 14
+        TextLabel1.TextXAlignment = Enum.TextXAlignment.Left
+        TextLabel1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        TextLabel1.BackgroundTransparency = 0.9990000128746033
+        TextLabel1.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        TextLabel1.BorderSizePixel = 0
+        TextLabel1.Size = UDim2.new(1, 0, 1, 0)
+        TextLabel1.Position = UDim2.new(0, TextLabel.TextBounds.X + 15, 0, 0)
+        TextLabel1.Parent = Top
+
+        Close.Font = Enum.Font.SourceSans
+        Close.Text = ""
+        Close.TextColor3 = Color3.fromRGB(0, 0, 0)
+        Close.TextSize = 14
+        Close.AnchorPoint = Vector2.new(1, 0.5)
+        Close.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Close.BackgroundTransparency = 0.9990000128746033
+        Close.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        Close.BorderSizePixel = 0
+        Close.Position = UDim2.new(1, -5, 0.5, 0)
+        Close.Size = UDim2.new(0, 25, 0, 25)
+        Close.Name = "Close"
+        Close.Parent = Top
+
+        ImageLabel.Image = "rbxassetid://9886659671"
+        ImageLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+        ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        ImageLabel.BackgroundTransparency = 0.9990000128746033
+        ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        ImageLabel.BorderSizePixel = 0
+        ImageLabel.Position = UDim2.new(0.49000001, 0, 0.5, 0)
+        ImageLabel.Size = UDim2.new(1, -8, 1, -8)
+        ImageLabel.Parent = Close
+
+        TextLabel2.Font = Enum.Font.GothamBold
+        TextLabel2.TextColor3 = Color3.fromRGB(255, 255, 255)
+        TextLabel2.TextSize = 13
+        TextLabel2.Text = NotifyConfig.Content
+        TextLabel2.TextXAlignment = Enum.TextXAlignment.Left
+        TextLabel2.TextYAlignment = Enum.TextYAlignment.Top
+        TextLabel2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        TextLabel2.BackgroundTransparency = 0.9990000128746033
+        TextLabel2.TextColor3 = Color3.fromRGB(150, 150, 150)
+        TextLabel2.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        TextLabel2.BorderSizePixel = 0
+        TextLabel2.Position = UDim2.new(0, 10, 0, 27)
+        TextLabel2.Parent = NotifyFrameReal
+        TextLabel2.Size = UDim2.new(1, -20, 0, 13)
+
+        TextLabel2.Size = UDim2.new(1, -20, 0, 13 + (13 * (TextLabel2.TextBounds.X // TextLabel2.AbsoluteSize.X)))
+        TextLabel2.TextWrapped = true
+
+        if TextLabel2.AbsoluteSize.Y < 27 then
+            NotifyFrame.Size = UDim2.new(1, 0, 0, 65)
+        else
+            NotifyFrame.Size = UDim2.new(1, 0, 0, TextLabel2.AbsoluteSize.Y + 40)
+        end
+        local waitbruh = false
+        function NotifyFunction:Close()
+            if waitbruh then
+                return false
+            end
+            waitbruh = true
+            TweenService:Create(
+                NotifyFrameReal,
+                TweenInfo.new(tonumber(NotifyConfig.Time), Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
+                { Position = UDim2.new(0, 400, 0, 0) }
+            ):Play()
+            task.wait(tonumber(NotifyConfig.Time) / 1.2)
+            NotifyFrame:Destroy()
+        end
+
+        Close.Activated:Connect(function()
+            NotifyFunction:Close()
+        end)
+        TweenService:Create(
+            NotifyFrameReal,
+            TweenInfo.new(tonumber(NotifyConfig.Time), Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
+            { Position = UDim2.new(0, 0, 0, 0) }
+        ):Play()
+        task.wait(tonumber(NotifyConfig.Delay))
+        NotifyFunction:Close()
+    end)
+    return NotifyFunction
+end
+
+function than(msg, delay, color, title, desc)
+    return Chloex:MakeNotify({
+        Title = title or "HydraHub",
+        Description = desc or "Notification",
+        Content = msg or "Content",
+        Color = color or Color3.fromRGB(0, 208, 255),
+        Delay = delay or 4
+    })
 end
 
 return Chloex
