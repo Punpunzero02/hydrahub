@@ -254,8 +254,8 @@ local function MakeDraggable(topbarobject, object)
             minSizeX, minSizeY = 100, 100
             defSizeX, defSizeY = 470, 270
         else
-            minSizeX, minSizeY = 480, 360
-            defSizeX, defSizeY = 760, 400
+            minSizeX, minSizeY = 100, 100
+            defSizeX, defSizeY = 640, 400
         end
 
         object.Size = UDim2.new(0, defSizeX, 0, defSizeY)
@@ -610,6 +610,8 @@ function than(msg, delay, color, title, desc)
         Delay = delay or 4
     })
 end
+
+local InventoryPickerGui = nil
 
 
 function Chloex:Window(GuiConfig)
@@ -1882,7 +1884,7 @@ function Chloex:Window(GuiConfig)
         TabButton.Font = Enum.Font.GothamBold
         TabButton.Text = ""
         TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-        TabButton.TextSize = 12
+        TabButton.TextSize = 13
         TabButton.TextXAlignment = Enum.TextXAlignment.Left
         TabButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         TabButton.BackgroundTransparency = 0.9990000128746033
@@ -1895,7 +1897,7 @@ function Chloex:Window(GuiConfig)
         TabName.Font = Enum.Font.GothamBold
         TabName.Text = tostring(TabConfig.Name)
         TabName.TextColor3 = Color3.fromRGB(230, 230, 235)
-        TabName.TextSize = 12
+        TabName.TextSize = 13
         TabName.TextXAlignment = Enum.TextXAlignment.Left
         TabName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         TabName.BackgroundTransparency = 0.9990000128746033
@@ -1911,7 +1913,7 @@ function Chloex:Window(GuiConfig)
         FeatureImg.BorderColor3 = Color3.fromRGB(0, 0, 0)
         FeatureImg.BorderSizePixel = 0
         FeatureImg.Position = UDim2.new(0, 10, 0, 7)
-        FeatureImg.Size = UDim2.new(0, 14, 0, 14)
+        FeatureImg.Size = UDim2.new(0, 18, 0, 18)
         FeatureImg.Name = "FeatureImg"
         FeatureImg.Parent = Tab
         if CountTab == 0 then
@@ -2038,7 +2040,7 @@ function Chloex:Window(GuiConfig)
             SectionReal.BorderSizePixel = 0
             SectionReal.LayoutOrder = 1
             SectionReal.Position = UDim2.new(0.5, 0, 0, 0)
-            SectionReal.Size = UDim2.new(1, 1, 0, 34)
+            SectionReal.Size = UDim2.new(1, 1, 0, 38)
             SectionReal.Name = "SectionReal"
             SectionReal.Parent = Section
 
@@ -2089,7 +2091,7 @@ function Chloex:Window(GuiConfig)
             SectionTitle.Font = Enum.Font.GothamBold
             SectionTitle.Text = Title
             SectionTitle.TextColor3 = Color3.fromRGB(230, 230, 235)
-            SectionTitle.TextSize = 13
+            SectionTitle.TextSize = 14
             SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
             SectionTitle.TextYAlignment = Enum.TextYAlignment.Top
             SectionTitle.AnchorPoint = Vector2.new(0, 0.5)
@@ -2132,7 +2134,7 @@ function Chloex:Window(GuiConfig)
             SectionAdd.ClipsDescendants = true
             SectionAdd.LayoutOrder = 1
             SectionAdd.Position = UDim2.new(0.5, 0, 0, 38)
-            SectionAdd.Size = UDim2.new(1, 0, 0, 40)
+            SectionAdd.Size = UDim2.new(1, 0, 0, 100)
             SectionAdd.Name = "SectionAdd"
             SectionAdd.Parent = Section
 
@@ -2271,8 +2273,8 @@ function Chloex:Window(GuiConfig)
                 ParagraphTitle.TextXAlignment = Enum.TextXAlignment.Left
                 ParagraphTitle.TextYAlignment = Enum.TextYAlignment.Top
                 ParagraphTitle.BackgroundTransparency = 1
-                ParagraphTitle.Position = UDim2.new(0, iconOffset, 0, 6)
-                ParagraphTitle.Size = UDim2.new(1, -16, 0, 12)
+                ParagraphTitle.Position = UDim2.new(0, iconOffset, 0, 10)
+                ParagraphTitle.Size = UDim2.new(1, -16, 0, 13)
                 ParagraphTitle.Name = "ParagraphTitle"
                 ParagraphTitle.Parent = Paragraph
 
@@ -2283,7 +2285,7 @@ function Chloex:Window(GuiConfig)
                 ParagraphContent.TextXAlignment = Enum.TextXAlignment.Left
                 ParagraphContent.TextYAlignment = Enum.TextYAlignment.Top
                 ParagraphContent.BackgroundTransparency = 1
-                ParagraphContent.Position = UDim2.new(0, iconOffset, 0, 20)
+                ParagraphContent.Position = UDim2.new(0, iconOffset, 0, 25)
                 ParagraphContent.Name = "ParagraphContent"
                 ParagraphContent.TextWrapped = false
                 ParagraphContent.RichText = true
@@ -2629,20 +2631,20 @@ end
 
                 ToggleTitle.Font = Enum.Font.GothamBold
                 ToggleTitle.Text = ToggleConfig.Title
-                ToggleTitle.TextSize = 12
+                ToggleTitle.TextSize = 13
                 ToggleTitle.TextColor3 = Color3.fromRGB(231, 231, 231)
                 ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
                 ToggleTitle.TextYAlignment = Enum.TextYAlignment.Top
                 ToggleTitle.BackgroundTransparency = 1
-                ToggleTitle.Position = UDim2.new(0, 10, 0, 6)
-                ToggleTitle.Size = UDim2.new(1, -100, 0, 12)
+                ToggleTitle.Position = UDim2.new(0, 10, 0, 10)
+                ToggleTitle.Size = UDim2.new(1, -100, 0, 13)
                 ToggleTitle.Name = "ToggleTitle"
                 ToggleTitle.Parent = Toggle
 
                 local ToggleTitle2 = Instance.new("TextLabel")
                 ToggleTitle2.Font = Enum.Font.GothamBold
                 ToggleTitle2.Text = ToggleConfig.Title2
-                ToggleTitle2.TextSize = 11
+                ToggleTitle2.TextSize = 12
                 ToggleTitle2.TextColor3 = Color3.fromRGB(231, 231, 231)
                 ToggleTitle2.TextXAlignment = Enum.TextXAlignment.Left
                 ToggleTitle2.TextYAlignment = Enum.TextYAlignment.Top
@@ -2665,12 +2667,12 @@ end
                 ToggleContent.Parent = Toggle
 
                 if ToggleConfig.Title2 ~= "" then
-                    Toggle.Size = UDim2.new(1, 0, 0, 44)
-                    ToggleContent.Position = UDim2.new(0, 10, 0, 28)
+                    Toggle.Size = UDim2.new(1, 0, 0, 57)
+                    ToggleContent.Position = UDim2.new(0, 10, 0, 36)
                     ToggleTitle2.Visible = true
                 else
-                    Toggle.Size = UDim2.new(1, 0, 0, 34)
-                    ToggleContent.Position = UDim2.new(0, 10, 0, 18)
+                    Toggle.Size = UDim2.new(1, 0, 0, 46)
+                    ToggleContent.Position = UDim2.new(0, 10, 0, 23)
                     ToggleTitle2.Visible = false
                 end
 
@@ -2678,9 +2680,9 @@ end
                     12 + (12 * (ToggleContent.TextBounds.X // ToggleContent.AbsoluteSize.X)))
                 ToggleContent.TextWrapped = true
                 if ToggleConfig.Title2 ~= "" then
-                    Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 34)
+                    Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 47)
                 else
-                    Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 22)
+                    Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 33)
                 end
 
                 ToggleContent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
@@ -2688,9 +2690,9 @@ end
                     ToggleContent.Size = UDim2.new(1, -100, 0,
                         12 + (12 * (ToggleContent.TextBounds.X // ToggleContent.AbsoluteSize.X)))
                     if ToggleConfig.Title2 ~= "" then
-                        Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 34)
+                        Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 47)
                     else
-                        Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 22)
+                        Toggle.Size = UDim2.new(1, 0, 0, ToggleContent.AbsoluteSize.Y + 33)
                     end
                     ToggleContent.TextWrapped = true
                     UpdateSizeSection()
@@ -2823,7 +2825,7 @@ end
                 Slider.BorderColor3 = Color3.fromRGB(0, 0, 0)
                 Slider.BorderSizePixel = 0
                 Slider.LayoutOrder = CountItem
-                Slider.Size = UDim2.new(1, 0, 0, 38)
+                Slider.Size = UDim2.new(1, 0, 0, 46)
                 Slider.Name = "Slider"
                 Slider.Parent = SectionAdd
 
@@ -2864,13 +2866,13 @@ end
                 SliderContent.Size = UDim2.new(1, -230, 0,
                     12 + (12 * (SliderContent.TextBounds.X // SliderContent.AbsoluteSize.X)))
                 SliderContent.TextWrapped = true
-                Slider.Size = UDim2.new(1, 0, 0, SliderContent.AbsoluteSize.Y + 26)
+                Slider.Size = UDim2.new(1, 0, 0, SliderContent.AbsoluteSize.Y + 33)
 
                 SliderContent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
                     SliderContent.TextWrapped = false
                     SliderContent.Size = UDim2.new(1, -230, 0,
                         12 + (12 * (SliderContent.TextBounds.X // SliderContent.AbsoluteSize.X)))
-                    Slider.Size = UDim2.new(1, 0, 0, SliderContent.AbsoluteSize.Y + 26)
+                    Slider.Size = UDim2.new(1, 0, 0, SliderContent.AbsoluteSize.Y + 33)
                     SliderContent.TextWrapped = true
                     UpdateSizeSection()
                 end)
@@ -3091,7 +3093,7 @@ end
                 Input.BorderColor3 = Color3.fromRGB(0, 0, 0)
                 Input.BorderSizePixel = 0
                 Input.LayoutOrder = CountItem
-                Input.Size = UDim2.new(1, 0, 0, 38)
+                Input.Size = UDim2.new(1, 0, 0, 46)
                 Input.Name = "Input"
                 Input.Parent = SectionAdd
 
@@ -3133,13 +3135,13 @@ end
                 InputContent.Size = UDim2.new(1, -180, 0,
                     12 + (12 * (InputContent.TextBounds.X // InputContent.AbsoluteSize.X)))
                 InputContent.TextWrapped = true
-                Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 26)
+                Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 33)
 
                 InputContent:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
                     InputContent.TextWrapped = false
                     InputContent.Size = UDim2.new(1, -180, 0,
                         12 + (12 * (InputContent.TextBounds.X // InputContent.AbsoluteSize.X)))
-                    Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 26)
+                    Input.Size = UDim2.new(1, 0, 0, InputContent.AbsoluteSize.Y + 33)
                     InputContent.TextWrapped = true
                     UpdateSizeSection()
                 end)
@@ -3231,7 +3233,7 @@ end
                 Dropdown.BackgroundTransparency = 0
                 Dropdown.BorderSizePixel = 0
                 Dropdown.LayoutOrder = CountItem
-                Dropdown.Size = UDim2.new(1, 0, 0, 38)
+                Dropdown.Size = UDim2.new(1, 0, 0, 46)
                 Dropdown.Name = "Dropdown"
                 Dropdown.Parent = SectionAdd
 
@@ -3926,6 +3928,7 @@ end
             end
 
         
+
 
             function Items:AddSubSection(title)
                 title = title or "Sub Section"
@@ -4622,6 +4625,17 @@ end
                 return PickerFunc
             end
 
+
+            CountSection = CountSection + 1
+            return Items
+        end
+
+        CountTab = CountTab + 1
+        local safeName = TabConfig.Name:gsub("%s+", "_")
+        _G[safeName] = Sections
+        return Sections
+    end
+
     function Tabs:InfoTab(InfoConfig)
         InfoConfig = InfoConfig or {}
         local Sections = Tabs:AddTab({
@@ -4699,6 +4713,8 @@ end
 
     return Tabs
 end
+
+
 
 
 
