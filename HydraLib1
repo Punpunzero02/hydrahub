@@ -16,6 +16,45 @@ local C_SUBTEXT = Color3.fromRGB(140, 145, 165)
 local C_BORDER  = Color3.fromRGB(40, 43, 58)
 local C_GREEN   = Color3.fromRGB(120, 220, 140)
 
+-- Ported straight from kknjx.lua so Tabs:AddTab({ Icon = "name" }) can
+-- resolve a short name to a real rbxassetid, same as kknjx does.
+local Icons = {
+    player    = "rbxassetid://12120698352",
+    web       = "rbxassetid://137601480983962",
+    bag       = "rbxassetid://8601111810",
+    shop      = "rbxassetid://4985385964",
+    cart      = "rbxassetid://128874923961846",
+    plug      = "rbxassetid://137601480983962",
+    settings  = "rbxassetid://70386228443175",
+    loop      = "rbxassetid://122032243989747",
+    gps       = "rbxassetid://17824309485",
+    compas    = "rbxassetid://125300760963399",
+    gamepad   = "rbxassetid://84173963561612",
+    boss      = "rbxassetid://13132186360",
+    scroll    = "rbxassetid://114127804740858",
+    menu      = "rbxassetid://6340513838",
+    crosshair = "rbxassetid://12614416478",
+    user      = "rbxassetid://108483430622128",
+    stat      = "rbxassetid://12094445329",
+    eyes      = "rbxassetid://14321059114",
+    sword     = "rbxassetid://82472368671405",
+    discord   = "rbxassetid://94434236999817",
+    star      = "rbxassetid://107005941750079",
+    skeleton  = "rbxassetid://17313330026",
+    payment   = "rbxassetid://18747025078",
+    scan      = "rbxassetid://109869955247116",
+    alert     = "rbxassetid://73186275216515",
+    question  = "rbxassetid://17510196486",
+    idea      = "rbxassetid://16833255748",
+    strom     = "rbxassetid://13321880293",
+    water     = "rbxassetid://100076212630732",
+    dcs       = "rbxassetid://15310731934",
+    start     = "rbxassetid://108886429866687",
+    next      = "rbxassetid://12662718374",
+    rod       = "rbxassetid://103247953194129",
+    fish      = "rbxassetid://97167558235554",
+}
+
 
 local function corner(inst, r)
     local c = Instance.new("UICorner")
@@ -51,14 +90,37 @@ local isMobile = isMobileDevice()
 
 local viewport = workspace.CurrentCamera.ViewportSize
 
+-- ═══════════════════════════════════════════════════════════════
+-- DRAGON AUTO-SCALE
+-- Same base logic as HydraLib1's safeSize (scale = target / viewport),
+-- but Dragon targets a much bigger window and uses higher mobile caps
+-- so it doesn't get crushed to 50%x30% of the screen like Chloex does.
+-- On top of that we clamp the final pixel size to the real viewport
+-- (kknjx-style fixed-pixel philosophy) so it never overflows on tiny
+-- screens and never looks tiny on big cloud-emulator viewports.
+-- ═══════════════════════════════════════════════════════════════
+
 local function safeSize(pxWidth, pxHeight)
     local scaleX = pxWidth / viewport.X
     local scaleY = pxHeight / viewport.Y
     if isMobile then
-        if scaleX > 0.5 then scaleX = 0.5 end
-        if scaleY > 0.3 then scaleY = 0.3 end
+        -- Dragon caps are much higher than Chloex (0.5 / 0.3) so the
+        -- window actually fills the phone screen instead of shrinking.
+        if scaleX > 0.94 then scaleX = 0.94 end
+        if scaleY > 0.82 then scaleY = 0.82 end
+    else
+        if scaleX > 0.85 then scaleX = 0.85 end
+        if scaleY > 0.85 then scaleY = 0.85 end
     end
     return UDim2.new(scaleX, 0, scaleY, 0)
+end
+
+-- Resolves a scale-based UDim2 into a final pixel size, clamped between
+-- a sensible min/max so Dragon always looks rapi regardless of device.
+local function resolveScaledPixelSize(scaleUDim, minW, minH, maxW, maxH)
+    local w = math.clamp(scaleUDim.X.Scale * viewport.X, minW, maxW)
+    local h = math.clamp(scaleUDim.Y.Scale * viewport.Y, minH, maxH)
+    return math.floor(w), math.floor(h)
 end
 
 function CircleClick(Button, X, Y)
@@ -244,23 +306,48 @@ function Dragon:Window(GuiConfig)
 
     local Main = Instance.new("Frame")
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
+
+    -- Dragon target sizes are noticeably larger than Chloex's
+    -- (470x270 mobile / 760x560 desktop). These are the "law" sizes
+    -- Dragon aims for before being clamped to the real viewport.
+    local DRAGON_TARGET_W, DRAGON_TARGET_H
     if isMobile then
-        Main.Size = safeSize(470, 270)
+        DRAGON_TARGET_W, DRAGON_TARGET_H = 900, 620
     else
-        Main.Size = safeSize(760, 560)
+        DRAGON_TARGET_W, DRAGON_TARGET_H = 1180, 820
     end
+
+    local mainScale = safeSize(DRAGON_TARGET_W, DRAGON_TARGET_H)
+    local MinW, MinH, MaxW, MaxH
+    if isMobile then
+        MinW, MinH, MaxW, MaxH = 360, 260, 1200, 900
+    else
+        MinW, MinH, MaxW, MaxH = 720, 520, 1600, 1100
+    end
+    local mainW, mainH = resolveScaledPixelSize(mainScale, MinW, MinH, MaxW, MaxH)
+    Main.Size = UDim2.new(0, mainW, 0, mainH)
     Main.Position = UDim2.fromScale(0.5, 0.5)
-    Main.BackgroundColor3 = C_BG
+
+    -- Glass look ported from kknjx: navy tint at low opacity instead of
+    -- a flat opaque panel, plus a thin glowing blue UIStroke outline.
+    Main.BackgroundColor3 = Color3.fromRGB(14, 22, 48)
+    Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.08
     Main.BorderSizePixel = 0
     Main.ClipsDescendants = true
     Main.Parent = ScreenGui
     corner(Main, 12)
-    stroke(Main, C_BORDER, 1)
+
+    local GlassStroke = Instance.new("UIStroke")
+    GlassStroke.Color = Color3.fromRGB(90, 140, 255)
+    GlassStroke.Thickness = 1
+    GlassStroke.Transparency = 0.55
+    GlassStroke.Parent = Main
 
 
     local TopBar = Instance.new("Frame")
     TopBar.Size = UDim2.new(1, 0, 0, 46)
     TopBar.BackgroundColor3 = C_SIDEBAR
+    TopBar.BackgroundTransparency = 0.35
     TopBar.BorderSizePixel = 0
     TopBar.Parent = Main
     corner(TopBar, 12)
@@ -268,23 +355,31 @@ function Dragon:Window(GuiConfig)
     topFix.Size = UDim2.new(1, 0, 0, 12)
     topFix.Position = UDim2.new(0, 0, 1, -12)
     topFix.BackgroundColor3 = C_SIDEBAR
+    topFix.BackgroundTransparency = 0.35
     topFix.BorderSizePixel = 0
     topFix.Parent = TopBar
 
-    local LogoIcon = Instance.new("Frame")
-    LogoIcon.Size = UDim2.fromOffset(28, 28)
-    LogoIcon.Position = UDim2.fromOffset(12, 9)
-    LogoIcon.BackgroundColor3 = GuiConfig.Color
-    LogoIcon.Parent = TopBar
-    corner(LogoIcon, 7)
-    local LogoLabel = Instance.new("TextLabel")
-    LogoLabel.BackgroundTransparency = 1
-    LogoLabel.Size = UDim2.fromScale(1, 1)
-    LogoLabel.Text = string.sub(tostring(GuiConfig.Title or "H"), 1, 1)
-    LogoLabel.TextColor3 = Color3.new(1, 1, 1)
-    LogoLabel.Font = Enum.Font.GothamBold
-    LogoLabel.TextSize = 15
-    LogoLabel.Parent = LogoIcon
+    -- Dragon's header logo: default is the Hydra logo asset, but stays
+    -- overridable via GuiConfig.Image (same pattern kknjx uses), so
+    -- anyone forking this lib can swap their own logo without editing
+    -- the source.
+    local LogoImg = Instance.new("ImageLabel")
+    LogoImg.Size = UDim2.fromOffset(28, 28)
+    LogoImg.Position = UDim2.fromOffset(10, 9)
+    LogoImg.BackgroundTransparency = 1
+    LogoImg.ScaleType = Enum.ScaleType.Fit
+    LogoImg.Name = "LogoImg"
+    LogoImg.Parent = TopBar
+    do
+        local rawLogo = tostring(GuiConfig.Image or "")
+        if string.find(rawLogo, "rbxthumb://") or string.find(rawLogo, "rbxassetid://") then
+            LogoImg.Image = rawLogo
+        elseif rawLogo ~= "" then
+            LogoImg.Image = "rbxassetid://" .. rawLogo
+        else
+            LogoImg.Image = "rbxthumb://type=Asset&id=5669312251&w=150&h=150"
+        end
+    end
 
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.BackgroundTransparency = 1
@@ -308,6 +403,21 @@ function Dragon:Window(GuiConfig)
     SubtitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     SubtitleLabel.Parent = TopBar
 
+    -- ═══════════════════════════════════════════════════════════
+    -- kknjx-style dynamic grow: if the title/footer text is wider
+    -- than the current window, expand Main's width to fit (like
+    -- kknjx's `115 + TextLabel.TextBounds.X + TextLabel1.TextBounds.X`
+    -- resize), but never past MaxW and never below the base mainW.
+    -- ═══════════════════════════════════════════════════════════
+    do
+        local neededW = 48 + math.max(TitleLabel.TextBounds.X, SubtitleLabel.TextBounds.X) + 120
+        local grownW = math.clamp(math.max(mainW, neededW), MinW, MaxW)
+        if grownW ~= mainW then
+            mainW = grownW
+            Main.Size = UDim2.new(0, mainW, 0, mainH)
+        end
+    end
+
     local MinimizeBtn = Instance.new("TextButton")
     MinimizeBtn.Size = UDim2.fromOffset(24, 24)
     MinimizeBtn.Position = UDim2.new(1, -66, 0, 11)
@@ -329,12 +439,15 @@ function Dragon:Window(GuiConfig)
     CloseBtn.Parent = TopBar
 
 
-    local SidebarWidth = isMobile and 100 or 150
+    -- Dragon's sidebar is wider than Chloex's (100/150) to match the
+    -- much bigger window and keep proportions rapi.
+    local SidebarWidth = isMobile and 190 or 230
 
     local Sidebar = Instance.new("Frame")
     Sidebar.Size = UDim2.new(0, SidebarWidth, 1, -46)
     Sidebar.Position = UDim2.new(0, 0, 0, 46)
     Sidebar.BackgroundColor3 = C_SIDEBAR
+    Sidebar.BackgroundTransparency = 0.35
     Sidebar.BorderSizePixel = 0
     Sidebar.Parent = Main
 
@@ -352,6 +465,7 @@ function Dragon:Window(GuiConfig)
     do
         SearchBar = Instance.new("Frame")
         SearchBar.BackgroundColor3 = C_PANEL2
+        SearchBar.BackgroundTransparency = 0.25
         SearchBar.BorderSizePixel = 0
         SearchBar.Size = UDim2.new(1, 0, 0, 28)
         SearchBar.Name = "SearchBar"
@@ -377,7 +491,7 @@ function Dragon:Window(GuiConfig)
         SearchResults = Instance.new("ScrollingFrame")
         SearchResults.Active = true
         SearchResults.BackgroundColor3 = C_PANEL
-        SearchResults.BackgroundTransparency = 0.05
+        SearchResults.BackgroundTransparency = 0.2
         SearchResults.BorderSizePixel = 0
         SearchResults.ScrollBarThickness = 2
         SearchResults.ScrollBarImageColor3 = GuiConfig.Color
@@ -503,6 +617,7 @@ function Dragon:Window(GuiConfig)
     Content.Size = UDim2.new(1, -SidebarWidth, 1, -74)
     Content.Position = UDim2.new(0, SidebarWidth, 0, 46)
     Content.BackgroundColor3 = C_BG
+    Content.BackgroundTransparency = 1
     Content.BorderSizePixel = 0
     Content.Parent = Main
     pad(Content, 14, 12, 14, 12)
@@ -537,6 +652,7 @@ function Dragon:Window(GuiConfig)
     FooterBar.Size = UDim2.new(1, 0, 0, 28)
     FooterBar.Position = UDim2.new(0, 0, 1, -28)
     FooterBar.BackgroundColor3 = C_SIDEBAR
+    FooterBar.BackgroundTransparency = 0.35
     FooterBar.BorderSizePixel = 0
     FooterBar.ZIndex = 5
     FooterBar.Parent = Main
@@ -595,14 +711,9 @@ function Dragon:Window(GuiConfig)
     ResizeIcon.ZIndex = 10
     ResizeIcon.Parent = ResizeHandle
 
-    local MIN_W, MIN_H, MAX_W, MAX_H
-    if isMobile then
-        MIN_W, MIN_H = 200, 150
-        MAX_W, MAX_H = 600, 500
-    else
-        MIN_W, MIN_H = 480, 360
-        MAX_W, MAX_H = 1100, 800
-    end
+    -- Reuse the same bounds Dragon used to size itself initially so
+    -- manual resize stays consistent with the auto-scale "law" sizes.
+    local MIN_W, MIN_H, MAX_W, MAX_H = MinW, MinH, MaxW, MaxH
 
     local resizing, resizeStart, sizeStart
     ResizeHandle.InputBegan:Connect(function(input)
@@ -874,13 +985,14 @@ function Dragon:Window(GuiConfig)
 
         local isActive = (CountTab == 0)
 
-        local function makeCatButton(name, active)
+        local function makeCatButton(name, active, iconName)
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 32)
-            btn.BackgroundColor3 = C_PANEL
-            btn.BackgroundTransparency = active and 0 or 1
+            btn.Size = UDim2.new(1, 0, 0, 36)
+            btn.BackgroundColor3 = GuiConfig.Color
+            btn.BackgroundTransparency = active and 0.82 or 1
             btn.AutoButtonColor = false
             btn.Text = ""
+            btn.Name = "CatBtn"
             btn.Parent = Sidebar
             corner(btn, 6)
 
@@ -889,54 +1001,75 @@ function Dragon:Window(GuiConfig)
             indicator.Position = UDim2.new(0, 0, 0.5, -8)
             indicator.BackgroundColor3 = GuiConfig.Color
             indicator.Visible = active
+            indicator.Name = "Indicator"
             indicator.Parent = btn
             corner(indicator, 2)
 
+            -- Icon on the left, looked up from the Icons table (or used
+            -- directly as an id/full string), same lookup kknjx uses.
+            local icon = Instance.new("ImageLabel")
+            icon.Size = UDim2.fromOffset(16, 16)
+            icon.Position = UDim2.new(0, 12, 0.5, -8)
+            icon.BackgroundTransparency = 1
+            icon.ScaleType = Enum.ScaleType.Fit
+            icon.Name = "TabIcon"
+            icon.Visible = iconName ~= ""
+            icon.ImageColor3 = active and GuiConfig.Color or C_SUBTEXT
+            if iconName ~= "" then
+                if Icons[iconName] then
+                    icon.Image = Icons[iconName]
+                elseif string.find(iconName, "rbxassetid://") or string.find(iconName, "rbxthumb://") then
+                    icon.Image = iconName
+                else
+                    icon.Image = "rbxassetid://" .. iconName
+                end
+            end
+            icon.Parent = btn
+
             local lbl = Instance.new("TextLabel")
             lbl.BackgroundTransparency = 1
-            lbl.Position = UDim2.new(0, 12, 0, 0)
-            lbl.Size = UDim2.new(1, -18, 1, 0)
+            lbl.Position = UDim2.new(0, iconName ~= "" and 36 or 12, 0, 0)
+            lbl.Size = UDim2.new(1, iconName ~= "" and -42 or -18, 1, 0)
             lbl.Text = name
             lbl.TextColor3 = active and C_TEXT or C_SUBTEXT
             lbl.Font = active and Enum.Font.GothamBold or Enum.Font.Gotham
             lbl.TextSize = 12
             lbl.TextXAlignment = Enum.TextXAlignment.Left
+            lbl.Name = "CatLabel"
             lbl.Parent = btn
 
             return btn
         end
 
-        local catBtn = makeCatButton(TabConfig.Name, isActive)
+        local catBtn = makeCatButton(TabConfig.Name, isActive, TabConfig.Icon)
         table.insert(CategoryButtons, catBtn)
         CategoryPages[TabConfig.Name] = Page
 
         catBtn.MouseButton1Click:Connect(function()
             for _, b in ipairs(CategoryButtons) do
-                for _, child in ipairs(b:GetChildren()) do
-                    if child:IsA("Frame") and child.Size.Y.Offset == 16 then
-                        child.Visible = false
-                    end
+                local ind = b:FindFirstChild("Indicator")
+                if ind then ind.Visible = false end
+                local lbl = b:FindFirstChild("CatLabel")
+                if lbl then
+                    lbl.TextColor3 = C_SUBTEXT
+                    lbl.Font = Enum.Font.Gotham
                 end
-                for _, child in ipairs(b:GetChildren()) do
-                    if child:IsA("TextLabel") then
-                        child.TextColor3 = C_SUBTEXT
-                        child.Font = Enum.Font.Gotham
-                    end
-                end
+                local ico = b:FindFirstChild("TabIcon")
+                if ico then ico.ImageColor3 = C_SUBTEXT end
                 b.BackgroundTransparency = 1
             end
-            for _, child in ipairs(catBtn:GetChildren()) do
-                if child:IsA("Frame") and child.Size.Y.Offset == 16 then
-                    child.Visible = true
-                end
+
+            local ind = catBtn:FindFirstChild("Indicator")
+            if ind then ind.Visible = true end
+            local lbl = catBtn:FindFirstChild("CatLabel")
+            if lbl then
+                lbl.TextColor3 = C_TEXT
+                lbl.Font = Enum.Font.GothamBold
             end
-            for _, child in ipairs(catBtn:GetChildren()) do
-                if child:IsA("TextLabel") then
-                    child.TextColor3 = C_TEXT
-                    child.Font = Enum.Font.GothamBold
-                end
-            end
-            catBtn.BackgroundTransparency = 0
+            local ico = catBtn:FindFirstChild("TabIcon")
+            if ico then ico.ImageColor3 = GuiConfig.Color end
+            catBtn.BackgroundTransparency = 0.82
+
             HeaderLabel.Text = TabConfig.Name
             PageLayout:JumpTo(Page)
         end)
