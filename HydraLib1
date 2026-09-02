@@ -1875,6 +1875,8 @@ function Dragon:Window(GuiConfig)
                     DropdownContent.Font = Enum.Font.Gotham
                     DropdownContent.Text = DropdownConfig.Content
                     DropdownContent.TextColor3 = C_SUBTEXT
+                    DropdownContent.TextStrokeColor3 = Color3.fromRGB(10, 15, 30)
+                    DropdownContent.TextStrokeTransparency = 0.4
                     DropdownContent.TextSize = 10
                     DropdownContent.TextWrapped = true
                     DropdownContent.TextXAlignment = Enum.TextXAlignment.Left
@@ -1896,7 +1898,7 @@ function Dragon:Window(GuiConfig)
                 local OptionSelecting = Instance.new("TextLabel")
                 OptionSelecting.Font = Enum.Font.GothamBold
                 OptionSelecting.Text = DropdownConfig.Multi and "Select Options" or "Select Option"
-                OptionSelecting.TextColor3 = Color3.fromRGB(255, 255, 255)
+                OptionSelecting.TextColor3 = C_SUBTEXT
                 OptionSelecting.TextSize = 11
                 OptionSelecting.TextXAlignment = Enum.TextXAlignment.Left
                 OptionSelecting.TextTruncate = Enum.TextTruncate.AtEnd
@@ -1905,12 +1907,6 @@ function Dragon:Window(GuiConfig)
                 OptionSelecting.Position = UDim2.new(0, 8, 0.5, 0)
                 OptionSelecting.Size = UDim2.new(1, -24, 1, -8)
                 OptionSelecting.Parent = SelectFrame
-
-                local OptionSelectingGlow = Instance.new("UIStroke")
-                OptionSelectingGlow.Color = Color3.fromRGB(90, 140, 255)
-                OptionSelectingGlow.Thickness = 1
-                OptionSelectingGlow.Transparency = 0.3
-                OptionSelectingGlow.Parent = OptionSelecting
 
                 local ArrowLabel = Instance.new("ImageLabel")
                 ArrowLabel.BackgroundTransparency = 1
