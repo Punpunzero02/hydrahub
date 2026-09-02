@@ -95,10 +95,10 @@ local function safeSize(pxWidth, pxHeight)
     local scaleY = pxHeight / viewport.Y
     if isMobile then
         if scaleX > 0.78 then scaleX = 0.78 end
-        if scaleY > 0.62 then scaleY = 0.62 end
+        if scaleY > 0.85 then scaleY = 0.85 end
     else
         if scaleX > 0.65 then scaleX = 0.65 end
-        if scaleY > 0.65 then scaleY = 0.65 end
+        if scaleY > 0.85 then scaleY = 0.85 end
     end
     return UDim2.new(scaleX, 0, scaleY, 0)
 end
@@ -295,17 +295,17 @@ function Dragon:Window(GuiConfig)
 
     local DRAGON_TARGET_W, DRAGON_TARGET_H
     if isMobile then
-        DRAGON_TARGET_W, DRAGON_TARGET_H = 620, 760
+        DRAGON_TARGET_W, DRAGON_TARGET_H = 620, 980
     else
-        DRAGON_TARGET_W, DRAGON_TARGET_H = 860, 980
+        DRAGON_TARGET_W, DRAGON_TARGET_H = 860, 1180
     end
 
     local mainScale = safeSize(DRAGON_TARGET_W, DRAGON_TARGET_H)
     local MinW, MinH, MaxW, MaxH
     if isMobile then
-        MinW, MinH, MaxW, MaxH = 340, 240, 700, 820
+        MinW, MinH, MaxW, MaxH = 340, 300, 700, 820
     else
-        MinW, MinH, MaxW, MaxH = 560, 400, 980, 1040
+        MinW, MinH, MaxW, MaxH = 560, 480, 980, 1040
     end
     local mainW, mainH = resolveScaledPixelSize(mainScale, MinW, MinH, MaxW, MaxH)
     Main.Size = UDim2.new(0, mainW, 0, mainH)
@@ -416,8 +416,8 @@ function Dragon:Window(GuiConfig)
     local Sidebar = Instance.new("Frame")
     Sidebar.Size = UDim2.new(0, SidebarWidth, 1, -46)
     Sidebar.Position = UDim2.new(0, 0, 0, 46)
-    Sidebar.BackgroundColor3 = C_SIDEBAR
-    Sidebar.BackgroundTransparency = 0.25
+    Sidebar.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    Sidebar.BackgroundTransparency = 0
     Sidebar.BorderSizePixel = 0
     Sidebar.Parent = Main
     stroke(Sidebar, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.6
@@ -1070,8 +1070,8 @@ function Dragon:Window(GuiConfig)
             Title = Title or "Title"
 
             local Section = Instance.new("Frame")
-            Section.BackgroundColor3 = C_PANEL
-            Section.BackgroundTransparency = 0.55
+            Section.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            Section.BackgroundTransparency = 0
             stroke(Section, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
             Section.BorderSizePixel = 0
             Section.ClipsDescendants = true
