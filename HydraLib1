@@ -295,17 +295,17 @@ function Dragon:Window(GuiConfig)
 
     local DRAGON_TARGET_W, DRAGON_TARGET_H
     if isMobile then
-        DRAGON_TARGET_W, DRAGON_TARGET_H = 620, 420
+        DRAGON_TARGET_W, DRAGON_TARGET_H = 620, 560
     else
-        DRAGON_TARGET_W, DRAGON_TARGET_H = 860, 600
+        DRAGON_TARGET_W, DRAGON_TARGET_H = 860, 760
     end
 
     local mainScale = safeSize(DRAGON_TARGET_W, DRAGON_TARGET_H)
     local MinW, MinH, MaxW, MaxH
     if isMobile then
-        MinW, MinH, MaxW, MaxH = 340, 240, 700, 520
+        MinW, MinH, MaxW, MaxH = 340, 240, 700, 660
     else
-        MinW, MinH, MaxW, MaxH = 560, 400, 980, 700
+        MinW, MinH, MaxW, MaxH = 560, 400, 980, 860
     end
     local mainW, mainH = resolveScaledPixelSize(mainScale, MinW, MinH, MaxW, MaxH)
     Main.Size = UDim2.new(0, mainW, 0, mainH)
