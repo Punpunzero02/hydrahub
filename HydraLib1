@@ -1850,7 +1850,7 @@ function Dragon:Window(GuiConfig)
                 Dropdown.BackgroundTransparency = 0.55
                 Dropdown.BorderSizePixel = 0
                 Dropdown.LayoutOrder = CountItem
-                Dropdown.Size = UDim2.new(1, 0, 0, hasContent and 46 or 38)
+                Dropdown.Size = UDim2.new(1, 0, 0, hasContent and 40 or 30)
                 Dropdown.Name = "Dropdown"
                 Dropdown.Parent = Body
                 corner(Dropdown, 6)
@@ -1863,8 +1863,11 @@ function Dragon:Window(GuiConfig)
                 DropdownTitle.TextSize = 13
                 DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
                 DropdownTitle.BackgroundTransparency = 1
-                DropdownTitle.Position = UDim2.new(0, 10, 0, 5)
-                DropdownTitle.Size = UDim2.new(1, -160, 0, 13)
+                DropdownTitle.Position = UDim2.new(0, 10, 0, hasContent and 4 or 0)
+                DropdownTitle.Size = UDim2.new(1, -160, 0, hasContent and 13 or 30)
+                if not hasContent then
+                    DropdownTitle.TextYAlignment = Enum.TextYAlignment.Center
+                end
                 DropdownTitle.Parent = Dropdown
 
                 if hasContent then
@@ -1872,12 +1875,12 @@ function Dragon:Window(GuiConfig)
                     DropdownContent.Font = Enum.Font.Gotham
                     DropdownContent.Text = DropdownConfig.Content
                     DropdownContent.TextColor3 = C_SUBTEXT
-                    DropdownContent.TextSize = 11
+                    DropdownContent.TextSize = 10
                     DropdownContent.TextWrapped = true
                     DropdownContent.TextXAlignment = Enum.TextXAlignment.Left
                     DropdownContent.BackgroundTransparency = 1
-                    DropdownContent.Position = UDim2.new(0, 10, 0, 20)
-                    DropdownContent.Size = UDim2.new(1, -160, 0, 12)
+                    DropdownContent.Position = UDim2.new(0, 10, 0, 18)
+                    DropdownContent.Size = UDim2.new(1, -160, 0, 11)
                     DropdownContent.Parent = Dropdown
                 end
 
@@ -1886,14 +1889,14 @@ function Dragon:Window(GuiConfig)
                 SelectFrame.BackgroundColor3 = C_FIELD
                 SelectFrame.BackgroundTransparency = 0.55
                 SelectFrame.Position = UDim2.new(1, -8, 0.5, 0)
-                SelectFrame.Size = UDim2.new(0, 130, 0, 22)
+                SelectFrame.Size = UDim2.new(0, 130, 0, 20)
                 SelectFrame.Parent = Dropdown
                 corner(SelectFrame, 5)
 
                 local OptionSelecting = Instance.new("TextLabel")
                 OptionSelecting.Font = Enum.Font.GothamBold
                 OptionSelecting.Text = DropdownConfig.Multi and "Select Options" or "Select Option"
-                OptionSelecting.TextColor3 = C_SUBTEXT
+                OptionSelecting.TextColor3 = Color3.fromRGB(255, 255, 255)
                 OptionSelecting.TextSize = 11
                 OptionSelecting.TextXAlignment = Enum.TextXAlignment.Left
                 OptionSelecting.TextTruncate = Enum.TextTruncate.AtEnd
@@ -1902,6 +1905,12 @@ function Dragon:Window(GuiConfig)
                 OptionSelecting.Position = UDim2.new(0, 8, 0.5, 0)
                 OptionSelecting.Size = UDim2.new(1, -24, 1, -8)
                 OptionSelecting.Parent = SelectFrame
+
+                local OptionSelectingGlow = Instance.new("UIStroke")
+                OptionSelectingGlow.Color = Color3.fromRGB(90, 140, 255)
+                OptionSelectingGlow.Thickness = 1
+                OptionSelectingGlow.Transparency = 0.3
+                OptionSelectingGlow.Parent = OptionSelecting
 
                 local ArrowLabel = Instance.new("ImageLabel")
                 ArrowLabel.BackgroundTransparency = 1
