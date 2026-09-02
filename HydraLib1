@@ -468,6 +468,7 @@ function Dragon:Window(GuiConfig)
         SearchBar.BackgroundTransparency = 0.25
         SearchBar.BorderSizePixel = 0
         SearchBar.Size = UDim2.new(1, 0, 0, 28)
+        SearchBar.LayoutOrder = -1000 -- always first, above every tab button
         SearchBar.Name = "SearchBar"
         SearchBar.Parent = Sidebar
         corner(SearchBar, 6)
@@ -993,6 +994,7 @@ function Dragon:Window(GuiConfig)
             btn.AutoButtonColor = false
             btn.Text = ""
             btn.Name = "CatBtn"
+            btn.LayoutOrder = CountTab -- keeps tab order stable and always below SearchBar (-1000)
             btn.Parent = Sidebar
             corner(btn, 6)
 
@@ -1097,102 +1099,136 @@ function Dragon:Window(GuiConfig)
             Title = Title or "Title"
 
             local Section = Instance.new("Frame")
-            Section.Size = UDim2.new(1, 0, 0, 38)
-            Section.BackgroundTransparency = 1
+            Section.BackgroundColor3 = C_PANEL
+            Section.BackgroundTransparency = 0.15
+            Section.BorderSizePixel = 0
             Section.ClipsDescendants = true
             Section.LayoutOrder = CountSection
+            Section.Size = UDim2.new(1, 0, 0, 34)
+            Section.Name = "Section"
             Section.Parent = Page
+            corner(Section, 6)
 
             local Header = Instance.new("TextButton")
-            Header.Size = UDim2.new(1, 0, 0, 38)
-            Header.BackgroundColor3 = C_PANEL
             Header.AutoButtonColor = false
             Header.Text = ""
+            Header.BackgroundTransparency = 1
+            Header.Size = UDim2.new(1, 0, 0, 34)
+            Header.Name = "SectionButton"
             Header.Parent = Section
-            corner(Header, 8)
-            stroke(Header, C_BORDER, 1)
+
+            local FeatureFrame = Instance.new("Frame")
+            FeatureFrame.AnchorPoint = Vector2.new(1, 0.5)
+            FeatureFrame.BackgroundTransparency = 1
+            FeatureFrame.Position = UDim2.new(1, -8, 0.5, 0)
+            FeatureFrame.Size = UDim2.new(0, 20, 0, 20)
+            FeatureFrame.Name = "FeatureFrame"
+            FeatureFrame.Parent = Header
+
+            local Chevron = Instance.new("TextLabel")
+            Chevron.BackgroundTransparency = 1
+            Chevron.AnchorPoint = Vector2.new(0.5, 0.5)
+            Chevron.Position = UDim2.new(0.5, 0, 0.5, 0)
+            Chevron.Rotation = -90
+            Chevron.Text = "▾"
+            Chevron.TextColor3 = C_SUBTEXT
+            Chevron.Font = Enum.Font.GothamBold
+            Chevron.TextSize = 14
+            Chevron.Size = UDim2.new(1, 0, 1, 0)
+            Chevron.Parent = FeatureFrame
 
             local HeaderTitle = Instance.new("TextLabel")
             HeaderTitle.BackgroundTransparency = 1
-            HeaderTitle.Position = UDim2.fromOffset(14, 0)
-            HeaderTitle.Size = UDim2.new(1, -46, 1, 0)
+            HeaderTitle.AnchorPoint = Vector2.new(0, 0.5)
+            HeaderTitle.Position = UDim2.new(0, 12, 0.5, 0)
+            HeaderTitle.Size = UDim2.new(1, -40, 0, 14)
             HeaderTitle.Text = Title
             HeaderTitle.TextColor3 = C_TEXT
             HeaderTitle.Font = Enum.Font.GothamBold
             HeaderTitle.TextSize = 13
             HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+            HeaderTitle.Name = "SectionTitle"
             HeaderTitle.Parent = Header
 
-            local Chevron = Instance.new("TextLabel")
-            Chevron.BackgroundTransparency = 1
-            Chevron.Position = UDim2.new(1, -30, 0, 0)
-            Chevron.Size = UDim2.fromOffset(20, 38)
-            Chevron.Text = ">"
-            Chevron.TextColor3 = GuiConfig.Color
-            Chevron.Font = Enum.Font.GothamBold
-            Chevron.TextSize = 14
-            Chevron.Parent = Header
+            -- Accent gradient bar (ported from kknjx's SectionDecideFrame) —
+            -- universal, always driven by GuiConfig.Color so any UI built on
+            -- Dragon (blue, purple, whatever) gets the matching accent.
+            local AccentBar = Instance.new("Frame")
+            AccentBar.AnchorPoint = Vector2.new(0.5, 0)
+            AccentBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            AccentBar.BorderSizePixel = 0
+            AccentBar.Position = UDim2.new(0.5, 0, 0, 34)
+            AccentBar.Size = UDim2.new(0, 0, 0, 2)
+            AccentBar.Name = "AccentBar"
+            AccentBar.Parent = Section
+            corner(AccentBar, 1)
 
-            local AccentLine = Instance.new("Frame")
-            AccentLine.Size = UDim2.new(0, 0, 0, 2)
-            AccentLine.Position = UDim2.new(0.5, 0, 0, 38)
-            AccentLine.BackgroundColor3 = GuiConfig.Color
-            AccentLine.BorderSizePixel = 0
-            AccentLine.Parent = Section
-            corner(AccentLine, 1)
+            local AccentGradient = Instance.new("UIGradient")
+            AccentGradient.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, C_PANEL),
+                ColorSequenceKeypoint.new(0.5, GuiConfig.Color),
+                ColorSequenceKeypoint.new(1, C_PANEL),
+            })
+            AccentGradient.Parent = AccentBar
 
             local Body = Instance.new("Frame")
-            Body.Size = UDim2.new(1, 0, 0, 0)
-            Body.Position = UDim2.fromOffset(0, 44)
             Body.BackgroundTransparency = 1
             Body.ClipsDescendants = true
+            Body.Position = UDim2.new(0, 0, 0, 38)
+            Body.Size = UDim2.new(1, 0, 0, 0)
+            Body.Name = "SectionAdd"
             Body.Parent = Section
 
             local BodyLayout = Instance.new("UIListLayout")
-            BodyLayout.Padding = UDim.new(0, 6)
+            BodyLayout.Padding = UDim.new(0, 3)
             BodyLayout.SortOrder = Enum.SortOrder.LayoutOrder
             BodyLayout.Parent = Body
 
             local OpenSection = false
-
-            local function setBodyHeight()
-                local h = 0
-                for _, r in ipairs(Body:GetChildren()) do
-                    if r:IsA("Frame") or r:IsA("TextButton") or r:IsA("ScrollingFrame") then
-                        h = h + r.Size.Y.Offset + 6
-                    end
-                end
-                return h
-            end
+            local ResizePending = false
 
             local function UpdateSizeSection()
                 if not OpenSection then return end
-                local bodyH = setBodyHeight()
-                local totalH = 38 + (6 + bodyH)
-                TweenService:Create(Section, TweenInfo.new(0.25), {Size = UDim2.new(1, 0, 0, totalH)}):Play()
-                TweenService:Create(Chevron, TweenInfo.new(0.25), {Rotation = 90}):Play()
-                TweenService:Create(AccentLine, TweenInfo.new(0.25), {Size = UDim2.new(1, 0, 0, 2)}):Play()
+                if ResizePending then return end
+                ResizePending = true
+                task.defer(function()
+                    ResizePending = false
+
+                    local bodyH = 6
+                    for _, v in Body:GetChildren() do
+                        if v.Name ~= "UIListLayout" then
+                            bodyH = bodyH + v.Size.Y.Offset + 3
+                        end
+                    end
+
+                    TweenService:Create(Chevron, TweenInfo.new(0.3), { Rotation = 0 }):Play()
+                    TweenService:Create(Section, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 38 + bodyH) }):Play()
+                    TweenService:Create(Body, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, bodyH) }):Play()
+                    TweenService:Create(AccentBar, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 2) }):Play()
+                end)
             end
 
-            Body.ChildAdded:Connect(UpdateSizeSection)
-            Body.ChildRemoved:Connect(UpdateSizeSection)
-
             if AlwaysOpen == true then
+                Header:Destroy()
+                FeatureFrame:Destroy()
                 OpenSection = true
-                task.defer(UpdateSizeSection)
+                UpdateSizeSection()
             elseif AlwaysOpen == false then
                 OpenSection = true
-                task.defer(UpdateSizeSection)
+                UpdateSizeSection()
+            else
+                OpenSection = false
             end
 
             if AlwaysOpen ~= true then
-                Header.MouseButton1Click:Connect(function()
+                Header.Activated:Connect(function()
+                    CircleClick(Header, Mouse.X, Mouse.Y)
                     if OpenSection then
+                        TweenService:Create(Chevron, TweenInfo.new(0.3), { Rotation = -90 }):Play()
+                        TweenService:Create(Section, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 34) }):Play()
+                        TweenService:Create(Body, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 0) }):Play()
+                        TweenService:Create(AccentBar, TweenInfo.new(0.3), { Size = UDim2.new(0, 0, 0, 2) }):Play()
                         OpenSection = false
-                        TweenService:Create(Chevron, TweenInfo.new(0.25), {Rotation = 0}):Play()
-                        TweenService:Create(AccentLine, TweenInfo.new(0.25), {Size = UDim2.new(0, 0, 0, 2)}):Play()
-                        local bodyH = setBodyHeight()
-                        TweenService:Create(Section, TweenInfo.new(0.25), {Size = UDim2.new(1, 0, 0, 38)}):Play()
                     else
                         OpenSection = true
                         UpdateSizeSection()
@@ -1200,70 +1236,127 @@ function Dragon:Window(GuiConfig)
                 end)
             end
 
+            Body.ChildAdded:Connect(UpdateSizeSection)
+            Body.ChildRemoved:Connect(UpdateSizeSection)
 
             local Items = {}
             local CountItem = 0
 
+            -- ═══════════════════════════════════════════
+            -- AddParagraph
+            -- ═══════════════════════════════════════════
             function Items:AddParagraph(ParagraphConfig)
                 ParagraphConfig = ParagraphConfig or {}
                 ParagraphConfig.Title = ParagraphConfig.Title or "Title"
                 ParagraphConfig.Content = ParagraphConfig.Content or "Content"
 
-                local Para = Instance.new("Frame")
-                Para.Size = UDim2.new(1, 0, 0, 40)
-                Para.BackgroundColor3 = C_PANEL2
-                Para.BorderSizePixel = 0
-                Para.LayoutOrder = CountItem
-                Para.Parent = Body
-                corner(Para, 6)
-                stroke(Para, C_BORDER, 1)
+                local ParagraphFunc = {}
 
-                local TitleLbl = Instance.new("TextLabel")
-                TitleLbl.LayoutOrder = 0
-                TitleLbl.BackgroundTransparency = 1
-                TitleLbl.Position = UDim2.new(0, 12, 0, 6)
-                TitleLbl.Size = UDim2.new(1, -24, 0, 14)
-                TitleLbl.Text = ParagraphConfig.Title
-                TitleLbl.TextColor3 = C_TEXT
-                TitleLbl.Font = Enum.Font.GothamBold
-                TitleLbl.TextSize = 12
-                TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-                TitleLbl.Parent = Para
+                local Paragraph = Instance.new("Frame")
+                Paragraph.BackgroundColor3 = C_PANEL2
+                Paragraph.BorderSizePixel = 0
+                Paragraph.LayoutOrder = CountItem
+                Paragraph.Size = UDim2.new(1, 0, 0, 46)
+                Paragraph.Name = "Paragraph"
+                Paragraph.Parent = Body
+                corner(Paragraph, 6)
+                stroke(Paragraph, C_BORDER, 1)
 
-                local ContentLbl = Instance.new("TextLabel")
-                ContentLbl.LayoutOrder = 1
-                ContentLbl.BackgroundTransparency = 1
-                ContentLbl.Position = UDim2.new(0, 12, 0, 22)
-                ContentLbl.Size = UDim2.new(1, -24, 0, 12)
-                ContentLbl.Text = ParagraphConfig.Content
-                ContentLbl.TextColor3 = C_SUBTEXT
-                ContentLbl.Font = Enum.Font.Gotham
-                ContentLbl.TextSize = 11
-                ContentLbl.TextXAlignment = Enum.TextXAlignment.Left
-                ContentLbl.Parent = Para
+                local iconOffset = 10
+                if ParagraphConfig.Icon then
+                    local IconImg = Instance.new("ImageLabel")
+                    IconImg.Size = UDim2.new(0, 20, 0, 20)
+                    IconImg.Position = UDim2.new(0, 8, 0, 12)
+                    IconImg.BackgroundTransparency = 1
+                    IconImg.ScaleType = Enum.ScaleType.Fit
+                    IconImg.Name = "ParagraphIcon"
+                    IconImg.Parent = Paragraph
+                    if Icons[ParagraphConfig.Icon] then
+                        IconImg.Image = Icons[ParagraphConfig.Icon]
+                    else
+                        IconImg.Image = ParagraphConfig.Icon
+                    end
+                    iconOffset = 30
+                end
+
+                local ParagraphTitle = Instance.new("TextLabel")
+                ParagraphTitle.Font = Enum.Font.GothamBold
+                ParagraphTitle.Text = ParagraphConfig.Title
+                ParagraphTitle.TextColor3 = C_TEXT
+                ParagraphTitle.TextSize = 13
+                ParagraphTitle.TextXAlignment = Enum.TextXAlignment.Left
+                ParagraphTitle.TextYAlignment = Enum.TextYAlignment.Top
+                ParagraphTitle.BackgroundTransparency = 1
+                ParagraphTitle.Position = UDim2.new(0, iconOffset, 0, 10)
+                ParagraphTitle.Size = UDim2.new(1, -(iconOffset + 6), 0, 13)
+                ParagraphTitle.Name = "ParagraphTitle"
+                ParagraphTitle.Parent = Paragraph
+
+                local ParagraphContent = Instance.new("TextLabel")
+                ParagraphContent.Font = Enum.Font.Gotham
+                ParagraphContent.Text = ParagraphConfig.Content
+                ParagraphContent.TextColor3 = C_SUBTEXT
+                ParagraphContent.TextSize = 12
+                ParagraphContent.TextXAlignment = Enum.TextXAlignment.Left
+                ParagraphContent.TextYAlignment = Enum.TextYAlignment.Top
+                ParagraphContent.BackgroundTransparency = 1
+                ParagraphContent.TextWrapped = true
+                ParagraphContent.RichText = true
+                ParagraphContent.Position = UDim2.new(0, iconOffset, 0, 25)
+                ParagraphContent.Size = UDim2.new(1, -(iconOffset + 6), 0, 13)
+                ParagraphContent.Name = "ParagraphContent"
+                ParagraphContent.Parent = Paragraph
+
+                local ParagraphButton
+                if ParagraphConfig.ButtonText then
+                    ParagraphButton = Instance.new("TextButton")
+                    ParagraphButton.Position = UDim2.new(0, 10, 0, 42)
+                    ParagraphButton.Size = UDim2.new(1, -20, 0, 28)
+                    ParagraphButton.BackgroundColor3 = C_BORDER
+                    ParagraphButton.BackgroundTransparency = 0.4
+                    ParagraphButton.Font = Enum.Font.GothamBold
+                    ParagraphButton.TextSize = 12
+                    ParagraphButton.TextColor3 = C_TEXT
+                    ParagraphButton.Text = ParagraphConfig.ButtonText
+                    ParagraphButton.Parent = Paragraph
+                    corner(ParagraphButton, 5)
+                    if ParagraphConfig.ButtonCallback then
+                        ParagraphButton.MouseButton1Click:Connect(ParagraphConfig.ButtonCallback)
+                    end
+                end
+
+                local function UpdateSize()
+                    task.spawn(function()
+                        task.wait()
+                        local contentHeight = ParagraphContent.TextBounds.Y
+                        ParagraphContent.Size = UDim2.new(1, -(iconOffset + 6), 0, contentHeight)
+                        local totalHeight = contentHeight + 33
+                        if ParagraphButton then
+                            totalHeight = totalHeight + ParagraphButton.Size.Y.Offset + 5
+                        end
+                        Paragraph.Size = UDim2.new(1, 0, 0, totalHeight)
+                        UpdateSizeSection()
+                    end)
+                end
+                UpdateSize()
+                ParagraphContent:GetPropertyChangedSignal("TextBounds"):Connect(UpdateSize)
+
+                function ParagraphFunc:SetContent(content)
+                    ParagraphContent.Text = content or "Content"
+                    UpdateSize()
+                end
+                function ParagraphFunc:SetTitle(title)
+                    ParagraphTitle.Text = title or "Title"
+                end
 
                 CountItem = CountItem + 1
-                RegisterSearch({ label = ParagraphConfig.Title, tab = TabConfig.Name, kind = "Paragraph", switch = SearchSwitch })
-
-                local ParaAPI = { Frame = Para }
-                function ParaAPI:SetContent(text)
-                    for _, child in ipairs(Para:GetChildren()) do
-                        if child:IsA("TextLabel") and child.LayoutOrder == 1 then
-                            child.Text = tostring(text or "")
-                        end
-                    end
-                end
-                function ParaAPI:SetTitle(text)
-                    for _, child in ipairs(Para:GetChildren()) do
-                        if child:IsA("TextLabel") and child.LayoutOrder == 0 then
-                            child.Text = tostring(text or "")
-                        end
-                    end
-                end
-                setmetatable(ParaAPI, { __index = Para })
-                return ParaAPI
+                RegisterSearch({ label = ParagraphConfig.Title, tab = TabConfig.Name, kind = "Info", switch = SearchSwitch })
+                return ParagraphFunc
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddButton
+            -- ═══════════════════════════════════════════
             function Items:AddButton(ButtonConfig)
                 ButtonConfig = ButtonConfig or {}
                 ButtonConfig.Title = ButtonConfig.Title or "Confirm"
@@ -1271,46 +1364,51 @@ function Dragon:Window(GuiConfig)
                 ButtonConfig.SubTitle = ButtonConfig.SubTitle or nil
                 ButtonConfig.SubCallback = ButtonConfig.SubCallback or function() end
 
-                local BtnFrame = Instance.new("Frame")
-                BtnFrame.Size = UDim2.new(1, 0, 0, 36)
-                BtnFrame.BackgroundColor3 = C_PANEL2
-                BtnFrame.BorderSizePixel = 0
-                BtnFrame.LayoutOrder = CountItem
-                BtnFrame.Parent = Body
-                corner(BtnFrame, 6)
-                stroke(BtnFrame, C_BORDER, 1)
+                local ButtonRoot = Instance.new("Frame")
+                ButtonRoot.BackgroundColor3 = C_PANEL2
+                ButtonRoot.BorderSizePixel = 0
+                ButtonRoot.Size = UDim2.new(1, 0, 0, 40)
+                ButtonRoot.LayoutOrder = CountItem
+                ButtonRoot.Name = "Button"
+                ButtonRoot.Parent = Body
+                corner(ButtonRoot, 6)
+                stroke(ButtonRoot, C_BORDER, 1)
 
                 local MainButton = Instance.new("TextButton")
                 MainButton.Font = Enum.Font.GothamBold
                 MainButton.Text = ButtonConfig.Title
                 MainButton.TextSize = 12
                 MainButton.TextColor3 = C_TEXT
-                MainButton.BackgroundColor3 = C_BORDER
-                MainButton.BackgroundTransparency = 0.7
-                MainButton.Size = ButtonConfig.SubTitle and UDim2.new(0.5, -8, 1, -8) or UDim2.new(1, -16, 1, -8)
-                MainButton.Position = UDim2.new(0, 6, 0, 4)
-                MainButton.Parent = BtnFrame
-                corner(MainButton, 5)
-
-                MainButton.MouseButton1Click:Connect(function()
-                    pcall(ButtonConfig.Callback)
+                MainButton.BackgroundTransparency = 1
+                MainButton.Size = ButtonConfig.SubTitle and UDim2.new(0.5, -4, 1, -10) or UDim2.new(1, -12, 1, -10)
+                MainButton.Position = UDim2.new(0, 6, 0, 5)
+                MainButton.Parent = ButtonRoot
+                MainButton.Activated:Connect(function()
+                    CircleClick(MainButton, Mouse.X, Mouse.Y)
+                    ButtonConfig.Callback()
                 end)
 
                 if ButtonConfig.SubTitle then
+                    local Divider = Instance.new("Frame")
+                    Divider.AnchorPoint = Vector2.new(0.5, 0.5)
+                    Divider.BackgroundColor3 = C_BORDER
+                    Divider.BorderSizePixel = 0
+                    Divider.Position = UDim2.new(0.5, 0, 0.5, 0)
+                    Divider.Size = UDim2.new(0, 1, 1, -12)
+                    Divider.Parent = ButtonRoot
+
                     local SubButton = Instance.new("TextButton")
                     SubButton.Font = Enum.Font.GothamBold
                     SubButton.Text = ButtonConfig.SubTitle
                     SubButton.TextSize = 12
-                    SubButton.TextColor3 = C_TEXT
-                    SubButton.BackgroundColor3 = C_BORDER
-                    SubButton.BackgroundTransparency = 0.7
-                    SubButton.Size = UDim2.new(0.5, -8, 1, -8)
-                    SubButton.Position = UDim2.new(0.5, 2, 0, 4)
-                    SubButton.Parent = BtnFrame
-                    corner(SubButton, 5)
-
-                    SubButton.MouseButton1Click:Connect(function()
-                        pcall(ButtonConfig.SubCallback)
+                    SubButton.TextColor3 = C_SUBTEXT
+                    SubButton.BackgroundTransparency = 1
+                    SubButton.Size = UDim2.new(0.5, -4, 1, -10)
+                    SubButton.Position = UDim2.new(0.5, 4, 0, 5)
+                    SubButton.Parent = ButtonRoot
+                    SubButton.Activated:Connect(function()
+                        CircleClick(SubButton, Mouse.X, Mouse.Y)
+                        ButtonConfig.SubCallback()
                     end)
                 end
 
@@ -1318,6 +1416,9 @@ function Dragon:Window(GuiConfig)
                 RegisterSearch({ label = ButtonConfig.Title, tab = TabConfig.Name, kind = "Button", switch = SearchSwitch })
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddToggle
+            -- ═══════════════════════════════════════════
             function Items:AddToggle(ToggleConfig)
                 ToggleConfig = ToggleConfig or {}
                 ToggleConfig.Title = ToggleConfig.Title or "Title"
@@ -1343,6 +1444,9 @@ function Dragon:Window(GuiConfig)
                 corner(Toggle, 6)
                 stroke(Toggle, C_BORDER, 1)
 
+                local hasTitle2 = ToggleConfig.Title2 ~= ""
+                local hasContent = ToggleConfig.Content ~= ""
+
                 local ToggleTitle = Instance.new("TextLabel")
                 ToggleTitle.Font = Enum.Font.GothamBold
                 ToggleTitle.Text = ToggleConfig.Title
@@ -1351,21 +1455,22 @@ function Dragon:Window(GuiConfig)
                 ToggleTitle.TextXAlignment = Enum.TextXAlignment.Left
                 ToggleTitle.TextYAlignment = Enum.TextYAlignment.Top
                 ToggleTitle.BackgroundTransparency = 1
-                ToggleTitle.Position = UDim2.new(0, 10, 0, 10)
-                ToggleTitle.Size = UDim2.new(1, -100, 0, 13)
+                ToggleTitle.Position = UDim2.new(0, 10, 0, 9)
+                ToggleTitle.Size = UDim2.new(1, -60, 0, 13)
+                ToggleTitle.Name = "ToggleTitle"
                 ToggleTitle.Parent = Toggle
 
                 local ToggleTitle2 = Instance.new("TextLabel")
-                ToggleTitle2.Font = Enum.Font.Gotham
+                ToggleTitle2.Font = Enum.Font.GothamBold
                 ToggleTitle2.Text = ToggleConfig.Title2
-                ToggleTitle2.TextSize = 12
-                ToggleTitle2.TextColor3 = C_SUBTEXT
+                ToggleTitle2.TextSize = 11
+                ToggleTitle2.TextColor3 = C_TEXT
                 ToggleTitle2.TextXAlignment = Enum.TextXAlignment.Left
-                ToggleTitle2.TextYAlignment = Enum.TextYAlignment.Top
                 ToggleTitle2.BackgroundTransparency = 1
-                ToggleTitle2.Position = UDim2.new(0, 10, 0, 23)
-                ToggleTitle2.Size = UDim2.new(1, -100, 0, 12)
-                ToggleTitle2.Visible = ToggleConfig.Title2 ~= ""
+                ToggleTitle2.Position = UDim2.new(0, 10, 0, 22)
+                ToggleTitle2.Size = UDim2.new(1, -60, 0, 12)
+                ToggleTitle2.Visible = hasTitle2
+                ToggleTitle2.Name = "ToggleTitle2"
                 ToggleTitle2.Parent = Toggle
 
                 local ToggleContent = Instance.new("TextLabel")
@@ -1373,48 +1478,51 @@ function Dragon:Window(GuiConfig)
                 ToggleContent.Text = ToggleConfig.Content
                 ToggleContent.TextColor3 = C_SUBTEXT
                 ToggleContent.TextSize = 11
-                ToggleContent.TextTransparency = 0.4
-                ToggleContent.TextXAlignment = Enum.TextXAlignment.Left
-                ToggleContent.TextYAlignment = Enum.TextYAlignment.Bottom
                 ToggleContent.TextWrapped = true
+                ToggleContent.TextXAlignment = Enum.TextXAlignment.Left
+                ToggleContent.TextYAlignment = Enum.TextYAlignment.Top
                 ToggleContent.BackgroundTransparency = 1
+                ToggleContent.Position = UDim2.new(0, 10, 0, hasTitle2 and 35 or 22)
+                ToggleContent.Size = UDim2.new(1, -60, 0, 12)
+                ToggleContent.Visible = hasContent
+                ToggleContent.Name = "ToggleContent"
                 ToggleContent.Parent = Toggle
 
-                if ToggleConfig.Title2 ~= "" then
-                    Toggle.Size = UDim2.new(1, 0, 0, 57)
-                    ToggleContent.Position = UDim2.new(0, 10, 0, 36)
-                    ToggleContent.Size = UDim2.new(1, -100, 0, 16)
-                else
-                    Toggle.Size = UDim2.new(1, 0, 0, 46)
-                    ToggleContent.Position = UDim2.new(0, 10, 0, 23)
-                    ToggleContent.Size = UDim2.new(1, -100, 0, 16)
-                end
-
-                local ToggleButton = Instance.new("TextButton")
-                ToggleButton.Font = Enum.Font.SourceSans
-                ToggleButton.Text = ""
-                ToggleButton.BackgroundTransparency = 1
-                ToggleButton.Size = UDim2.new(1, 0, 1, 0)
-                ToggleButton.Parent = Toggle
+                local baseH = 9 + 13 + 4
+                if hasTitle2 then baseH = baseH + 13 end
+                if hasContent then baseH = baseH + 14 end
+                Toggle.Size = UDim2.new(1, 0, 0, math.max(baseH, 40))
 
                 local FeatureFrame = Instance.new("Frame")
                 FeatureFrame.AnchorPoint = Vector2.new(1, 0.5)
                 FeatureFrame.BackgroundColor3 = C_BORDER
+                FeatureFrame.BackgroundTransparency = 0.2
                 FeatureFrame.BorderSizePixel = 0
-                FeatureFrame.Position = UDim2.new(1, -15, 0.5, 0)
-                FeatureFrame.Size = UDim2.new(0, 38, 0, 20)
+                FeatureFrame.Position = UDim2.new(1, -10, 0.5, 0)
+                FeatureFrame.Size = UDim2.new(0, 34, 0, 18)
+                FeatureFrame.Name = "FeatureFrame"
                 FeatureFrame.Parent = Toggle
-                corner(FeatureFrame, 10)
+                corner(FeatureFrame, 9)
 
                 local ToggleCircle = Instance.new("Frame")
-                ToggleCircle.BackgroundColor3 = C_TEXT
+                ToggleCircle.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
                 ToggleCircle.BorderSizePixel = 0
-                ToggleCircle.Size = UDim2.new(0, 16, 0, 16)
-                ToggleCircle.Position = UDim2.fromOffset(2, 2)
+                ToggleCircle.AnchorPoint = Vector2.new(0, 0.5)
+                ToggleCircle.Position = UDim2.new(0, 2, 0.5, 0)
+                ToggleCircle.Size = UDim2.new(0, 14, 0, 14)
+                ToggleCircle.Name = "ToggleCircle"
                 ToggleCircle.Parent = FeatureFrame
-                corner(ToggleCircle, 8)
+                corner(ToggleCircle, 7)
+
+                local ToggleButton = Instance.new("TextButton")
+                ToggleButton.Text = ""
+                ToggleButton.BackgroundTransparency = 1
+                ToggleButton.Size = UDim2.new(1, 0, 1, 0)
+                ToggleButton.Name = "ToggleButton"
+                ToggleButton.Parent = Toggle
 
                 ToggleButton.Activated:Connect(function()
+                    CircleClick(ToggleButton, Mouse.X, Mouse.Y)
                     ToggleFunc.Value = not ToggleFunc.Value
                     ToggleFunc:Set(ToggleFunc.Value)
                 end)
@@ -1423,20 +1531,21 @@ function Dragon:Window(GuiConfig)
                     Value = Value and true or false
                     ToggleFunc.Value = Value
                     if typeof(ToggleConfig.Callback) == "function" then
-                        pcall(function() ToggleConfig.Callback(Value) end)
+                        local ok, err = pcall(function() ToggleConfig.Callback(Value) end)
+                        if not ok then warn("Toggle Callback error:", err) end
                     end
                     if shouldSave then
                         ConfigData[configKey] = Value
                         if not noSave then QueueSaveConfig() end
                     end
                     if Value then
-                        TweenService:Create(ToggleTitle, TweenInfo.new(0.2), {TextColor3 = GuiConfig.Color}):Play()
-                        TweenService:Create(FeatureFrame, TweenInfo.new(0.2), {BackgroundColor3 = GuiConfig.Color}):Play()
-                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), {Position = UDim2.fromOffset(20, 2)}):Play()
+                        TweenService:Create(ToggleTitle, TweenInfo.new(0.2), { TextColor3 = GuiConfig.Color }):Play()
+                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(1, -16, 0.5, 0) }):Play()
+                        TweenService:Create(FeatureFrame, TweenInfo.new(0.2), { BackgroundColor3 = GuiConfig.Color, BackgroundTransparency = 0 }):Play()
                     else
-                        TweenService:Create(ToggleTitle, TweenInfo.new(0.2), {TextColor3 = C_TEXT}):Play()
-                        TweenService:Create(FeatureFrame, TweenInfo.new(0.2), {BackgroundColor3 = C_BORDER}):Play()
-                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), {Position = UDim2.fromOffset(2, 2)}):Play()
+                        TweenService:Create(ToggleTitle, TweenInfo.new(0.2), { TextColor3 = C_TEXT }):Play()
+                        TweenService:Create(ToggleCircle, TweenInfo.new(0.2), { Position = UDim2.new(0, 2, 0.5, 0) }):Play()
+                        TweenService:Create(FeatureFrame, TweenInfo.new(0.2), { BackgroundColor3 = C_BORDER, BackgroundTransparency = 0.2 }):Play()
                     end
                 end
 
@@ -1447,6 +1556,9 @@ function Dragon:Window(GuiConfig)
                 return ToggleFunc
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddSlider
+            -- ═══════════════════════════════════════════
             function Items:AddSlider(SliderConfig)
                 SliderConfig = SliderConfig or {}
                 SliderConfig.Title = SliderConfig.Title or "Slider"
@@ -1464,7 +1576,6 @@ function Dragon:Window(GuiConfig)
                 elseif sliderSpan > 0 and SliderConfig.Increment >= sliderSpan then
                     SliderConfig.Increment = sliderSpan >= 1 and 1 or math.max(sliderSpan / 100, 0.01)
                 end
-                SliderConfig.Live = SliderConfig.Live == true
                 SliderConfig.Callback = SliderConfig.Callback or function() end
 
                 local configKey = "Slider_" .. SliderConfig.Title
@@ -1474,12 +1585,13 @@ function Dragon:Window(GuiConfig)
                 end
 
                 local SliderFunc = { Value = SliderConfig.Default }
+                local hasContent = SliderConfig.Content ~= ""
 
                 local Slider = Instance.new("Frame")
                 Slider.BackgroundColor3 = C_PANEL2
                 Slider.BorderSizePixel = 0
                 Slider.LayoutOrder = CountItem
-                Slider.Size = UDim2.new(1, 0, 0, 52)
+                Slider.Size = UDim2.new(1, 0, 0, hasContent and 58 or 46)
                 Slider.Name = "Slider"
                 Slider.Parent = Body
                 corner(Slider, 6)
@@ -1491,67 +1603,77 @@ function Dragon:Window(GuiConfig)
                 SliderTitle.TextColor3 = C_TEXT
                 SliderTitle.TextSize = 13
                 SliderTitle.TextXAlignment = Enum.TextXAlignment.Left
-                SliderTitle.TextYAlignment = Enum.TextYAlignment.Top
                 SliderTitle.BackgroundTransparency = 1
                 SliderTitle.Position = UDim2.new(0, 10, 0, 8)
-                SliderTitle.Size = UDim2.new(1, -180, 0, 13)
+                SliderTitle.Size = UDim2.new(1, -70, 0, 13)
+                SliderTitle.Name = "SliderTitle"
                 SliderTitle.Parent = Slider
 
-                local SliderContent = Instance.new("TextLabel")
-                SliderContent.Font = Enum.Font.Gotham
-                SliderContent.Text = SliderConfig.Content
-                SliderContent.TextColor3 = C_SUBTEXT
-                SliderContent.TextSize = 11
-                SliderContent.TextXAlignment = Enum.TextXAlignment.Left
-                SliderContent.TextYAlignment = Enum.TextYAlignment.Bottom
-                SliderContent.BackgroundTransparency = 1
-                SliderContent.Position = UDim2.new(0, 10, 0, 24)
-                SliderContent.Size = UDim2.new(1, -180, 0, 12)
-                SliderContent.Parent = Slider
+                if hasContent then
+                    local SliderContent = Instance.new("TextLabel")
+                    SliderContent.Font = Enum.Font.Gotham
+                    SliderContent.Text = SliderConfig.Content
+                    SliderContent.TextColor3 = C_SUBTEXT
+                    SliderContent.TextSize = 11
+                    SliderContent.TextXAlignment = Enum.TextXAlignment.Left
+                    SliderContent.BackgroundTransparency = 1
+                    SliderContent.Position = UDim2.new(0, 10, 0, 22)
+                    SliderContent.Size = UDim2.new(1, -20, 0, 12)
+                    SliderContent.Name = "SliderContent"
+                    SliderContent.Parent = Slider
+                end
 
-                local ValueLabel = Instance.new("TextLabel")
-                ValueLabel.Font = Enum.Font.GothamBold
-                ValueLabel.Text = tostring(SliderConfig.Default)
-                ValueLabel.TextColor3 = GuiConfig.Color
-                ValueLabel.TextSize = 12
-                ValueLabel.BackgroundTransparency = 1
-                ValueLabel.AnchorPoint = Vector2.new(1, 0)
-                ValueLabel.Position = UDim2.new(1, -10, 0, 8)
-                ValueLabel.Size = UDim2.new(0, 60, 0, 16)
-                ValueLabel.Parent = Slider
+                local SliderInput = Instance.new("Frame")
+                SliderInput.AnchorPoint = Vector2.new(1, 0)
+                SliderInput.BackgroundColor3 = C_BORDER
+                SliderInput.BackgroundTransparency = 0.3
+                SliderInput.Position = UDim2.new(1, -10, 0, 6)
+                SliderInput.Size = UDim2.new(0, 46, 0, 18)
+                SliderInput.Name = "SliderInput"
+                SliderInput.Parent = Slider
+                corner(SliderInput, 4)
+
+                local TextBox = Instance.new("TextBox")
+                TextBox.Font = Enum.Font.GothamBold
+                TextBox.Text = tostring(SliderConfig.Default)
+                TextBox.TextColor3 = C_TEXT
+                TextBox.TextSize = 12
+                TextBox.BackgroundTransparency = 1
+                TextBox.Size = UDim2.new(1, 0, 1, 0)
+                TextBox.ClearTextOnFocus = false
+                TextBox.Parent = SliderInput
 
                 local SliderFrame = Instance.new("Frame")
-                SliderFrame.AnchorPoint = Vector2.new(1, 0.5)
+                SliderFrame.AnchorPoint = Vector2.new(0, 1)
                 SliderFrame.BackgroundColor3 = C_BORDER
-                SliderFrame.BackgroundTransparency = 0.5
                 SliderFrame.BorderSizePixel = 0
-                SliderFrame.Position = UDim2.new(1, -10, 0.5, 8)
-                SliderFrame.Size = UDim2.new(0, 180, 0, 4)
+                SliderFrame.Position = UDim2.new(0, 10, 1, -8)
+                SliderFrame.Size = UDim2.new(1, -20, 0, 4)
                 SliderFrame.Name = "SliderFrame"
                 SliderFrame.Parent = Slider
                 corner(SliderFrame, 2)
 
                 local SliderDraggable = Instance.new("Frame")
-                SliderDraggable.AnchorPoint = Vector2.new(0, 0.5)
                 SliderDraggable.BackgroundColor3 = GuiConfig.Color
                 SliderDraggable.BorderSizePixel = 0
-                SliderDraggable.Position = UDim2.new(0, 0, 0.5, 0)
                 SliderDraggable.Size = UDim2.new(0, 0, 1, 0)
                 SliderDraggable.Name = "SliderDraggable"
                 SliderDraggable.Parent = SliderFrame
                 corner(SliderDraggable, 2)
 
                 local SliderCircle = Instance.new("Frame")
-                SliderCircle.AnchorPoint = Vector2.new(1, 0.5)
+                SliderCircle.AnchorPoint = Vector2.new(0.5, 0.5)
                 SliderCircle.BackgroundColor3 = GuiConfig.Color
                 SliderCircle.BorderSizePixel = 0
-                SliderCircle.Position = UDim2.new(1, 4, 0.5, 0)
+                SliderCircle.Position = UDim2.new(1, 0, 0.5, 0)
                 SliderCircle.Size = UDim2.new(0, 10, 0, 10)
                 SliderCircle.Name = "SliderCircle"
                 SliderCircle.Parent = SliderDraggable
                 corner(SliderCircle, 5)
+                stroke(SliderCircle, C_TEXT, 1)
 
                 local Dragging = false
+                local UpdatingText = false
 
                 local function Round(Number, Factor)
                     if sliderSpan <= 0 then return SliderConfig.Min end
@@ -1563,7 +1685,7 @@ function Dragon:Window(GuiConfig)
                     if math.abs(Value - math.floor(Value)) < 0.000001 then
                         return tostring(math.floor(Value))
                     end
-                    local text = string.format("%.2f", Value)
+                    local text = string.format("%.4f", Value)
                     text = text:gsub("0+$", ""):gsub("%.$", "")
                     return text
                 end
@@ -1576,19 +1698,26 @@ function Dragon:Window(GuiConfig)
                 local function ApplySliderValue(Value, noSave, instant, fireCallback)
                     Value = tonumber(Value) or SliderConfig.Min
                     Value = math.clamp(Round(Value, SliderConfig.Increment), SliderConfig.Min, SliderConfig.Max)
+
                     SliderFunc.Value = Value
                     if shouldSave then ConfigData[configKey] = Value end
 
-                    ValueLabel.Text = FormatValue(Value)
+                    UpdatingText = true
+                    TextBox.Text = FormatValue(Value)
+                    UpdatingText = false
+
                     local targetSize = UDim2.fromScale(ValueScale(Value), 1)
                     if instant then
                         SliderDraggable.Size = targetSize
                     else
-                        TweenService:Create(SliderDraggable, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = targetSize}):Play()
+                        TweenService:Create(SliderDraggable, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = targetSize }):Play()
                     end
+
                     if fireCallback then
-                        pcall(function() SliderConfig.Callback(Value) end)
+                        local ok, err = pcall(function() SliderConfig.Callback(Value) end)
+                        if not ok then warn("Slider Callback error:", err) end
                     end
+
                     if shouldSave and not noSave then QueueSaveConfig() end
                 end
 
@@ -1596,47 +1725,56 @@ function Dragon:Window(GuiConfig)
                     ApplySliderValue(Value, noSave, false, true)
                 end
 
+                local function UpdateFromInput(input)
+                    local absPos = math.clamp(input.Position.X - SliderFrame.AbsolutePosition.X, 0, SliderFrame.AbsoluteSize.X)
+                    local pct = SliderFrame.AbsoluteSize.X > 0 and (absPos / SliderFrame.AbsoluteSize.X) or 0
+                    local val = SliderConfig.Min + (pct * sliderSpan)
+                    ApplySliderValue(val, false, true, true)
+                end
+
                 SliderFrame.InputBegan:Connect(function(Input)
                     if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                         Dragging = true
-                        TweenService:Create(SliderCircle, TweenInfo.new(0.2), {Size = UDim2.new(0, 14, 0, 14)}):Play()
-                        local SizeScale = math.clamp((Input.Position.X - SliderFrame.AbsolutePosition.X) / SliderFrame.AbsoluteSize.X, 0, 1)
-                        ApplySliderValue(SliderConfig.Min + (sliderSpan * SizeScale), true, true, SliderConfig.Live)
+                        UpdateFromInput(Input)
+                        Input.Changed:Connect(function()
+                            if Input.UserInputState == Enum.UserInputState.End then Dragging = false end
+                        end)
                     end
                 end)
 
-                local function FinishSliderDrag(Input)
-                    if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-                        if not Dragging then return end
-                        Dragging = false
-                        ApplySliderValue(SliderFunc.Value, false, false, not SliderConfig.Live)
-                        TweenService:Create(SliderCircle, TweenInfo.new(0.2), {Size = UDim2.new(0, 10, 0, 10)}):Play()
-                    end
-                end
-
-                SliderFrame.InputEnded:Connect(FinishSliderDrag)
-                UserInputService.InputEnded:Connect(FinishSliderDrag)
                 UserInputService.InputChanged:Connect(function(Input)
                     if Dragging and (Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch) then
-                        local SizeScale = math.clamp((Input.Position.X - SliderFrame.AbsolutePosition.X) / SliderFrame.AbsoluteSize.X, 0, 1)
-                        ApplySliderValue(SliderConfig.Min + (sliderSpan * SizeScale), true, true, SliderConfig.Live)
+                        UpdateFromInput(Input)
                     end
                 end)
 
-                SliderFunc:Set(SliderConfig.Default, true)
+                TextBox.FocusLost:Connect(function()
+                    if UpdatingText then return end
+                    local n = tonumber(TextBox.Text)
+                    if n then
+                        ApplySliderValue(n, false, false, true)
+                    else
+                        TextBox.Text = FormatValue(SliderFunc.Value)
+                    end
+                end)
+
+                ApplySliderValue(SliderFunc.Value, true, true, false)
                 CountItem = CountItem + 1
                 if shouldSave then Elements[configKey] = SliderFunc end
-                RegisterSearch({ label = SliderConfig.Title, tab = TabConfig.Name, kind = "Slider", element = SliderFunc, switch = SearchSwitch })
+                RegisterSearch({ label = SliderConfig.Title, tab = TabConfig.Name, kind = "Slider", switch = SearchSwitch })
                 return SliderFunc
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddInput
+            -- ═══════════════════════════════════════════
             function Items:AddInput(InputConfig)
                 InputConfig = InputConfig or {}
-                InputConfig.Title = InputConfig.Title or "Title"
+                InputConfig.Title = InputConfig.Title or "Input"
                 InputConfig.Content = InputConfig.Content or ""
-                InputConfig.Callback = InputConfig.Callback or function() end
+                InputConfig.Placeholder = InputConfig.Placeholder or "Type here..."
                 InputConfig.Default = InputConfig.Default or ""
-                InputConfig.Placeholder = InputConfig.Placeholder or "Input Here"
+                InputConfig.Callback = InputConfig.Callback or function() end
 
                 local configKey = "Input_" .. InputConfig.Title
                 local shouldSave = InputConfig.Save ~= false
@@ -1645,16 +1783,17 @@ function Dragon:Window(GuiConfig)
                 end
 
                 local InputFunc = { Value = InputConfig.Default }
+                local hasContent = InputConfig.Content ~= ""
 
-                local Input = Instance.new("Frame")
-                Input.BackgroundColor3 = C_PANEL2
-                Input.BorderSizePixel = 0
-                Input.LayoutOrder = CountItem
-                Input.Size = UDim2.new(1, 0, 0, 50)
-                Input.Name = "Input"
-                Input.Parent = Body
-                corner(Input, 6)
-                stroke(Input, C_BORDER, 1)
+                local InputRoot = Instance.new("Frame")
+                InputRoot.BackgroundColor3 = C_PANEL2
+                InputRoot.BorderSizePixel = 0
+                InputRoot.LayoutOrder = CountItem
+                InputRoot.Size = UDim2.new(1, 0, 0, hasContent and 62 or 48)
+                InputRoot.Name = "Input"
+                InputRoot.Parent = Body
+                corner(InputRoot, 6)
+                stroke(InputRoot, C_BORDER, 1)
 
                 local InputTitle = Instance.new("TextLabel")
                 InputTitle.Font = Enum.Font.GothamBold
@@ -1662,71 +1801,75 @@ function Dragon:Window(GuiConfig)
                 InputTitle.TextColor3 = C_TEXT
                 InputTitle.TextSize = 13
                 InputTitle.TextXAlignment = Enum.TextXAlignment.Left
-                InputTitle.TextYAlignment = Enum.TextYAlignment.Top
                 InputTitle.BackgroundTransparency = 1
                 InputTitle.Position = UDim2.new(0, 10, 0, 8)
-                InputTitle.Size = UDim2.new(1, -180, 0, 13)
-                InputTitle.Parent = Input
+                InputTitle.Size = UDim2.new(1, -20, 0, 13)
+                InputTitle.Parent = InputRoot
 
-                local InputContent = Instance.new("TextLabel")
-                InputContent.Font = Enum.Font.Gotham
-                InputContent.Text = InputConfig.Content
-                InputContent.TextColor3 = C_SUBTEXT
-                InputContent.TextSize = 11
-                InputContent.TextWrapped = true
-                InputContent.TextXAlignment = Enum.TextXAlignment.Left
-                InputContent.TextYAlignment = Enum.TextYAlignment.Bottom
-                InputContent.BackgroundTransparency = 1
-                InputContent.Position = UDim2.new(0, 10, 0, 24)
-                InputContent.Size = UDim2.new(1, -180, 0, 12)
-                InputContent.Parent = Input
+                if hasContent then
+                    local InputContent = Instance.new("TextLabel")
+                    InputContent.Font = Enum.Font.Gotham
+                    InputContent.Text = InputConfig.Content
+                    InputContent.TextColor3 = C_SUBTEXT
+                    InputContent.TextSize = 11
+                    InputContent.TextXAlignment = Enum.TextXAlignment.Left
+                    InputContent.BackgroundTransparency = 1
+                    InputContent.Position = UDim2.new(0, 10, 0, 22)
+                    InputContent.Size = UDim2.new(1, -20, 0, 12)
+                    InputContent.Parent = InputRoot
+                end
 
-                local InputFrame = Instance.new("Frame")
-                InputFrame.AnchorPoint = Vector2.new(1, 0.5)
-                InputFrame.BackgroundColor3 = C_BORDER
-                InputFrame.BackgroundTransparency = 0.5
-                InputFrame.BorderSizePixel = 0
-                InputFrame.ClipsDescendants = true
-                InputFrame.Position = UDim2.new(1, -7, 0.5, 0)
-                InputFrame.Size = UDim2.new(0, 148, 0, 30)
-                InputFrame.Parent = Input
-                corner(InputFrame, 5)
+                local Field = Instance.new("Frame")
+                Field.BackgroundColor3 = C_BORDER
+                Field.BackgroundTransparency = 0.3
+                Field.Position = UDim2.new(0, 8, 0, hasContent and 36 or 24)
+                Field.Size = UDim2.new(1, -16, 0, 22)
+                Field.Parent = InputRoot
+                corner(Field, 4)
 
-                local InputTextBox = Instance.new("TextBox")
-                InputTextBox.CursorPosition = -1
-                InputTextBox.Font = Enum.Font.GothamBold
-                InputTextBox.PlaceholderColor3 = C_SUBTEXT
-                InputTextBox.PlaceholderText = InputConfig.Placeholder
-                InputTextBox.Text = InputConfig.Default
-                InputTextBox.TextColor3 = C_TEXT
-                InputTextBox.TextSize = 12
-                InputTextBox.TextXAlignment = Enum.TextXAlignment.Left
-                InputTextBox.AnchorPoint = Vector2.new(0, 0.5)
-                InputTextBox.BackgroundTransparency = 1
-                InputTextBox.Position = UDim2.new(0, 8, 0.5, 0)
-                InputTextBox.Size = UDim2.new(1, -16, 1, -8)
-                InputTextBox.Parent = InputFrame
+                local TextBox = Instance.new("TextBox")
+                TextBox.Font = Enum.Font.GothamBold
+                TextBox.PlaceholderText = InputConfig.Placeholder
+                TextBox.PlaceholderColor3 = C_SUBTEXT
+                TextBox.Text = InputConfig.Default
+                TextBox.TextColor3 = C_TEXT
+                TextBox.TextSize = 12
+                TextBox.TextXAlignment = Enum.TextXAlignment.Left
+                TextBox.ClearTextOnFocus = false
+                TextBox.BackgroundTransparency = 1
+                TextBox.Position = UDim2.new(0, 6, 0, 0)
+                TextBox.Size = UDim2.new(1, -12, 1, 0)
+                TextBox.Parent = Field
 
                 function InputFunc:Set(Value, noSave)
                     Value = tostring(Value or "")
-                    InputTextBox.Text = Value
                     InputFunc.Value = Value
-                    pcall(function() InputConfig.Callback(Value) end)
+                    TextBox.Text = Value
                     if shouldSave then
                         ConfigData[configKey] = Value
                         if not noSave then QueueSaveConfig() end
                     end
                 end
 
-                InputFunc:Set(InputFunc.Value, true)
-                InputTextBox.FocusLost:Connect(function() InputFunc:Set(InputTextBox.Text) end)
+                TextBox.FocusLost:Connect(function(enterPressed)
+                    InputFunc.Value = TextBox.Text
+                    if shouldSave then
+                        ConfigData[configKey] = TextBox.Text
+                        QueueSaveConfig()
+                    end
+                    local ok, err = pcall(function() InputConfig.Callback(TextBox.Text) end)
+                    if not ok then warn("Input Callback error:", err) end
+                end)
 
                 CountItem = CountItem + 1
                 if shouldSave then Elements[configKey] = InputFunc end
-                RegisterSearch({ label = InputConfig.Title, tab = TabConfig.Name, kind = "Input", element = InputFunc, switch = SearchSwitch })
+                RegisterSearch({ label = InputConfig.Title, tab = TabConfig.Name, kind = "Input", switch = SearchSwitch })
                 return InputFunc
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddDropdown
+            -- ═══════════════════════════════════════════
             function Items:AddDropdown(DropdownConfig)
                 DropdownConfig = DropdownConfig or {}
                 DropdownConfig.Title = DropdownConfig.Title or "Title"
@@ -1743,22 +1886,17 @@ function Dragon:Window(GuiConfig)
                 end
 
                 local DropdownFunc = { Value = DropdownConfig.Default, Options = DropdownConfig.Options }
+                local hasContent = DropdownConfig.Content ~= ""
 
                 local Dropdown = Instance.new("Frame")
                 Dropdown.BackgroundColor3 = C_PANEL2
                 Dropdown.BorderSizePixel = 0
                 Dropdown.LayoutOrder = CountItem
-                Dropdown.Size = UDim2.new(1, 0, 0, 50)
+                Dropdown.Size = UDim2.new(1, 0, 0, hasContent and 58 or 46)
                 Dropdown.Name = "Dropdown"
                 Dropdown.Parent = Body
                 corner(Dropdown, 6)
                 stroke(Dropdown, C_BORDER, 1)
-
-                local DropdownButton = Instance.new("TextButton")
-                DropdownButton.Text = ""
-                DropdownButton.BackgroundTransparency = 1
-                DropdownButton.Size = UDim2.new(1, 0, 1, 0)
-                DropdownButton.Parent = Dropdown
 
                 local DropdownTitle = Instance.new("TextLabel")
                 DropdownTitle.Font = Enum.Font.GothamBold
@@ -1768,27 +1906,29 @@ function Dragon:Window(GuiConfig)
                 DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
                 DropdownTitle.BackgroundTransparency = 1
                 DropdownTitle.Position = UDim2.new(0, 10, 0, 8)
-                DropdownTitle.Size = UDim2.new(1, -180, 0, 13)
+                DropdownTitle.Size = UDim2.new(1, -160, 0, 13)
                 DropdownTitle.Parent = Dropdown
 
-                local DropdownContent = Instance.new("TextLabel")
-                DropdownContent.Font = Enum.Font.Gotham
-                DropdownContent.Text = DropdownConfig.Content
-                DropdownContent.TextColor3 = C_SUBTEXT
-                DropdownContent.TextSize = 11
-                DropdownContent.TextWrapped = true
-                DropdownContent.TextXAlignment = Enum.TextXAlignment.Left
-                DropdownContent.BackgroundTransparency = 1
-                DropdownContent.Position = UDim2.new(0, 10, 0, 24)
-                DropdownContent.Size = UDim2.new(1, -180, 0, 12)
-                DropdownContent.Parent = Dropdown
+                if hasContent then
+                    local DropdownContent = Instance.new("TextLabel")
+                    DropdownContent.Font = Enum.Font.Gotham
+                    DropdownContent.Text = DropdownConfig.Content
+                    DropdownContent.TextColor3 = C_SUBTEXT
+                    DropdownContent.TextSize = 11
+                    DropdownContent.TextWrapped = true
+                    DropdownContent.TextXAlignment = Enum.TextXAlignment.Left
+                    DropdownContent.BackgroundTransparency = 1
+                    DropdownContent.Position = UDim2.new(0, 10, 0, 22)
+                    DropdownContent.Size = UDim2.new(1, -160, 0, 12)
+                    DropdownContent.Parent = Dropdown
+                end
 
                 local SelectFrame = Instance.new("Frame")
                 SelectFrame.AnchorPoint = Vector2.new(1, 0.5)
                 SelectFrame.BackgroundColor3 = C_BORDER
-                SelectFrame.BackgroundTransparency = 0.5
-                SelectFrame.Position = UDim2.new(1, -7, 0.5, 0)
-                SelectFrame.Size = UDim2.new(0, 148, 0, 30)
+                SelectFrame.BackgroundTransparency = 0.3
+                SelectFrame.Position = UDim2.new(1, -8, 0.5, 0)
+                SelectFrame.Size = UDim2.new(0, 130, 0, 26)
                 SelectFrame.Parent = Dropdown
                 corner(SelectFrame, 5)
 
@@ -1798,21 +1938,29 @@ function Dragon:Window(GuiConfig)
                 OptionSelecting.TextColor3 = C_SUBTEXT
                 OptionSelecting.TextSize = 11
                 OptionSelecting.TextXAlignment = Enum.TextXAlignment.Left
+                OptionSelecting.TextTruncate = Enum.TextTruncate.AtEnd
                 OptionSelecting.BackgroundTransparency = 1
+                OptionSelecting.AnchorPoint = Vector2.new(0, 0.5)
                 OptionSelecting.Position = UDim2.new(0, 8, 0.5, 0)
-                OptionSelecting.AnchorPoint = UDim2.new(0, 0.5)
                 OptionSelecting.Size = UDim2.new(1, -24, 1, -8)
                 OptionSelecting.Parent = SelectFrame
 
                 local ArrowLabel = Instance.new("TextLabel")
                 ArrowLabel.BackgroundTransparency = 1
-                ArrowLabel.Text = ">"
+                ArrowLabel.Text = "▾"
                 ArrowLabel.TextColor3 = C_SUBTEXT
                 ArrowLabel.Font = Enum.Font.GothamBold
-                ArrowLabel.TextSize = 12
+                ArrowLabel.TextSize = 11
                 ArrowLabel.Size = UDim2.new(0, 16, 1, 0)
                 ArrowLabel.Position = UDim2.new(1, -18, 0, 0)
                 ArrowLabel.Parent = SelectFrame
+
+                local DropdownButton = Instance.new("TextButton")
+                DropdownButton.Text = ""
+                DropdownButton.BackgroundTransparency = 1
+                DropdownButton.Size = UDim2.new(1, 0, 1, 0)
+                DropdownButton.ZIndex = 5
+                DropdownButton.Parent = SelectFrame
 
                 local DropdownOverlay = Instance.new("Frame")
                 DropdownOverlay.Size = UDim2.new(1, 0, 1, 0)
@@ -1862,6 +2010,7 @@ function Dragon:Window(GuiConfig)
                 DropSearch.ZIndex = 32
                 DropSearch.Parent = DropPanel
                 corner(DropSearch, 5)
+                pad(DropSearch, 8, 0, 0, 0)
 
                 local DropScroll = Instance.new("ScrollingFrame")
                 DropScroll.Size = UDim2.new(1, -16, 1, -66)
@@ -1883,302 +2032,268 @@ function Dragon:Window(GuiConfig)
                     DropScroll.CanvasSize = UDim2.new(0, 0, 0, DropList.AbsoluteContentSize.Y + 8)
                 end)
 
-                local DropCount = 0
+                local CloseBtn = Instance.new("TextButton")
+                CloseBtn.AnchorPoint = Vector2.new(1, 0)
+                CloseBtn.BackgroundTransparency = 1
+                CloseBtn.Position = UDim2.new(1, -6, 0, 4)
+                CloseBtn.Size = UDim2.new(0, 20, 0, 20)
+                CloseBtn.Text = "x"
+                CloseBtn.TextColor3 = C_SUBTEXT
+                CloseBtn.Font = Enum.Font.GothamBold
+                CloseBtn.TextSize = 14
+                CloseBtn.ZIndex = 33
+                CloseBtn.Parent = DropPanel
+
+                local function IsSelected(value)
+                    if DropdownConfig.Multi then
+                        for _, v in ipairs(DropdownFunc.Value or {}) do
+                            if v == value then return true end
+                        end
+                        return false
+                    end
+                    return DropdownFunc.Value == value
+                end
+
+                local function CurrentLabel()
+                    if DropdownConfig.Multi then
+                        local n = #(DropdownFunc.Value or {})
+                        return n == 0 and (DropdownConfig.Multi and "Select Options" or "Select Option") or (n .. " selected")
+                    end
+                    return DropdownFunc.Value ~= nil and tostring(DropdownFunc.Value) or (DropdownConfig.Multi and "Select Options" or "Select Option")
+                end
+
+                local function Persist()
+                    if not shouldSave then return end
+                    ConfigData[configKey] = DropdownFunc.Value
+                    QueueSaveConfig()
+                end
+
                 local function RefreshOptions()
                     for _, child in ipairs(DropScroll:GetChildren()) do
                         if child:IsA("Frame") then child:Destroy() end
                     end
-                    DropCount = 0
+                    local query = string.lower(DropSearch.Text)
+                    local order = 0
                     for _, opt in ipairs(DropdownFunc.Options) do
-                        local label, value
-                        if typeof(opt) == "table" and opt.Label and opt.Value ~= nil then
-                            label = tostring(opt.Label)
-                            value = opt.Value
-                        else
-                            label = tostring(opt)
-                            value = opt
-                        end
+                        local label = tostring(opt)
+                        if query == "" or string.find(string.lower(label), query, 1, true) then
+                            order = order + 1
+                            local isSel = IsSelected(opt)
 
-                        local OptFrame = Instance.new("Frame")
-                        OptFrame.Size = UDim2.new(1, 0, 0, 30)
-                        OptFrame.BackgroundTransparency = 1
-                        OptFrame.LayoutOrder = DropCount
-                        OptFrame.ZIndex = 33
-                        OptFrame.Parent = DropScroll
+                            local Row = Instance.new("TextButton")
+                            Row.Font = Enum.Font.GothamBold
+                            Row.Text = label
+                            Row.TextColor3 = isSel and GuiConfig.Color or C_TEXT
+                            Row.TextSize = 12
+                            Row.TextXAlignment = Enum.TextXAlignment.Left
+                            Row.BackgroundColor3 = isSel and GuiConfig.Color or C_PANEL2
+                            Row.BackgroundTransparency = isSel and 0.82 or 0
+                            Row.Size = UDim2.new(1, 0, 0, 30)
+                            Row.LayoutOrder = order
+                            Row.ZIndex = 32
+                            Row.Parent = DropScroll
+                            corner(Row, 5)
+                            pad(Row, 10, 0, 0, 0)
+                            local rowStroke = stroke(Row, isSel and GuiConfig.Color or C_BORDER, 1)
+                            rowStroke.ZIndex = 32
 
-                        local OptBtn = Instance.new("TextButton")
-                        OptBtn.Size = UDim2.new(1, 0, 1, 0)
-                        OptBtn.BackgroundTransparency = 1
-                        OptBtn.Text = ""
-                        OptBtn.ZIndex = 34
-                        OptBtn.Parent = OptFrame
-
-                        local OptLabel = Instance.new("TextLabel")
-                        OptLabel.BackgroundTransparency = 1
-                        OptLabel.Position = UDim2.new(0, 8, 0, 0)
-                        OptLabel.Size = UDim2.new(1, -16, 1, 0)
-                        OptLabel.Text = label
-                        OptLabel.TextColor3 = C_TEXT
-                        OptLabel.Font = Enum.Font.GothamBold
-                        OptLabel.TextSize = 12
-                        OptLabel.TextXAlignment = Enum.TextXAlignment.Left
-                        OptLabel.ZIndex = 34
-                        OptLabel.Parent = OptFrame
-
-                        local CheckMark = Instance.new("TextLabel")
-                        CheckMark.BackgroundTransparency = 1
-                        CheckMark.Text = "✓"
-                        CheckMark.TextColor3 = GuiConfig.Color
-                        CheckMark.Font = Enum.Font.GothamBold
-                        CheckMark.TextSize = 14
-                        CheckMark.Size = UDim2.new(0, 20, 1, 0)
-                        CheckMark.Position = UDim2.new(1, -24, 0, 0)
-                        CheckMark.ZIndex = 34
-                        CheckMark.Visible = false
-                        CheckMark.Parent = OptFrame
-
-                        OptBtn.MouseButton1Click:Connect(function()
-                            if DropdownConfig.Multi then
-                                if not table.find(DropdownFunc.Value, value) then
-                                    table.insert(DropdownFunc.Value, value)
-                                else
-                                    for i, v in pairs(DropdownFunc.Value) do
-                                        if v == value then
+                            Row.Activated:Connect(function()
+                                if DropdownConfig.Multi then
+                                    local found = false
+                                    for i, v in ipairs(DropdownFunc.Value) do
+                                        if v == opt then
                                             table.remove(DropdownFunc.Value, i)
+                                            found = true
                                             break
                                         end
                                     end
+                                    if not found then table.insert(DropdownFunc.Value, opt) end
+                                    RefreshOptions()
+                                    OptionSelecting.Text = CurrentLabel()
+                                    Persist()
+                                    local ok, err = pcall(function() DropdownConfig.Callback(DropdownFunc.Value) end)
+                                    if not ok then warn("Dropdown Callback error:", err) end
+                                else
+                                    DropdownFunc.Value = opt
+                                    OptionSelecting.Text = CurrentLabel()
+                                    DropdownOverlay.Visible = false
+                                    Persist()
+                                    local ok, err = pcall(function() DropdownConfig.Callback(DropdownFunc.Value) end)
+                                    if not ok then warn("Dropdown Callback error:", err) end
                                 end
-                            else
-                                DropdownFunc.Value = value
-                                DropdownOverlay.Visible = false
-                            end
-                            DropdownFunc:Set(DropdownFunc.Value)
-                        end)
-
-                        OptFrame:SetAttribute("RealValue", value)
-                        DropCount = DropCount + 1
-                    end
-                end
-
-                local function UpdateDropdownVisual()
-                    for _, OptFrame in ipairs(DropScroll:GetChildren()) do
-                        if OptFrame:IsA("Frame") then
-                            local v = OptFrame:GetAttribute("RealValue")
-                            local selected = DropdownConfig.Multi and table.find(DropdownFunc.Value, v) or DropdownFunc.Value == v
-                            for _, child in ipairs(OptFrame:GetChildren()) do
-                                if child:IsA("TextLabel") and child.Text == "✓" then
-                                    child.Visible = selected
-                                end
-                            end
-                            OptFrame.BackgroundTransparency = selected and 0.9 or 1
+                            end)
                         end
                     end
-
-                    local texts = {}
-                    for _, OptFrame in ipairs(DropScroll:GetChildren()) do
-                        if OptFrame:IsA("Frame") then
-                            local v = OptFrame:GetAttribute("RealValue")
-                            local selected = DropdownConfig.Multi and table.find(DropdownFunc.Value, v) or DropdownFunc.Value == v
-                            if selected then
-                                local lbl = OptFrame:FindFirstChildWhichIsA("TextLabel")
-                                if lbl then table.insert(texts, lbl.Text) end
-                            end
-                        end
-                    end
-                    OptionSelecting.Text = (#texts == 0)
-                        and (DropdownConfig.Multi and "Select Options" or "Select Option")
-                        or table.concat(texts, ", ")
-                    OptionSelecting.TextColor3 = (#texts > 0) and C_TEXT or C_SUBTEXT
-                end
-
-                function DropdownFunc:Clear()
-                    DropdownFunc.Value = DropdownConfig.Multi and {} or nil
-                    DropdownFunc.Options = {}
-                    OptionSelecting.Text = DropdownConfig.Multi and "Select Options" or "Select Option"
-                    RefreshOptions()
-                end
-
-                function DropdownFunc:AddOption(option)
-                    table.insert(DropdownFunc.Options, option)
-                    RefreshOptions()
-                end
-
-                function DropdownFunc:Set(Value, noSave)
-                    if DropdownConfig.Multi then
-                        DropdownFunc.Value = type(Value) == "table" and Value or {}
-                    else
-                        DropdownFunc.Value = (type(Value) == "table" and Value[1]) or Value
-                    end
-                    if shouldSave then
-                        ConfigData[configKey] = DropdownFunc.Value
-                        if not noSave then QueueSaveConfig() end
-                    end
-                    RefreshOptions()
-                    UpdateDropdownVisual()
-                    if DropdownConfig.Callback then
-                        pcall(function() DropdownConfig.Callback(DropdownFunc.Value) end)
-                    end
-                end
-
-                function DropdownFunc:SetValue(val) self:Set(val) end
-                function DropdownFunc:GetValue() return self.Value end
-
-                function DropdownFunc:SetValues(newList, selecting, noSave)
-                    newList = newList or {}
-                    selecting = selecting or (DropdownConfig.Multi and {} or nil)
-                    DropdownFunc:Clear()
-                    for _, v in ipairs(newList) do DropdownFunc:AddOption(v) end
-                    DropdownFunc:Set(selecting, noSave)
-                    DropdownFunc.Options = newList
                 end
 
                 DropdownButton.Activated:Connect(function()
-                    RefreshOptions()
-                    UpdateDropdownVisual()
                     DropdownOverlay.Visible = true
                     DropSearch.Text = ""
+                    RefreshOptions()
+                end)
+                CloseBtn.Activated:Connect(function()
+                    DropdownOverlay.Visible = false
                 end)
 
-                DropdownOverlay.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        DropdownOverlay.Visible = false
-                    end
-                end)
-
+                local dropSearchTicket = 0
                 DropSearch:GetPropertyChangedSignal("Text"):Connect(function()
-                    local q = string.lower(DropSearch.Text)
-                    for _, OptFrame in ipairs(DropScroll:GetChildren()) do
-                        if OptFrame:IsA("Frame") then
-                            local lbl = OptFrame:FindFirstChildWhichIsA("TextLabel")
-                            if lbl then
-                                OptFrame.Visible = q == "" or string.find(string.lower(lbl.Text), q, 1, true)
-                            end
-                        end
-                    end
+                    dropSearchTicket = dropSearchTicket + 1
+                    local ticket = dropSearchTicket
+                    task.delay(0.08, function()
+                        if ticket == dropSearchTicket then RefreshOptions() end
+                    end)
                 end)
 
-                DropdownFunc:SetValues(DropdownFunc.Options, DropdownFunc.Value, true)
+                function DropdownFunc:Set(value, noSave)
+                    DropdownFunc.Value = value
+                    OptionSelecting.Text = CurrentLabel()
+                    if shouldSave and not noSave then Persist() end
+                end
+                function DropdownFunc:SetOptions(list)
+                    DropdownConfig.Options = list or {}
+                    DropdownFunc.Options = DropdownConfig.Options
+                    RefreshOptions()
+                end
+
+                OptionSelecting.Text = CurrentLabel()
                 CountItem = CountItem + 1
                 if shouldSave then Elements[configKey] = DropdownFunc end
-                RegisterSearch({ label = DropdownConfig.Title, tab = TabConfig.Name, kind = "Dropdown", element = DropdownFunc, switch = SearchSwitch })
+                RegisterSearch({ label = DropdownConfig.Title, tab = TabConfig.Name, kind = "Dropdown", switch = SearchSwitch })
                 return DropdownFunc
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddBanner
+            -- ═══════════════════════════════════════════
             function Items:AddBanner(BannerConfig)
                 BannerConfig = BannerConfig or {}
-                local asset = tostring(BannerConfig.Image or BannerConfig.Banner or "")
-                if asset ~= "" and not string.find(asset, "rbxassetid://") then
-                    asset = "rbxassetid://" .. asset
-                end
+                BannerConfig.Version = BannerConfig.Version or ""
 
                 local Banner = Instance.new("Frame")
                 Banner.BackgroundColor3 = C_PANEL2
                 Banner.BorderSizePixel = 0
-                Banner.ClipsDescendants = true
                 Banner.LayoutOrder = CountItem
-                Banner.Size = UDim2.new(1, 0, 0, 80)
+                Banner.Size = UDim2.new(1, 0, 0, 60)
+                Banner.ClipsDescendants = true
                 Banner.Parent = Body
-                corner(Banner, 8)
+                corner(Banner, 6)
+                stroke(Banner, C_BORDER, 1)
 
-                if asset ~= "" then
-                    local Img = Instance.new("ImageLabel")
-                    Img.Image = asset
-                    Img.BackgroundTransparency = 1
-                    Img.ScaleType = Enum.ScaleType.Crop
-                    Img.Size = UDim2.new(1, 0, 1, 0)
-                    Img.Parent = Banner
-                else
-                    local Grad = Instance.new("UIGradient")
-                    Grad.Color = ColorSequence.new {
-                        ColorSequenceKeypoint.new(0, C_PANEL2),
-                        ColorSequenceKeypoint.new(0.5, GuiConfig.Color),
-                        ColorSequenceKeypoint.new(1, C_PANEL2),
-                    }
-                    Grad.Rotation = 25
-                    Grad.Parent = Banner
-                end
+                local BannerGradient = Instance.new("UIGradient")
+                BannerGradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, GuiConfig.Color),
+                    ColorSequenceKeypoint.new(1, C_PANEL2),
+                })
+                BannerGradient.Transparency = NumberSequence.new({
+                    NumberSequenceKeypoint.new(0, 0.75),
+                    NumberSequenceKeypoint.new(1, 0.96),
+                })
+                BannerGradient.Rotation = 20
+                BannerGradient.Parent = Banner
 
-                if BannerConfig.Version then
-                    local VerPill = Instance.new("TextLabel")
-                    VerPill.BackgroundTransparency = 0.35
-                    VerPill.BackgroundColor3 = Color3.new(0, 0, 0)
-                    VerPill.Text = tostring(BannerConfig.Version)
-                    VerPill.TextColor3 = C_TEXT
-                    VerPill.Font = Enum.Font.GothamBold
-                    VerPill.TextSize = 10
-                    VerPill.Size = UDim2.new(0, 52, 0, 20)
-                    VerPill.AnchorPoint = Vector2.new(1, 0)
-                    VerPill.Position = UDim2.new(1, -8, 0, 8)
-                    VerPill.ZIndex = 3
-                    VerPill.Parent = Banner
-                    corner(VerPill, 10)
+                local Logo = Instance.new("ImageLabel")
+                Logo.BackgroundTransparency = 1
+                Logo.Image = "rbxthumb://type=Asset&id=5669312251&w=150&h=150"
+                Logo.ImageTransparency = 0.15
+                Logo.ScaleType = Enum.ScaleType.Fit
+                Logo.AnchorPoint = Vector2.new(1, 0.5)
+                Logo.Position = UDim2.new(1, -14, 0.5, 0)
+                Logo.Size = UDim2.new(0, 38, 0, 38)
+                Logo.Parent = Banner
+
+                local BannerTitle = Instance.new("TextLabel")
+                BannerTitle.Font = Enum.Font.GothamBold
+                BannerTitle.Text = GuiConfig.Title
+                BannerTitle.TextColor3 = C_TEXT
+                BannerTitle.TextSize = 16
+                BannerTitle.TextXAlignment = Enum.TextXAlignment.Left
+                BannerTitle.BackgroundTransparency = 1
+                BannerTitle.Position = UDim2.new(0, 14, 0, 12)
+                BannerTitle.Size = UDim2.new(1, -70, 0, 18)
+                BannerTitle.Parent = Banner
+
+                if BannerConfig.Version ~= "" then
+                    local Pill = Instance.new("Frame")
+                    Pill.BackgroundColor3 = GuiConfig.Color
+                    Pill.BackgroundTransparency = 0.6
+                    Pill.Position = UDim2.new(0, 14, 0, 34)
+                    Pill.Size = UDim2.new(0, 0, 0, 16)
+                    Pill.AutomaticSize = Enum.AutomaticSize.X
+                    Pill.Parent = Banner
+                    corner(Pill, 8)
+                    pad(Pill, 8, 0, 8, 0)
+
+                    local PillLabel = Instance.new("TextLabel")
+                    PillLabel.Font = Enum.Font.GothamBold
+                    PillLabel.Text = BannerConfig.Version
+                    PillLabel.TextColor3 = GuiConfig.Color
+                    PillLabel.TextSize = 10
+                    PillLabel.BackgroundTransparency = 1
+                    PillLabel.Size = UDim2.new(0, 0, 1, 0)
+                    PillLabel.AutomaticSize = Enum.AutomaticSize.X
+                    PillLabel.Parent = Pill
                 end
 
                 CountItem = CountItem + 1
-                return Banner
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddDivider
+            -- ═══════════════════════════════════════════
             function Items:AddDivider()
                 local Divider = Instance.new("Frame")
-                Divider.Name = "Divider"
-                Divider.Parent = Body
-                Divider.Size = UDim2.new(1, 0, 0, 2)
-                Divider.BackgroundColor3 = GuiConfig.Color
-                Divider.BackgroundTransparency = 0.7
+                Divider.BackgroundColor3 = C_BORDER
                 Divider.BorderSizePixel = 0
                 Divider.LayoutOrder = CountItem
+                Divider.Size = UDim2.new(1, 0, 0, 1)
+                Divider.Parent = Body
 
-                local DivGrad = Instance.new("UIGradient")
-                DivGrad.Color = ColorSequence.new {
-                    ColorSequenceKeypoint.new(0, C_PANEL2),
+                local DividerGradient = Instance.new("UIGradient")
+                DividerGradient.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, C_PANEL),
                     ColorSequenceKeypoint.new(0.5, GuiConfig.Color),
-                    ColorSequenceKeypoint.new(1, C_PANEL2),
-                }
-                DivGrad.Parent = Divider
-                corner(Divider, 1)
+                    ColorSequenceKeypoint.new(1, C_PANEL),
+                })
+                DividerGradient.Parent = Divider
 
                 CountItem = CountItem + 1
-                return Divider
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddSubSection
+            -- ═══════════════════════════════════════════
             function Items:AddSubSection(title)
-                title = title or "Sub Section"
-                local SubSection = Instance.new("Frame")
-                SubSection.Size = UDim2.new(1, 0, 0, 28)
-                SubSection.BackgroundTransparency = 1
-                SubSection.LayoutOrder = CountItem
-                SubSection.Parent = Body
-
                 local SubLabel = Instance.new("TextLabel")
-                SubLabel.BackgroundTransparency = 1
-                SubLabel.Position = UDim2.new(0, 4, 0, 0)
-                SubLabel.Size = UDim2.new(1, -8, 1, 0)
-                SubLabel.Text = title
-                SubLabel.TextColor3 = GuiConfig.Color
                 SubLabel.Font = Enum.Font.GothamBold
-                SubLabel.TextSize = 12
+                SubLabel.Text = string.upper(tostring(title or ""))
+                SubLabel.TextColor3 = GuiConfig.Color
+                SubLabel.TextSize = 11
                 SubLabel.TextXAlignment = Enum.TextXAlignment.Left
-                SubLabel.Parent = SubSection
+                SubLabel.BackgroundTransparency = 1
+                SubLabel.LayoutOrder = CountItem
+                SubLabel.Size = UDim2.new(1, 0, 0, 18)
+                SubLabel.Parent = Body
 
                 CountItem = CountItem + 1
-                return SubSection
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddCard
+            -- ═══════════════════════════════════════════
             function Items:AddCard(CardConfig)
                 CardConfig = CardConfig or {}
-                CardConfig.Title = CardConfig.Title or "Card"
+                CardConfig.Title = CardConfig.Title or "Title"
                 CardConfig.Description = CardConfig.Description or ""
-                local btns = CardConfig.Buttons or {}
-                local cardHeight = 60 + (#btns > 0 and 36 or 0)
+                CardConfig.Buttons = CardConfig.Buttons or {}
 
+                local btnRows = math.max(1, #CardConfig.Buttons)
                 local Card = Instance.new("Frame")
                 Card.BackgroundColor3 = C_PANEL2
                 Card.BorderSizePixel = 0
                 Card.LayoutOrder = CountItem
-                Card.Size = UDim2.new(1, 0, 0, cardHeight)
+                Card.Size = UDim2.new(1, 0, 0, 56 + (btnRows > 0 and 34 or 0))
                 Card.Parent = Body
-                corner(Card, 8)
+                corner(Card, 6)
                 stroke(Card, C_BORDER, 1)
 
                 local CardTitle = Instance.new("TextLabel")
@@ -2188,8 +2303,8 @@ function Dragon:Window(GuiConfig)
                 CardTitle.TextSize = 13
                 CardTitle.TextXAlignment = Enum.TextXAlignment.Left
                 CardTitle.BackgroundTransparency = 1
-                CardTitle.Position = UDim2.new(0, 12, 0, 8)
-                CardTitle.Size = UDim2.new(1, -24, 0, 16)
+                CardTitle.Position = UDim2.new(0, 10, 0, 8)
+                CardTitle.Size = UDim2.new(1, -20, 0, 13)
                 CardTitle.Parent = Card
 
                 local CardDesc = Instance.new("TextLabel")
@@ -2197,48 +2312,52 @@ function Dragon:Window(GuiConfig)
                 CardDesc.Text = CardConfig.Description
                 CardDesc.TextColor3 = C_SUBTEXT
                 CardDesc.TextSize = 11
-                CardDesc.TextXAlignment = Enum.TextXAlignment.Left
-                CardDesc.TextYAlignment = Enum.TextYAlignment.Top
                 CardDesc.TextWrapped = true
+                CardDesc.TextXAlignment = Enum.TextXAlignment.Left
                 CardDesc.BackgroundTransparency = 1
-                CardDesc.Position = UDim2.new(0, 12, 0, 26)
-                CardDesc.Size = UDim2.new(1, -24, 0, 24)
+                CardDesc.Position = UDim2.new(0, 10, 0, 24)
+                CardDesc.Size = UDim2.new(1, -20, 0, 26)
                 CardDesc.Parent = Card
 
-                if #btns > 0 then
-                    local Row = Instance.new("Frame")
-                    Row.BackgroundTransparency = 1
-                    Row.Position = UDim2.new(0, 8, 0, cardHeight - 34)
-                    Row.Size = UDim2.new(1, -16, 0, 28)
-                    Row.Parent = Card
+                if #CardConfig.Buttons > 0 then
+                    local BtnRow = Instance.new("Frame")
+                    BtnRow.BackgroundTransparency = 1
+                    BtnRow.Position = UDim2.new(0, 8, 1, -32)
+                    BtnRow.Size = UDim2.new(1, -16, 0, 26)
+                    BtnRow.Parent = Card
 
-                    local RowLayout = Instance.new("UIListLayout")
-                    RowLayout.FillDirection = Enum.FillDirection.Horizontal
-                    RowLayout.Padding = UDim.new(0, 6)
-                    RowLayout.Parent = Row
+                    local BtnLayout = Instance.new("UIListLayout")
+                    BtnLayout.FillDirection = Enum.FillDirection.Horizontal
+                    BtnLayout.Padding = UDim.new(0, 6)
+                    BtnLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                    BtnLayout.Parent = BtnRow
 
-                    for _, bd in ipairs(btns) do
-                        local Btn = Instance.new("TextButton")
-                        Btn.Font = Enum.Font.GothamBold
-                        Btn.Text = bd.Name or "Button"
-                        Btn.TextColor3 = C_TEXT
-                        Btn.TextSize = 11
-                        Btn.BackgroundColor3 = bd.Color or GuiConfig.Color
-                        Btn.BorderSizePixel = 0
-                        Btn.Size = UDim2.new(0, #btns == 1 and 200 or 100, 0, 28)
-                        Btn.Parent = Row
-                        corner(Btn, 6)
-                        if bd.Callback then
-                            Btn.MouseButton1Click:Connect(bd.Callback)
-                        end
+                    for i, btnCfg in ipairs(CardConfig.Buttons) do
+                        local BtnW = (1 / #CardConfig.Buttons)
+                        local CardBtn = Instance.new("TextButton")
+                        CardBtn.Font = Enum.Font.GothamBold
+                        CardBtn.Text = btnCfg.Name or "Button"
+                        CardBtn.TextColor3 = C_TEXT
+                        CardBtn.TextSize = 11
+                        CardBtn.BackgroundColor3 = btnCfg.Color or C_BORDER
+                        CardBtn.Size = UDim2.new(BtnW, -4, 1, 0)
+                        CardBtn.LayoutOrder = i
+                        CardBtn.Parent = BtnRow
+                        corner(CardBtn, 5)
+                        CardBtn.Activated:Connect(function()
+                            CircleClick(CardBtn, Mouse.X, Mouse.Y)
+                            if btnCfg.Callback then btnCfg.Callback() end
+                        end)
                     end
                 end
 
-                RegisterSearch({ label = CardConfig.Title, tab = TabConfig.Name, kind = "Card", switch = SearchSwitch })
                 CountItem = CountItem + 1
-                return Card
+                RegisterSearch({ label = CardConfig.Title, tab = TabConfig.Name, kind = "Card", switch = SearchSwitch })
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddPanel
+            -- ═══════════════════════════════════════════
             function Items:AddPanel(PanelConfig)
                 PanelConfig = PanelConfig or {}
                 PanelConfig.Title = PanelConfig.Title or "Title"
@@ -2258,52 +2377,50 @@ function Dragon:Window(GuiConfig)
 
                 local PanelFunc = { Value = PanelConfig.Default }
 
-                local baseHeight = 50
-                if PanelConfig.Placeholder then baseHeight = baseHeight + 40 end
-                if PanelConfig.SubButtonText then baseHeight = baseHeight + 40 else baseHeight = baseHeight + 36 end
+                local baseHeight = 44
+                if PanelConfig.Placeholder then baseHeight = baseHeight + 34 end
+                baseHeight = baseHeight + 34
 
                 local Panel = Instance.new("Frame")
                 Panel.BackgroundColor3 = C_PANEL2
                 Panel.BorderSizePixel = 0
-                Panel.LayoutOrder = CountItem
                 Panel.Size = UDim2.new(1, 0, 0, baseHeight)
+                Panel.LayoutOrder = CountItem
                 Panel.Parent = Body
                 corner(Panel, 6)
                 stroke(Panel, C_BORDER, 1)
 
-                local TitleLbl = Instance.new("TextLabel")
-                TitleLbl.Font = Enum.Font.GothamBold
-                TitleLbl.Text = PanelConfig.Title
-                TitleLbl.TextSize = 13
-                TitleLbl.TextColor3 = C_TEXT
-                TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-                TitleLbl.BackgroundTransparency = 1
-                TitleLbl.Position = UDim2.new(0, 10, 0, 10)
-                TitleLbl.Size = UDim2.new(1, -20, 0, 13)
-                TitleLbl.Parent = Panel
+                local Title = Instance.new("TextLabel")
+                Title.Font = Enum.Font.GothamBold
+                Title.Text = PanelConfig.Title
+                Title.TextSize = 13
+                Title.TextColor3 = C_TEXT
+                Title.TextXAlignment = Enum.TextXAlignment.Left
+                Title.BackgroundTransparency = 1
+                Title.Position = UDim2.new(0, 10, 0, 8)
+                Title.Size = UDim2.new(1, -20, 0, 13)
+                Title.Parent = Panel
 
-                local ContentLbl = Instance.new("TextLabel")
-                ContentLbl.Font = Enum.Font.Gotham
-                ContentLbl.Text = PanelConfig.Content
-                ContentLbl.TextSize = 12
-                ContentLbl.TextColor3 = C_SUBTEXT
-                ContentLbl.TextXAlignment = Enum.TextXAlignment.Left
-                ContentLbl.RichText = true
-                ContentLbl.BackgroundTransparency = 1
-                ContentLbl.Position = UDim2.new(0, 10, 0, 28)
-                ContentLbl.Size = UDim2.new(1, -20, 0, 14)
-                ContentLbl.Parent = Panel
+                local Content = Instance.new("TextLabel")
+                Content.Font = Enum.Font.Gotham
+                Content.Text = PanelConfig.Content
+                Content.TextSize = 11
+                Content.TextColor3 = C_SUBTEXT
+                Content.TextXAlignment = Enum.TextXAlignment.Left
+                Content.BackgroundTransparency = 1
+                Content.Position = UDim2.new(0, 10, 0, 22)
+                Content.Size = UDim2.new(1, -20, 0, 14)
+                Content.Parent = Panel
 
                 local InputBox
                 if PanelConfig.Placeholder then
                     local InputFrame = Instance.new("Frame")
-                    InputFrame.AnchorPoint = Vector2.new(0.5, 0)
                     InputFrame.BackgroundColor3 = C_BORDER
-                    InputFrame.BackgroundTransparency = 0.5
-                    InputFrame.Position = UDim2.new(0.5, 0, 0, 48)
-                    InputFrame.Size = UDim2.new(1, -20, 0, 30)
+                    InputFrame.BackgroundTransparency = 0.3
+                    InputFrame.Position = UDim2.new(0, 8, 0, 38)
+                    InputFrame.Size = UDim2.new(1, -16, 0, 26)
                     InputFrame.Parent = Panel
-                    corner(InputFrame, 5)
+                    corner(InputFrame, 4)
 
                     InputBox = Instance.new("TextBox")
                     InputBox.Font = Enum.Font.GothamBold
@@ -2319,7 +2436,7 @@ function Dragon:Window(GuiConfig)
                     InputBox.Parent = InputFrame
                 end
 
-                local yBtn = PanelConfig.Placeholder and 88 or 48
+                local yBtn = PanelConfig.Placeholder and 72 or 38
 
                 local ButtonMain = Instance.new("TextButton")
                 ButtonMain.Font = Enum.Font.GothamBold
@@ -2327,47 +2444,48 @@ function Dragon:Window(GuiConfig)
                 ButtonMain.TextColor3 = C_TEXT
                 ButtonMain.TextSize = 12
                 ButtonMain.BackgroundColor3 = C_BORDER
-                ButtonMain.BackgroundTransparency = 0.7
-                ButtonMain.Size = PanelConfig.SubButtonText and UDim2.new(0.5, -12, 0, 30) or UDim2.new(1, -20, 0, 30)
-                ButtonMain.Position = UDim2.new(0, 10, 0, yBtn)
+                ButtonMain.BackgroundTransparency = 0.3
+                ButtonMain.Size = PanelConfig.SubButtonText and UDim2.new(0.5, -10, 0, 26) or UDim2.new(1, -16, 0, 26)
+                ButtonMain.Position = UDim2.new(0, 8, 0, yBtn)
                 ButtonMain.Parent = Panel
-                corner(ButtonMain, 6)
+                corner(ButtonMain, 5)
                 ButtonMain.MouseButton1Click:Connect(function()
-                    pcall(function() PanelConfig.ButtonCallback(InputBox and InputBox.Text or "") end)
+                    PanelConfig.ButtonCallback(InputBox and InputBox.Text or "")
                 end)
 
                 if PanelConfig.SubButtonText then
                     local SubButton = Instance.new("TextButton")
                     SubButton.Font = Enum.Font.GothamBold
                     SubButton.Text = PanelConfig.SubButtonText
-                    SubButton.TextColor3 = C_TEXT
+                    SubButton.TextColor3 = C_SUBTEXT
                     SubButton.TextSize = 12
                     SubButton.BackgroundColor3 = C_BORDER
-                    SubButton.BackgroundTransparency = 0.7
-                    SubButton.Size = UDim2.new(0.5, -12, 0, 30)
+                    SubButton.BackgroundTransparency = 0.6
+                    SubButton.Size = UDim2.new(0.5, -10, 0, 26)
                     SubButton.Position = UDim2.new(0.5, 2, 0, yBtn)
                     SubButton.Parent = Panel
-                    corner(SubButton, 6)
+                    corner(SubButton, 5)
                     SubButton.MouseButton1Click:Connect(function()
-                        pcall(function() PanelConfig.SubButtonCallback(InputBox and InputBox.Text or "") end)
+                        PanelConfig.SubButtonCallback(InputBox and InputBox.Text or "")
                     end)
                 end
 
                 if InputBox then
-                    InputBox.FocusLost:Connect(function() PanelFunc:Set(InputBox.Text) end)
+                    InputBox.FocusLost:Connect(function()
+                        PanelFunc:Set(InputBox.Text)
+                    end)
                 end
 
                 function PanelFunc:Set(Value, noSave)
                     Value = tostring(Value or "")
                     PanelFunc.Value = Value
+                    if shouldSave then ConfigData[configKey] = Value end
                     if InputBox then InputBox.Text = Value end
-                    if shouldSave then
-                        ConfigData[configKey] = Value
-                        if not noSave then QueueSaveConfig() end
-                    end
+                    if shouldSave and not noSave then QueueSaveConfig() end
                 end
-
-                function PanelFunc:GetInput() return InputBox and InputBox.Text or "" end
+                function PanelFunc:GetInput()
+                    return InputBox and InputBox.Text or ""
+                end
 
                 PanelFunc:Set(PanelFunc.Value, true)
                 CountItem = CountItem + 1
@@ -2376,303 +2494,551 @@ function Dragon:Window(GuiConfig)
                 return PanelFunc
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddLogPanel
+            -- ═══════════════════════════════════════════
             function Items:AddLogPanel(LogConfig)
                 LogConfig = LogConfig or {}
-                LogConfig.Title = LogConfig.Title or "Logs"
-                LogConfig.Height = LogConfig.Height or 160
+                LogConfig.Title = LogConfig.Title or "Log"
+                LogConfig.Height = LogConfig.Height or 120
                 LogConfig.MaxLines = LogConfig.MaxLines or 100
-                LogConfig.Timestamps = LogConfig.Timestamps ~= false
 
-                local LogFunc = { Lines = {} }
+                local LogFunc = {}
 
-                local Root = Instance.new("Frame")
-                Root.BackgroundColor3 = C_PANEL2
-                Root.BorderSizePixel = 0
-                Root.LayoutOrder = CountItem
-                Root.Size = UDim2.new(1, 0, 0, LogConfig.Height)
-                Root.Parent = Body
-                corner(Root, 6)
-                stroke(Root, GuiConfig.Color, 1)
-                Root.UIStroke.Transparency = 0.85
+                local LogRoot = Instance.new("Frame")
+                LogRoot.BackgroundColor3 = C_PANEL2
+                LogRoot.BorderSizePixel = 0
+                LogRoot.LayoutOrder = CountItem
+                LogRoot.Size = UDim2.new(1, 0, 0, LogConfig.Height)
+                LogRoot.Parent = Body
+                corner(LogRoot, 6)
+                stroke(LogRoot, C_BORDER, 1)
 
                 local Header = Instance.new("Frame")
-                Header.BackgroundTransparency = 1
-                Header.Size = UDim2.new(1, 0, 0, 24)
-                Header.Parent = Root
+                Header.BackgroundColor3 = C_BG
+                Header.BackgroundTransparency = 0.3
+                Header.Size = UDim2.new(1, 0, 0, 22)
+                Header.Parent = LogRoot
+                corner(Header, 6)
 
-                local TitleLbl = Instance.new("TextLabel")
-                TitleLbl.Font = Enum.Font.GothamBold
-                TitleLbl.Text = LogConfig.Title
-                TitleLbl.TextColor3 = GuiConfig.Color
-                TitleLbl.TextSize = 13
-                TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-                TitleLbl.BackgroundTransparency = 1
-                TitleLbl.Position = UDim2.new(0, 10, 0, 0)
-                TitleLbl.Size = UDim2.new(1, -60, 1, 0)
-                TitleLbl.Parent = Header
+                local HeaderTitle = Instance.new("TextLabel")
+                HeaderTitle.Font = Enum.Font.GothamBold
+                HeaderTitle.Text = LogConfig.Title
+                HeaderTitle.TextColor3 = GuiConfig.Color
+                HeaderTitle.TextSize = 11
+                HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+                HeaderTitle.BackgroundTransparency = 1
+                HeaderTitle.Position = UDim2.new(0, 8, 0, 0)
+                HeaderTitle.Size = UDim2.new(1, -60, 1, 0)
+                HeaderTitle.Parent = Header
 
                 local ClearBtn = Instance.new("TextButton")
                 ClearBtn.Font = Enum.Font.GothamBold
                 ClearBtn.Text = "Clear"
-                ClearBtn.TextSize = 11
-                ClearBtn.TextColor3 = C_TEXT
-                ClearBtn.TextTransparency = 0.3
-                ClearBtn.BackgroundColor3 = C_BORDER
-                ClearBtn.BackgroundTransparency = 0.7
+                ClearBtn.TextColor3 = C_SUBTEXT
+                ClearBtn.TextSize = 10
+                ClearBtn.BackgroundTransparency = 1
                 ClearBtn.AnchorPoint = Vector2.new(1, 0.5)
-                ClearBtn.Position = UDim2.new(1, -8, 0.5, 0)
-                ClearBtn.Size = UDim2.new(0, 44, 0, 18)
+                ClearBtn.Position = UDim2.new(1, -6, 0.5, 0)
+                ClearBtn.Size = UDim2.new(0, 40, 1, -4)
                 ClearBtn.Parent = Header
-                corner(ClearBtn, 4)
 
                 local ScrollLog = Instance.new("ScrollingFrame")
+                ScrollLog.Size = UDim2.new(1, -4, 1, -26)
+                ScrollLog.Position = UDim2.new(0, 2, 0, 24)
                 ScrollLog.BackgroundTransparency = 1
                 ScrollLog.BorderSizePixel = 0
-                ScrollLog.Position = UDim2.new(0, 0, 0, 26)
-                ScrollLog.Size = UDim2.new(1, 0, 1, -30)
                 ScrollLog.ScrollBarThickness = 3
-                ScrollLog.ScrollBarImageTransparency = 0.5
-                ScrollLog.AutomaticCanvasSize = Enum.AutomaticSize.Y
+                ScrollLog.ScrollBarImageColor3 = GuiConfig.Color
                 ScrollLog.CanvasSize = UDim2.new(0, 0, 0, 0)
-                ScrollLog.Parent = Root
-                pad(ScrollLog, 10, 0, 8, 0)
+                ScrollLog.Parent = LogRoot
 
                 local LogList = Instance.new("UIListLayout")
                 LogList.Padding = UDim.new(0, 2)
                 LogList.SortOrder = Enum.SortOrder.LayoutOrder
                 LogList.Parent = ScrollLog
 
-                local logOrder = 0
+                LogList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    ScrollLog.CanvasSize = UDim2.new(0, 0, 0, LogList.AbsoluteContentSize.Y + 4)
+                end)
 
-                local function ScrollToBottom()
+                local lineCount = 0
+                function LogFunc:Push(text, color)
+                    lineCount = lineCount + 1
+                    local Line = Instance.new("TextLabel")
+                    Line.Font = Enum.Font.Code
+                    Line.Text = "[" .. os.date("%H:%M:%S") .. "] " .. tostring(text)
+                    Line.TextColor3 = color or C_SUBTEXT
+                    Line.TextSize = 11
+                    Line.TextXAlignment = Enum.TextXAlignment.Left
+                    Line.TextWrapped = true
+                    Line.BackgroundTransparency = 1
+                    Line.Size = UDim2.new(1, -6, 0, 14)
+                    Line.LayoutOrder = lineCount
+                    Line.Parent = ScrollLog
+
+                    local kids = {}
+                    for _, c in ipairs(ScrollLog:GetChildren()) do
+                        if c:IsA("TextLabel") then table.insert(kids, c) end
+                    end
+                    while #kids > LogConfig.MaxLines do
+                        kids[1]:Destroy()
+                        table.remove(kids, 1)
+                    end
                     task.defer(function()
                         ScrollLog.CanvasPosition = Vector2.new(0, math.max(0, ScrollLog.AbsoluteCanvasSize.Y))
                     end)
                 end
-
-                function LogFunc:Push(text, color)
-                    text = tostring(text or "")
-                    logOrder = logOrder + 1
-                    local prefix = LogConfig.Timestamps and os.date("[%H:%M:%S] ") or ""
-
-                    local Line = Instance.new("TextLabel")
-                    Line.Font = Enum.Font.Code
-                    Line.Text = prefix .. text
-                    Line.TextColor3 = color or Color3.fromRGB(220, 220, 220)
-                    Line.TextSize = 12
-                    Line.TextXAlignment = Enum.TextXAlignment.Left
-                    Line.TextWrapped = true
-                    Line.BackgroundTransparency = 1
-                    Line.Size = UDim2.new(1, 0, 0, 14)
-                    Line.LayoutOrder = logOrder
-                    Line.Parent = ScrollLog
-
-                    local function fit() Line.Size = UDim2.new(1, 0, 0, math.max(14, Line.TextBounds.Y)) end
-                    Line:GetPropertyChangedSignal("TextBounds"):Connect(fit)
-                    fit()
-
-                    table.insert(LogFunc.Lines, prefix .. text)
-
-                    local count = 0
-                    for _, c in ScrollLog:GetChildren() do
-                        if c:IsA("TextLabel") then count = count + 1 end
-                    end
-                    if count > LogConfig.MaxLines then
-                        local oldest, oldestOrder = nil, math.huge
-                        for _, c in ScrollLog:GetChildren() do
-                            if c:IsA("TextLabel") and c.LayoutOrder < oldestOrder then
-                                oldest, oldestOrder = c, c.LayoutOrder
-                            end
-                        end
-                        if oldest then oldest:Destroy() end
-                        table.remove(LogFunc.Lines, 1)
-                    end
-                    ScrollToBottom()
-                end
-
                 function LogFunc:Clear()
-                    for _, c in ScrollLog:GetChildren() do
+                    for _, c in ipairs(ScrollLog:GetChildren()) do
                         if c:IsA("TextLabel") then c:Destroy() end
                     end
-                    LogFunc.Lines = {}
-                    logOrder = 0
+                    lineCount = 0
                 end
 
-                ClearBtn.MouseButton1Click:Connect(function() LogFunc:Clear() end)
+                ClearBtn.Activated:Connect(function() LogFunc:Clear() end)
 
                 CountItem = CountItem + 1
-                RegisterSearch({ label = LogConfig.Title, tab = TabConfig.Name, kind = "Log", switch = SearchSwitch })
                 return LogFunc
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddListView — restyled after HydraMainLibrary's
+            -- built-in team cards + fullscreen pick-pet picker
+            -- (Select All / Done header, search, compact rows),
+            -- rewritten to be generic/universal instead of the
+            -- game-specific pet logic it came from.
+            -- ═══════════════════════════════════════════
             function Items:AddListView(ListConfig)
                 ListConfig = ListConfig or {}
                 ListConfig.Title = ListConfig.Title or "List"
-                ListConfig.Height = ListConfig.Height or 220
-                ListConfig.Search = ListConfig.Search ~= false
-                ListConfig.RenderRow = ListConfig.RenderRow or function(item, RowAPI)
-                    local Label = Instance.new("TextLabel")
-                    Label.Font = Enum.Font.Gotham
-                    Label.Text = tostring(item)
-                    Label.TextColor3 = C_TEXT
-                    Label.TextSize = 12
-                    Label.TextXAlignment = Enum.TextXAlignment.Left
-                    Label.BackgroundTransparency = 1
-                    Label.Size = UDim2.new(1, -16, 1, 0)
-                    Label.Position = UDim2.new(0, 8, 0, 0)
-                    Label.Parent = RowAPI.Container
-                end
+                ListConfig.Height = ListConfig.Height or 160
+                ListConfig.Multi = ListConfig.Multi or false
                 ListConfig.GetLabel = ListConfig.GetLabel or function(item) return tostring(item) end
-                ListConfig.OnSelect = ListConfig.OnSelect or function(item) end
-                ListConfig.RowHeight = ListConfig.RowHeight or 34
+                ListConfig.GetSubLabel = ListConfig.GetSubLabel or nil
+                ListConfig.OnSelect = ListConfig.OnSelect or function() end
+                ListConfig.BuiltIn = ListConfig.BuiltIn or {} -- optional list of {Name, Desc, OnEquip} "BUILT-IN" cards
 
-                local ListFunc = { Items = {} }
+                local ListFunc = { Items = {}, Selected = {} }
 
-                local Root = Instance.new("Frame")
-                Root.BackgroundColor3 = C_PANEL2
-                Root.BorderSizePixel = 0
-                Root.LayoutOrder = CountItem
-                Root.Size = UDim2.new(1, 0, 0, ListConfig.Height)
-                Root.Parent = Body
-                corner(Root, 6)
-                stroke(Root, GuiConfig.Color, 1)
-                Root.UIStroke.Transparency = 0.85
+                local ListRoot = Instance.new("Frame")
+                ListRoot.BackgroundColor3 = C_PANEL2
+                ListRoot.BorderSizePixel = 0
+                ListRoot.LayoutOrder = CountItem
+                ListRoot.Size = UDim2.new(1, 0, 0, 34)
+                ListRoot.Parent = Body
+                corner(ListRoot, 6)
+                stroke(ListRoot, C_BORDER, 1)
 
-                local topOffset = 8
-                local TitleLbl = Instance.new("TextLabel")
-                TitleLbl.Font = Enum.Font.GothamBold
-                TitleLbl.Text = ListConfig.Title
-                TitleLbl.TextColor3 = GuiConfig.Color
-                TitleLbl.TextSize = 13
-                TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-                TitleLbl.BackgroundTransparency = 1
-                TitleLbl.Position = UDim2.new(0, 10, 0, topOffset)
-                TitleLbl.Size = UDim2.new(1, -20, 0, 16)
-                TitleLbl.Parent = Root
-                topOffset = topOffset + 20
+                local ListTitle = Instance.new("TextLabel")
+                ListTitle.Font = Enum.Font.GothamBold
+                ListTitle.Text = ListConfig.Title
+                ListTitle.TextColor3 = C_TEXT
+                ListTitle.TextSize = 13
+                ListTitle.TextXAlignment = Enum.TextXAlignment.Left
+                ListTitle.BackgroundTransparency = 1
+                ListTitle.Position = UDim2.new(0, 10, 0, 0)
+                ListTitle.Size = UDim2.new(1, -110, 1, 0)
+                ListTitle.Parent = ListRoot
 
-                local SearchBoxList
-                if ListConfig.Search then
-                    SearchBoxList = Instance.new("TextBox")
-                    SearchBoxList.PlaceholderText = "Search..."
-                    SearchBoxList.Font = Enum.Font.Gotham
-                    SearchBoxList.Text = ""
-                    SearchBoxList.TextSize = 12
-                    SearchBoxList.TextColor3 = C_TEXT
-                    SearchBoxList.ClearTextOnFocus = false
-                    SearchBoxList.BackgroundColor3 = C_BORDER
-                    SearchBoxList.BackgroundTransparency = 0.7
-                    SearchBoxList.BorderSizePixel = 0
-                    SearchBoxList.Position = UDim2.new(0, 8, 0, topOffset)
-                    SearchBoxList.Size = UDim2.new(1, -16, 0, 24)
-                    SearchBoxList.Parent = Root
-                    corner(SearchBoxList, 4)
-                    pad(SearchBoxList, 8, 0, 0, 0)
-                    topOffset = topOffset + 30
+                -- Small compact opener button (kknjx pick-pet size, not the
+                -- old oversized "+ ADD TO LIST" full-width button)
+                local OpenBtn = Instance.new("TextButton")
+                OpenBtn.Font = Enum.Font.GothamBold
+                OpenBtn.Text = "Pick ›"
+                OpenBtn.TextColor3 = GuiConfig.Color
+                OpenBtn.TextSize = 12
+                OpenBtn.BackgroundColor3 = GuiConfig.Color
+                OpenBtn.BackgroundTransparency = 0.85
+                OpenBtn.AnchorPoint = Vector2.new(1, 0.5)
+                OpenBtn.Position = UDim2.new(1, -8, 0.5, 0)
+                OpenBtn.Size = UDim2.new(0, 68, 0, 22)
+                OpenBtn.Parent = ListRoot
+                corner(OpenBtn, 5)
+                stroke(OpenBtn, GuiConfig.Color, 1)
+
+                local SelectedWrap = Instance.new("Frame")
+                SelectedWrap.BackgroundTransparency = 1
+                SelectedWrap.Position = UDim2.new(0, 8, 0, 30)
+                SelectedWrap.Size = UDim2.new(1, -16, 0, 0)
+                SelectedWrap.Parent = ListRoot
+
+                local SelectedLayout = Instance.new("UIListLayout")
+                SelectedLayout.Padding = UDim.new(0, 3)
+                SelectedLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                SelectedLayout.Parent = SelectedWrap
+
+                local function ResizeRoot()
+                    task.defer(function()
+                        local rowH = 0
+                        for _, c in ipairs(SelectedWrap:GetChildren()) do
+                            if c.Name ~= "UIListLayout" then rowH = rowH + c.Size.Y.Offset + 3 end
+                        end
+                        local totalH = 34 + (rowH > 0 and (rowH + 6) or 0)
+                        ListRoot.Size = UDim2.new(1, 0, 0, totalH)
+                        SelectedWrap.Size = UDim2.new(1, -16, 0, rowH)
+                        UpdateSizeSection()
+                    end)
                 end
 
-                local ScrollList = Instance.new("ScrollingFrame")
-                ScrollList.BackgroundTransparency = 1
-                ScrollList.BorderSizePixel = 0
-                ScrollList.Position = UDim2.new(0, 0, 0, topOffset)
-                ScrollList.Size = UDim2.new(1, 0, 1, -(topOffset + 6))
-                ScrollList.ScrollBarThickness = 3
-                ScrollList.ScrollBarImageTransparency = 0.5
-                ScrollList.CanvasSize = UDim2.new(0, 0, 0, 0)
-                ScrollList.Parent = Root
-                pad(ScrollList, 8, 0, 8, 0)
+                local function BuildSelectedRows()
+                    for _, c in ipairs(SelectedWrap:GetChildren()) do
+                        if c.Name ~= "UIListLayout" then c:Destroy() end
+                    end
+                    local order = 0
+                    for _, item in ipairs(ListFunc.Items) do
+                        if ListFunc.Selected[item] then
+                            order = order + 1
+                            local Row = Instance.new("Frame")
+                            Row.BackgroundColor3 = C_BORDER
+                            Row.BackgroundTransparency = 0.35
+                            Row.Size = UDim2.new(1, 0, 0, 24)
+                            Row.LayoutOrder = order
+                            Row.Parent = SelectedWrap
+                            corner(Row, 5)
 
-                local RowsList = Instance.new("UIListLayout")
-                RowsList.Padding = UDim.new(0, 4)
-                RowsList.SortOrder = Enum.SortOrder.LayoutOrder
-                RowsList.Parent = ScrollList
+                            local RowLbl = Instance.new("TextLabel")
+                            RowLbl.Font = Enum.Font.GothamBold
+                            RowLbl.Text = ListConfig.GetLabel(item)
+                            RowLbl.TextColor3 = C_TEXT
+                            RowLbl.TextSize = 11
+                            RowLbl.TextXAlignment = Enum.TextXAlignment.Left
+                            RowLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                            RowLbl.BackgroundTransparency = 1
+                            RowLbl.Position = UDim2.new(0, 8, 0, 0)
+                            RowLbl.Size = UDim2.new(1, -32, 1, 0)
+                            RowLbl.Parent = Row
 
-                RowsList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                    ScrollList.CanvasSize = UDim2.new(0, 0, 0, RowsList.AbsoluteContentSize.Y)
+                            -- Small remove button, matching HydraMainLibrary's
+                            -- compact "-" (not the old oversized delete button)
+                            local RemoveBtn = Instance.new("TextButton")
+                            RemoveBtn.Font = Enum.Font.GothamBold
+                            RemoveBtn.Text = "-"
+                            RemoveBtn.TextColor3 = Color3.fromRGB(255, 120, 120)
+                            RemoveBtn.TextSize = 13
+                            RemoveBtn.BackgroundColor3 = Color3.fromRGB(255, 90, 90)
+                            RemoveBtn.BackgroundTransparency = 0.85
+                            RemoveBtn.AnchorPoint = Vector2.new(1, 0.5)
+                            RemoveBtn.Position = UDim2.new(1, -4, 0.5, 0)
+                            RemoveBtn.Size = UDim2.new(0, 20, 0, 18)
+                            RemoveBtn.Parent = Row
+                            corner(RemoveBtn, 4)
+                            RemoveBtn.Activated:Connect(function()
+                                ListFunc.Selected[item] = nil
+                                BuildSelectedRows()
+                                ResizeRoot()
+                                local ok, err = pcall(function() ListConfig.OnSelect(item, false) end)
+                                if not ok then warn("ListView OnSelect error:", err) end
+                            end)
+                        end
+                    end
+                    ResizeRoot()
+                end
+
+                -- Fullscreen-style picker overlay (Select All / Done header,
+                -- search box, scrollable rows) — the kknjx/HydraMainLibrary
+                -- "Pick Pet" look, generalized for any list of items.
+                local PickerOverlay = Instance.new("Frame")
+                PickerOverlay.BackgroundColor3 = C_BG
+                PickerOverlay.BackgroundTransparency = 0.05
+                PickerOverlay.BorderSizePixel = 0
+                PickerOverlay.Size = UDim2.new(1, 0, 1, 0)
+                PickerOverlay.Visible = false
+                PickerOverlay.ZIndex = 40
+                PickerOverlay.Parent = Content.Parent -- same level as Content/Sidebar, inside Main
+
+                local PickerHeader = Instance.new("Frame")
+                PickerHeader.BackgroundColor3 = C_PANEL
+                PickerHeader.BorderSizePixel = 0
+                PickerHeader.Size = UDim2.new(1, 0, 0, 34)
+                PickerHeader.ZIndex = 41
+                PickerHeader.Parent = PickerOverlay
+
+                local PickerTitle = Instance.new("TextLabel")
+                PickerTitle.Font = Enum.Font.GothamBold
+                PickerTitle.Text = ListConfig.Title
+                PickerTitle.TextColor3 = C_TEXT
+                PickerTitle.TextSize = 13
+                PickerTitle.TextXAlignment = Enum.TextXAlignment.Left
+                PickerTitle.BackgroundTransparency = 1
+                PickerTitle.Position = UDim2.new(0, 12, 0, 0)
+                PickerTitle.Size = UDim2.new(1, -170, 1, 0)
+                PickerTitle.ZIndex = 41
+                PickerTitle.Parent = PickerHeader
+
+                local SelectAllBtn = Instance.new("TextButton")
+                SelectAllBtn.Font = Enum.Font.GothamBold
+                SelectAllBtn.Text = "Select All"
+                SelectAllBtn.TextColor3 = C_SUBTEXT
+                SelectAllBtn.TextSize = 11
+                SelectAllBtn.BackgroundColor3 = C_BORDER
+                SelectAllBtn.BackgroundTransparency = 0.3
+                SelectAllBtn.AnchorPoint = Vector2.new(1, 0.5)
+                SelectAllBtn.Position = UDim2.new(1, -78, 0.5, 0)
+                SelectAllBtn.Size = UDim2.new(0, 74, 0, 22)
+                SelectAllBtn.ZIndex = 41
+                SelectAllBtn.Visible = ListConfig.Multi
+                SelectAllBtn.Parent = PickerHeader
+                corner(SelectAllBtn, 5)
+
+                local DoneBtn = Instance.new("TextButton")
+                DoneBtn.Font = Enum.Font.GothamBold
+                DoneBtn.Text = "Done"
+                DoneBtn.TextColor3 = C_TEXT
+                DoneBtn.TextSize = 11
+                DoneBtn.BackgroundColor3 = GuiConfig.Color
+                DoneBtn.AnchorPoint = Vector2.new(1, 0.5)
+                DoneBtn.Position = UDim2.new(1, -8, 0.5, 0)
+                DoneBtn.Size = UDim2.new(0, 64, 0, 22)
+                DoneBtn.ZIndex = 41
+                DoneBtn.Parent = PickerHeader
+                corner(DoneBtn, 5)
+
+                local PickerSearch = Instance.new("TextBox")
+                PickerSearch.PlaceholderText = "Search..."
+                PickerSearch.PlaceholderColor3 = C_SUBTEXT
+                PickerSearch.Font = Enum.Font.Gotham
+                PickerSearch.Text = ""
+                PickerSearch.TextColor3 = C_TEXT
+                PickerSearch.TextSize = 12
+                PickerSearch.TextXAlignment = Enum.TextXAlignment.Left
+                PickerSearch.ClearTextOnFocus = false
+                PickerSearch.BackgroundColor3 = C_PANEL2
+                PickerSearch.BorderSizePixel = 0
+                PickerSearch.Position = UDim2.new(0, 10, 0, 40)
+                PickerSearch.Size = UDim2.new(1, -20, 0, 26)
+                PickerSearch.ZIndex = 41
+                PickerSearch.Parent = PickerOverlay
+                corner(PickerSearch, 5)
+                pad(PickerSearch, 8, 0, 0, 0)
+
+                local PickerScroll = Instance.new("ScrollingFrame")
+                PickerScroll.Position = UDim2.new(0, 10, 0, 72)
+                PickerScroll.Size = UDim2.new(1, -20, 1, -80)
+                PickerScroll.BackgroundTransparency = 1
+                PickerScroll.BorderSizePixel = 0
+                PickerScroll.ScrollBarThickness = 3
+                PickerScroll.ScrollBarImageColor3 = GuiConfig.Color
+                PickerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+                PickerScroll.ZIndex = 40
+                PickerScroll.Parent = PickerOverlay
+
+                local PickerList = Instance.new("UIListLayout")
+                PickerList.Padding = UDim.new(0, 4)
+                PickerList.SortOrder = Enum.SortOrder.LayoutOrder
+                PickerList.Parent = PickerScroll
+
+                PickerList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    PickerScroll.CanvasSize = UDim2.new(0, 0, 0, PickerList.AbsoluteContentSize.Y + 8)
                 end)
 
-                local selectedRow = nil
-
-                local function BuildRow(item, order)
-                    local RowFrame = Instance.new("Frame")
-                    RowFrame.BackgroundColor3 = C_BORDER
-                    RowFrame.BackgroundTransparency = 0.94
-                    RowFrame.BorderSizePixel = 0
-                    RowFrame.Size = UDim2.new(1, 0, 0, ListConfig.RowHeight)
-                    RowFrame.LayoutOrder = order
-                    RowFrame.Name = "Row"
-                    RowFrame.Parent = ScrollList
-                    corner(RowFrame, 4)
-
-                    local RowStroke = Instance.new("UIStroke")
-                    RowStroke.Color = GuiConfig.Color
-                    RowStroke.Thickness = 1
-                    RowStroke.Transparency = 1
-                    RowStroke.Parent = RowFrame
-
-                    local RowBtn = Instance.new("TextButton")
-                    RowBtn.Text = ""
-                    RowBtn.BackgroundTransparency = 1
-                    RowBtn.Size = UDim2.new(1, 0, 1, 0)
-                    RowBtn.ZIndex = 1
-                    RowBtn.Parent = RowFrame
-
-                    local RowAPI = {
-                        Container = RowFrame,
-                        SetHighlight = function(on)
-                            RowStroke.Transparency = on and 0.4 or 1
-                            RowFrame.BackgroundTransparency = on and 0.85 or 0.94
-                        end,
-                    }
-
-                    ListConfig.RenderRow(item, RowAPI)
-
-                    RowBtn.MouseButton1Click:Connect(function()
-                        if selectedRow and selectedRow ~= RowAPI then
-                            selectedRow.SetHighlight(false)
-                        end
-                        RowAPI.SetHighlight(true)
-                        selectedRow = RowAPI
-                        ListConfig.OnSelect(item)
-                    end)
-
-                    return RowFrame
-                end
-
-                function ListFunc:Clear()
-                    for _, c in ScrollList:GetChildren() do
-                        if c.Name == "Row" then c:Destroy() end
+                local function SelectItem(item)
+                    if ListConfig.Multi then
+                        ListFunc.Selected[item] = not ListFunc.Selected[item] or nil
+                        if ListFunc.Selected[item] == nil then ListFunc.Selected[item] = nil end
+                    else
+                        table.clear(ListFunc.Selected)
+                        ListFunc.Selected[item] = true
                     end
-                    selectedRow = nil
+                    BuildSelectedRows()
+                    local ok, err = pcall(function() ListConfig.OnSelect(item, ListFunc.Selected[item] == true) end)
+                    if not ok then warn("ListView OnSelect error:", err) end
                 end
+
+                local function RebuildPicker(query)
+                    for _, c in ipairs(PickerScroll:GetChildren()) do
+                        if c:IsA("GuiObject") then c:Destroy() end
+                    end
+
+                    -- Built-in cards first (kknjx-style purple "BUILT-IN" badge + Dragon logo)
+                    local order = 0
+                    for _, entry in ipairs(ListConfig.BuiltIn) do
+                        local ql = string.lower(query or "")
+                        local nameLower = string.lower(entry.Name or "")
+                        if ql == "" or string.find(nameLower, ql, 1, true) then
+                            order = order + 1
+                            local Card = Instance.new("Frame")
+                            Card.BackgroundColor3 = Color3.fromRGB(24, 18, 40)
+                            Card.Size = UDim2.new(1, 0, 0, 44)
+                            Card.LayoutOrder = order
+                            Card.ZIndex = 41
+                            Card.Parent = PickerScroll
+                            corner(Card, 6)
+                            local cardStroke = stroke(Card, Color3.fromRGB(120, 90, 220), 1)
+                            cardStroke.ZIndex = 41
+
+                            local Badge = Instance.new("Frame")
+                            Badge.BackgroundColor3 = Color3.fromRGB(60, 40, 120)
+                            Badge.Position = UDim2.new(0, 8, 0, 5)
+                            Badge.Size = UDim2.new(0, 58, 0, 12)
+                            Badge.ZIndex = 41
+                            Badge.Parent = Card
+                            corner(Badge, 4)
+                            local BadgeLbl = Instance.new("TextLabel")
+                            BadgeLbl.Font = Enum.Font.GothamBold
+                            BadgeLbl.Text = "BUILT-IN"
+                            BadgeLbl.TextColor3 = Color3.fromRGB(180, 160, 255)
+                            BadgeLbl.TextSize = 7
+                            BadgeLbl.BackgroundTransparency = 1
+                            BadgeLbl.Size = UDim2.new(1, 0, 1, 0)
+                            BadgeLbl.ZIndex = 41
+                            BadgeLbl.Parent = Badge
+
+                            local NameLbl = Instance.new("TextLabel")
+                            NameLbl.Font = Enum.Font.GothamBold
+                            NameLbl.Text = entry.Name or "Built-in"
+                            NameLbl.TextColor3 = Color3.fromRGB(190, 170, 255)
+                            NameLbl.TextSize = 11
+                            NameLbl.TextXAlignment = Enum.TextXAlignment.Left
+                            NameLbl.BackgroundTransparency = 1
+                            NameLbl.Position = UDim2.new(0, 8, 0, 19)
+                            NameLbl.Size = UDim2.new(1, -70, 0, 12)
+                            NameLbl.ZIndex = 41
+                            NameLbl.Parent = Card
+
+                            if entry.Desc then
+                                local DescLbl = Instance.new("TextLabel")
+                                DescLbl.Font = Enum.Font.Gotham
+                                DescLbl.Text = entry.Desc
+                                DescLbl.TextColor3 = C_SUBTEXT
+                                DescLbl.TextSize = 9
+                                DescLbl.TextXAlignment = Enum.TextXAlignment.Left
+                                DescLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                                DescLbl.BackgroundTransparency = 1
+                                DescLbl.Position = UDim2.new(0, 8, 0, 30)
+                                DescLbl.Size = UDim2.new(1, -70, 0, 11)
+                                DescLbl.ZIndex = 41
+                                DescLbl.Parent = Card
+                            end
+
+                            local HydraLogo = Instance.new("ImageLabel")
+                            HydraLogo.BackgroundTransparency = 1
+                            HydraLogo.Image = "rbxthumb://type=Asset&id=5669312251&w=150&h=150"
+                            HydraLogo.ImageTransparency = 0.3
+                            HydraLogo.ScaleType = Enum.ScaleType.Fit
+                            HydraLogo.AnchorPoint = Vector2.new(1, 0.5)
+                            HydraLogo.Position = UDim2.new(1, -44, 0.5, 0)
+                            HydraLogo.Size = UDim2.new(0, 24, 0, 24)
+                            HydraLogo.ZIndex = 41
+                            HydraLogo.Parent = Card
+
+                            local EquipBtn = Instance.new("TextButton")
+                            EquipBtn.Font = Enum.Font.GothamBold
+                            EquipBtn.Text = "⇄"
+                            EquipBtn.TextColor3 = Color3.fromRGB(190, 170, 255)
+                            EquipBtn.TextSize = 12
+                            EquipBtn.BackgroundColor3 = Color3.fromRGB(60, 40, 120)
+                            EquipBtn.AnchorPoint = Vector2.new(1, 0.5)
+                            EquipBtn.Position = UDim2.new(1, -8, 0.5, 0)
+                            EquipBtn.Size = UDim2.new(0, 26, 0, 26)
+                            EquipBtn.ZIndex = 41
+                            EquipBtn.Parent = Card
+                            corner(EquipBtn, 5)
+                            stroke(EquipBtn, Color3.fromRGB(120, 90, 220), 1).ZIndex = 41
+                            EquipBtn.Activated:Connect(function()
+                                if entry.OnEquip then entry.OnEquip() end
+                            end)
+                        end
+                    end
+
+                    -- Regular items — compact rows (kknjx pick-pet row size,
+                    -- not the old oversized full-width item buttons)
+                    for _, item in ipairs(ListFunc.Items) do
+                        local label = ListConfig.GetLabel(item)
+                        local ql = string.lower(query or "")
+                        if ql == "" or string.find(string.lower(label), ql, 1, true) then
+                            order = order + 1
+                            local isSel = ListFunc.Selected[item] == true
+
+                            local Row = Instance.new("TextButton")
+                            Row.Text = ""
+                            Row.BackgroundColor3 = isSel and GuiConfig.Color or C_PANEL2
+                            Row.BackgroundTransparency = isSel and 0.8 or 0
+                            Row.Size = UDim2.new(1, 0, 0, 32)
+                            Row.LayoutOrder = order
+                            Row.ZIndex = 41
+                            Row.Parent = PickerScroll
+                            corner(Row, 5)
+                            stroke(Row, isSel and GuiConfig.Color or C_BORDER, 1).ZIndex = 41
+
+                            local RowLbl = Instance.new("TextLabel")
+                            RowLbl.Font = Enum.Font.GothamBold
+                            RowLbl.Text = label
+                            RowLbl.TextColor3 = isSel and GuiConfig.Color or C_TEXT
+                            RowLbl.TextSize = 11
+                            RowLbl.TextXAlignment = Enum.TextXAlignment.Left
+                            RowLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                            RowLbl.BackgroundTransparency = 1
+                            RowLbl.Position = UDim2.new(0, 10, 0, ListConfig.GetSubLabel and 3 or 0)
+                            RowLbl.Size = UDim2.new(1, -20, 0, ListConfig.GetSubLabel and 14 or 32)
+                            RowLbl.ZIndex = 41
+                            RowLbl.Parent = Row
+
+                            if ListConfig.GetSubLabel then
+                                local SubLbl = Instance.new("TextLabel")
+                                SubLbl.Font = Enum.Font.Gotham
+                                SubLbl.Text = ListConfig.GetSubLabel(item) or ""
+                                SubLbl.TextColor3 = C_SUBTEXT
+                                SubLbl.TextSize = 9
+                                SubLbl.TextXAlignment = Enum.TextXAlignment.Left
+                                SubLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                                SubLbl.BackgroundTransparency = 1
+                                SubLbl.Position = UDim2.new(0, 10, 0, 17)
+                                SubLbl.Size = UDim2.new(1, -20, 0, 12)
+                                SubLbl.ZIndex = 41
+                                SubLbl.Parent = Row
+                            end
+
+                            Row.Activated:Connect(function()
+                                SelectItem(item)
+                                RebuildPicker(PickerSearch.Text)
+                                if not ListConfig.Multi then
+                                    PickerOverlay.Visible = false
+                                end
+                            end)
+                        end
+                    end
+                end
+
+                OpenBtn.Activated:Connect(function()
+                    PickerOverlay.Visible = true
+                    PickerSearch.Text = ""
+                    RebuildPicker("")
+                end)
+                DoneBtn.Activated:Connect(function()
+                    PickerOverlay.Visible = false
+                end)
+                SelectAllBtn.Activated:Connect(function()
+                    for _, item in ipairs(ListFunc.Items) do
+                        ListFunc.Selected[item] = true
+                    end
+                    BuildSelectedRows()
+                    RebuildPicker(PickerSearch.Text)
+                end)
+
+                local pickerSearchTicket = 0
+                PickerSearch:GetPropertyChangedSignal("Text"):Connect(function()
+                    pickerSearchTicket = pickerSearchTicket + 1
+                    local ticket = pickerSearchTicket
+                    task.delay(0.08, function()
+                        if ticket == pickerSearchTicket then RebuildPicker(PickerSearch.Text) end
+                    end)
+                end)
 
                 function ListFunc:SetItems(items)
                     ListFunc.Items = items or {}
-                    ListFunc:Refresh()
+                    if PickerOverlay.Visible then RebuildPicker(PickerSearch.Text) end
                 end
-
-                function ListFunc:Refresh()
-                    ListFunc:Clear()
-                    local query = SearchBoxList and string.lower(SearchBoxList.Text) or ""
-                    local order = 0
+                function ListFunc:GetSelected()
+                    local out = {}
                     for _, item in ipairs(ListFunc.Items) do
-                        local label = string.lower(ListConfig.GetLabel(item))
-                        if query == "" or string.find(label, query, 1, true) then
-                            order = order + 1
-                            BuildRow(item, order)
-                        end
+                        if ListFunc.Selected[item] then table.insert(out, item) end
                     end
+                    return out
                 end
-
-                if SearchBoxList then
-                    local searchTicket = 0
-                    SearchBoxList:GetPropertyChangedSignal("Text"):Connect(function()
-                        searchTicket = searchTicket + 1
-                        local ticket = searchTicket
-                        task.delay(0.08, function()
-                            if ticket == searchTicket then ListFunc:Refresh() end
-                        end)
-                    end)
+                function ListFunc:Clear()
+                    table.clear(ListFunc.Selected)
+                    BuildSelectedRows()
                 end
 
                 CountItem = CountItem + 1
@@ -2680,6 +3046,9 @@ function Dragon:Window(GuiConfig)
                 return ListFunc
             end
 
+            -- ═══════════════════════════════════════════
+            -- AddInlinePicker
+            -- ═══════════════════════════════════════════
             function Items:AddInlinePicker(PickerConfig)
                 PickerConfig = PickerConfig or {}
                 PickerConfig.Title = PickerConfig.Title or "Picker"
