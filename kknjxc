@@ -611,12 +611,290 @@ function than(msg, delay, color, title, desc)
     })
 end
 
+local InventoryPickerGui = nil
+
+local function ShowInventoryPicker(config)
+    config = config or {}
+    local items = config.Items or {}
+    local selectedSet = config.SelectedSet or {}
+    local onToggle = config.OnToggle or function(name, nowSelected) end
+    local accentColor = config.Color or Color3.fromRGB(100, 200, 255)
+
+    if InventoryPickerGui then
+        InventoryPickerGui:Destroy()
+        InventoryPickerGui = nil
+    end
+
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "InventoryPickerGui"
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.Parent = game:GetService("CoreGui")
+    InventoryPickerGui = ScreenGui
+
+    local Overlay = Instance.new("Frame")
+    Overlay.Size = UDim2.new(1, 0, 1, 0)
+    Overlay.BackgroundTransparency = 1
+    Overlay.ZIndex = 100
+    Overlay.Parent = ScreenGui
+
+    local Box = Instance.new("Frame")
+    Box.AnchorPoint = Vector2.new(0.5, 0.5)
+    Box.Position = UDim2.new(0.5, 0, 0.5, 0)
+    Box.Size = UDim2.new(0, 260, 0, 320)
+    Box.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+    Box.BorderSizePixel = 0
+    Box.ZIndex = 101
+    Box.Parent = Overlay
+
+    local BoxCorner = Instance.new("UICorner")
+    BoxCorner.CornerRadius = UDim.new(0, 8)
+    BoxCorner.Parent = Box
+
+    local BoxStroke = Instance.new("UIStroke")
+    BoxStroke.Color = accentColor
+    BoxStroke.Thickness = 1
+    BoxStroke.Transparency = 0.5
+    BoxStroke.Parent = Box
+
+    local TitleBar = Instance.new("Frame")
+    TitleBar.Size = UDim2.new(1, 0, 0, 32)
+    TitleBar.BackgroundTransparency = 1
+    TitleBar.ZIndex = 102
+    TitleBar.Name = "TitleBar"
+    TitleBar.Parent = Box
+
+    local TitleLbl = Instance.new("TextLabel")
+    TitleLbl.Font = Enum.Font.GothamBold
+    TitleLbl.Text = config.Title or "Select Items"
+    TitleLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+    TitleLbl.TextSize = 13
+    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLbl.BackgroundTransparency = 1
+    TitleLbl.Position = UDim2.new(0, 10, 0, 0)
+    TitleLbl.Size = UDim2.new(1, -40, 1, 0)
+    TitleLbl.ZIndex = 102
+    TitleLbl.Parent = TitleBar
+
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.Text = "x"
+    CloseBtn.TextColor3 = Color3.fromRGB(255, 107, 107)
+    CloseBtn.TextSize = 14
+    CloseBtn.AnchorPoint = Vector2.new(1, 0.5)
+    CloseBtn.Position = UDim2.new(1, -8, 0.5, 0)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(226, 75, 74)
+    CloseBtn.BackgroundTransparency = 0.88
+    CloseBtn.Size = UDim2.new(0, 22, 0, 22)
+    CloseBtn.ZIndex = 102
+    CloseBtn.Parent = TitleBar
+
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 4)
+    CloseCorner.Parent = CloseBtn
+
+    CloseBtn.Activated:Connect(function()
+        ScreenGui:Destroy()
+        if InventoryPickerGui == ScreenGui then InventoryPickerGui = nil end
+    end)
+
+    local dragging, dragStart, startPos
+    TitleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = Box.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            Box.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    local SearchBar = Instance.new("Frame")
+    SearchBar.Position = UDim2.new(0, 8, 0, 36)
+    SearchBar.Size = UDim2.new(1, -16, 0, 26)
+    SearchBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    SearchBar.BackgroundTransparency = 0.93
+    SearchBar.ZIndex = 102
+    SearchBar.Parent = Box
+    local SearchCorner = Instance.new("UICorner")
+    SearchCorner.CornerRadius = UDim.new(0, 4)
+    SearchCorner.Parent = SearchBar
+
+    local SearchBox = Instance.new("TextBox")
+    SearchBox.Font = Enum.Font.Gotham
+    SearchBox.PlaceholderText = "Search..."
+    SearchBox.PlaceholderColor3 = Color3.fromRGB(130, 130, 130)
+    SearchBox.Text = ""
+    SearchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SearchBox.TextSize = 12
+    SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+    SearchBox.ClearTextOnFocus = false
+    SearchBox.BackgroundTransparency = 1
+    SearchBox.Position = UDim2.new(0, 8, 0, 0)
+    SearchBox.Size = UDim2.new(1, -16, 1, 0)
+    SearchBox.ZIndex = 102
+    SearchBox.Parent = SearchBar
+
+    local ListScroll = Instance.new("ScrollingFrame")
+    ListScroll.Position = UDim2.new(0, 8, 0, 68)
+    ListScroll.Size = UDim2.new(1, -16, 1, -76)
+    ListScroll.BackgroundTransparency = 1
+    ListScroll.BorderSizePixel = 0
+    ListScroll.ScrollBarThickness = 3
+    ListScroll.ScrollBarImageColor3 = accentColor
+    ListScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    ListScroll.ZIndex = 102
+    ListScroll.Parent = Box
+
+    local ListLayout = Instance.new("UIListLayout")
+    ListLayout.Padding = UDim.new(0, 4)
+    ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ListLayout.Parent = ListScroll
+    ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        ListScroll.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 8)
+    end)
+
+    local rowsByName = {}
+
+    local function buildRow(itemData)
+        local name = itemData.Name
+        local stock = itemData.Stock or 0
+        local isSelected = selectedSet[name] == true
+
+        local Row = Instance.new("Frame")
+        Row.BackgroundColor3 = isSelected and accentColor or Color3.fromRGB(255, 255, 255)
+        Row.BackgroundTransparency = isSelected and 0.85 or 0.96
+        Row.Size = UDim2.new(1, 0, 0, 30)
+        Row.ZIndex = 102
+        Row.Name = "Row"
+        Row.Parent = ListScroll
+
+        local RowCorner = Instance.new("UICorner")
+        RowCorner.CornerRadius = UDim.new(0, 4)
+        RowCorner.Parent = Row
+
+        local NameLbl = Instance.new("TextLabel")
+        NameLbl.Font = Enum.Font.GothamBold
+        NameLbl.Text = name
+        NameLbl.TextColor3 = isSelected and accentColor or Color3.fromRGB(220, 220, 220)
+        NameLbl.TextSize = 12
+        NameLbl.TextXAlignment = Enum.TextXAlignment.Left
+        NameLbl.BackgroundTransparency = 1
+        NameLbl.Position = UDim2.new(0, 8, 0, config.ShowStock == false and 8 or 3)
+        NameLbl.Size = UDim2.new(0.6, 0, 0, 12)
+        NameLbl.ZIndex = 103
+        NameLbl.Parent = Row
+
+        if config.ShowStock ~= false then
+            local StockLbl = Instance.new("TextLabel")
+            StockLbl.Font = Enum.Font.Gotham
+            StockLbl.Text = tostring(stock)
+            StockLbl.TextColor3 = Color3.fromRGB(150, 220, 150)
+            StockLbl.TextSize = 10
+            StockLbl.TextXAlignment = Enum.TextXAlignment.Left
+            StockLbl.BackgroundTransparency = 1
+            StockLbl.Position = UDim2.new(0, 8, 0, 16)
+            StockLbl.Size = UDim2.new(0.6, 0, 0, 10)
+            StockLbl.ZIndex = 103
+            StockLbl.Parent = Row
+        end
+
+        local CheckMark = Instance.new("TextLabel")
+        CheckMark.Font = Enum.Font.GothamBold
+        CheckMark.Text = isSelected and "✓" or ""
+        CheckMark.TextColor3 = accentColor
+        CheckMark.TextSize = 14
+        CheckMark.AnchorPoint = Vector2.new(1, 0.5)
+        CheckMark.Position = UDim2.new(1, -8, 0.5, 0)
+        CheckMark.Size = UDim2.new(0, 20, 0, 20)
+        CheckMark.BackgroundTransparency = 1
+        CheckMark.ZIndex = 103
+        CheckMark.Name = "CheckMark"
+        CheckMark.Parent = Row
+
+        local Btn = Instance.new("TextButton")
+        Btn.Text = ""
+        Btn.BackgroundTransparency = 1
+        Btn.Size = UDim2.new(1, 0, 1, 0)
+        Btn.ZIndex = 104
+        Btn.Parent = Row
+
+        Btn.Activated:Connect(function()
+            local nowSelected = not selectedSet[name]
+            selectedSet[name] = nowSelected or nil
+            Row.BackgroundColor3 = nowSelected and accentColor or Color3.fromRGB(255, 255, 255)
+            Row.BackgroundTransparency = nowSelected and 0.85 or 0.96
+            NameLbl.TextColor3 = nowSelected and accentColor or Color3.fromRGB(220, 220, 220)
+            CheckMark.Text = nowSelected and "✓" or ""
+            onToggle(name, nowSelected)
+        end)
+
+        rowsByName[name] = { row = Row, nameLbl = NameLbl }
+        return Row
+    end
+
+    for _, itemData in ipairs(items) do
+        buildRow(itemData)
+    end
+
+    if config.OnRefresh then
+        task.spawn(function()
+            while ScreenGui.Parent do
+                task.wait(1)
+                local ok, freshItems = pcall(config.OnRefresh)
+                if ok and type(freshItems) == "table" then
+                    for _, itemData in ipairs(freshItems) do
+                        local r = rowsByName[itemData.Name]
+                        if r then
+                            local stockLbl = r.row:FindFirstChild("StockLbl") or r.row:FindFirstChildWhichIsA("TextLabel", true)
+                            for _, child in ipairs(r.row:GetChildren()) do
+                                if child:IsA("TextLabel") and child ~= r.nameLbl and child.Name ~= "CheckMark" then
+                                    child.Text = tostring(itemData.Stock or 0)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+
+    local searchTicket = 0
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        searchTicket = searchTicket + 1
+        local ticket = searchTicket
+        task.delay(0.08, function()
+            if ticket ~= searchTicket then return end
+            local q = string.lower(SearchBox.Text)
+            for name, r in pairs(rowsByName) do
+                r.row.Visible = (q == "") or string.find(string.lower(name), q, 1, true) ~= nil
+            end
+        end)
+    end)
+
+    Overlay.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.Position.X < Box.AbsolutePosition.X or input.Position.X > Box.AbsolutePosition.X + Box.AbsoluteSize.X
+                or input.Position.Y < Box.AbsolutePosition.Y or input.Position.Y > Box.AbsolutePosition.Y + Box.AbsoluteSize.Y then
+                ScreenGui:Destroy()
+                if InventoryPickerGui == ScreenGui then InventoryPickerGui = nil end
+            end
+        end
+    end)
+end
+
 function Chloex:Window(GuiConfig)
     GuiConfig              = GuiConfig or {}
     GuiConfig.Title        = GuiConfig.Title or "HydraHub"
     GuiConfig.Footer       = GuiConfig.Footer or ""
     GuiConfig.Color        = GuiConfig.Color or Color3.fromRGB(255, 0, 255)
-    GuiConfig["Tab Width"] = GuiConfig["Tab Width"] or 150
+    GuiConfig["Tab Width"] = GuiConfig["Tab Width"] or 120
     GuiConfig.Version      = GuiConfig.Version or 1
     if GuiConfig.Search == nil then GuiConfig.Search = true end
 
@@ -870,9 +1148,9 @@ function Chloex:Window(GuiConfig)
     DropShadowHolder.AnchorPoint = Vector2.new(0.5, 0.5)
     DropShadowHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
     if isMobile then
-        DropShadowHolder.Size = safeSize(760, 560)
+        DropShadowHolder.Size = safeSize(470, 270)
     else
-        DropShadowHolder.Size = safeSize(760, 560)
+        DropShadowHolder.Size = safeSize(640, 400)
     end
     DropShadowHolder.ZIndex = 0
     DropShadowHolder.Name = "DropShadowHolder"
@@ -889,7 +1167,7 @@ function Chloex:Window(GuiConfig)
     DropShadow.BackgroundTransparency = 1
     DropShadow.BorderSizePixel = 0
     DropShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-    DropShadow.Size = UDim2.new(1, 0, 1, 0)
+    DropShadow.Size = UDim2.new(1, 47, 1, 47)
     DropShadow.ZIndex = 0
     DropShadow.Name = "DropShadow"
     DropShadow.Parent = DropShadowHolder
@@ -902,121 +1180,148 @@ function Chloex:Window(GuiConfig)
         Main.BackgroundTransparency = 1
         Main.ImageTransparency = GuiConfig.ThemeTransparency or 0.15
     else
-        Main.BackgroundColor3 = Color3.fromRGB(9, 10, 16)
-        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0
+        Main.BackgroundColor3 = Color3.fromRGB(14, 22, 48)
+        Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.08
     end
 
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
     Main.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Main.BorderSizePixel = 0
     Main.Position = UDim2.new(0.5, 0, 0.5, 0)
-    Main.Size = UDim2.new(1, 0, 1, 0)
+    Main.Size = UDim2.new(1, -47, 1, -47)
     Main.Name = "Main"
     Main.Parent = DropShadow
 
-    UICorner.CornerRadius = UDim.new(0, 12)
     UICorner.Parent = Main
 
     if not GuiConfig.Theme then
         local GlassStroke = Instance.new("UIStroke")
-        GlassStroke.Color = Color3.fromRGB(40, 43, 58)
+        GlassStroke.Color = Color3.fromRGB(90, 140, 255)
         GlassStroke.Thickness = 1
-        GlassStroke.Transparency = 0
+        GlassStroke.Transparency = 0.55
         GlassStroke.Parent = Main
     end
 
-    Top.BackgroundColor3 = Color3.fromRGB(12, 13, 20)
-    Top.BackgroundTransparency = 0
+    Top.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    Top.BackgroundTransparency = 0.9990000128746033
     Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Top.BorderSizePixel = 0
-    Top.Size = UDim2.new(1, 0, 0, 46)
+    Top.Size = UDim2.new(1, 0, 0, 38)
     Top.Name = "Top"
     Top.Parent = Main
 
-    UICorner1.CornerRadius = UDim.new(0, 12)
-    UICorner1.Parent = Top
-
-    local TopFix = Instance.new("Frame")
-    TopFix.BackgroundColor3 = Color3.fromRGB(12, 13, 20)
-    TopFix.BorderSizePixel = 0
-    TopFix.Size = UDim2.new(1, 0, 0, 12)
-    TopFix.Position = UDim2.new(0, 0, 1, -12)
-    TopFix.ZIndex = 0
-    TopFix.Name = "TopFix"
-    TopFix.Parent = Top
-
-    local HeaderLogo = Instance.new("Frame")
-    HeaderLogo.BackgroundColor3 = GuiConfig.Color or Color3.fromRGB(90, 140, 255)
+    local HeaderLogo = Instance.new("ImageLabel")
+    HeaderLogo.BackgroundTransparency = 1
     HeaderLogo.AnchorPoint = Vector2.new(0, 0.5)
-    HeaderLogo.Position = UDim2.new(0, 12, 0.5, 0)
-    HeaderLogo.Size = UDim2.new(0, 28, 0, 28)
+    HeaderLogo.Position = UDim2.new(0, 8, 0.5, 0)
+    HeaderLogo.Size = UDim2.new(0, 20, 0, 20)
+    HeaderLogo.ScaleType = Enum.ScaleType.Fit
     HeaderLogo.Name = "HeaderLogo"
     HeaderLogo.Parent = Top
     do
-        local logoCorner = Instance.new("UICorner")
-        logoCorner.CornerRadius = UDim.new(0, 7)
-        logoCorner.Parent = HeaderLogo
-
         local rawLogo = tostring(GuiConfig.Image or "")
-        if string.find(rawLogo, "rbxthumb://") or string.find(rawLogo, "rbxassetid://") or rawLogo ~= "" then
-            local LogoImg = Instance.new("ImageLabel")
-            LogoImg.BackgroundTransparency = 1
-            LogoImg.Size = UDim2.new(1, 0, 1, 0)
-            LogoImg.ScaleType = Enum.ScaleType.Fit
-            LogoImg.Name = "LogoImg"
-            LogoImg.Parent = HeaderLogo
-            if string.find(rawLogo, "rbxthumb://") or string.find(rawLogo, "rbxassetid://") then
-                LogoImg.Image = rawLogo
-            else
-                LogoImg.Image = "rbxassetid://" .. rawLogo
-            end
-        else
-            local LogoLetter = Instance.new("TextLabel")
-            LogoLetter.BackgroundTransparency = 1
-            LogoLetter.Size = UDim2.new(1, 0, 1, 0)
-            LogoLetter.Font = Enum.Font.GothamBold
-            LogoLetter.Text = string.sub(tostring(GuiConfig.Title or "H"), 1, 1)
-            LogoLetter.TextColor3 = Color3.new(1, 1, 1)
-            LogoLetter.TextSize = 15
-            LogoLetter.Name = "LogoLetter"
-            LogoLetter.Parent = HeaderLogo
+        if string.find(rawLogo, "rbxthumb://") or string.find(rawLogo, "rbxassetid://") then
+            HeaderLogo.Image = rawLogo
+        elseif rawLogo ~= "" then
+            HeaderLogo.Image = "rbxassetid://" .. rawLogo
         end
     end
 
     TextLabel.Font = Enum.Font.GothamBold
     TextLabel.Text = GuiConfig.Title
-    TextLabel.TextColor3 = GuiConfig.Color or Color3.fromRGB(90, 140, 255)
-    TextLabel.TextSize = 15
+    TextLabel.TextColor3 = GuiConfig.Color
+    TextLabel.TextSize = 14
     TextLabel.TextXAlignment = Enum.TextXAlignment.Left
-    TextLabel.TextYAlignment = Enum.TextYAlignment.Top
-    TextLabel.BackgroundTransparency = 1
+    TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TextLabel.BackgroundTransparency = 0.9990000128746033
+    TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
     TextLabel.BorderSizePixel = 0
-    TextLabel.Size = UDim2.new(1, -190, 0, 18)
-    TextLabel.Position = UDim2.new(0, 50, 0, 6)
+    TextLabel.Size = UDim2.new(1, -190, 1, 0)
+    TextLabel.Position = UDim2.new(0, 34, 0, 0)
     TextLabel.Parent = Top
 
-    TextLabel1.Font = Enum.Font.Gotham
-    TextLabel1.Text = GuiConfig.Footer
-    TextLabel1.TextColor3 = Color3.fromRGB(140, 145, 165)
-    TextLabel1.TextSize = 11
-    TextLabel1.TextTransparency = 0
-    TextLabel1.TextXAlignment = Enum.TextXAlignment.Left
-    TextLabel1.BackgroundTransparency = 1
-    TextLabel1.BorderSizePixel = 0
-    TextLabel1.Size = UDim2.new(1, -190, 0, 14)
-    TextLabel1.Position = UDim2.new(0, 50, 0, 24)
-    TextLabel1.Parent = Top
+    UICorner1.Parent = Top
+
+    do
+        local Players = game:GetService("Players")
+        local LP = Players.LocalPlayer
+
+        local PlayerBadge = Instance.new("Frame")
+        PlayerBadge.BackgroundTransparency = 1
+        PlayerBadge.AnchorPoint = Vector2.new(1, 0.5)
+        PlayerBadge.Position = UDim2.new(1, -70, 0.5, 0)
+        PlayerBadge.Size = UDim2.new(0, 100, 0, 24)
+        PlayerBadge.Name = "PlayerBadge"
+        PlayerBadge.ZIndex = 5
+        PlayerBadge.Parent = Top
+
+        local AvatarImg = Instance.new("ImageLabel")
+        AvatarImg.BackgroundTransparency = 1
+        AvatarImg.AnchorPoint = Vector2.new(1, 0.5)
+        AvatarImg.Position = UDim2.new(1, 0, 0.5, 0)
+        AvatarImg.Size = UDim2.new(0, 20, 0, 20)
+        AvatarImg.ZIndex = 6
+        AvatarImg.Name = "AvatarImg"
+        AvatarImg.Parent = PlayerBadge
+        local avatarCorner = Instance.new("UICorner")
+        avatarCorner.CornerRadius = UDim.new(1, 0)
+        avatarCorner.Parent = AvatarImg
+
+        local NameLbl = Instance.new("TextLabel")
+        NameLbl.Font = Enum.Font.GothamBold
+        NameLbl.Text = LP.DisplayName or LP.Name
+        NameLbl.TextColor3 = Color3.fromRGB(230, 230, 230)
+        NameLbl.TextSize = 11
+        NameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+        NameLbl.TextXAlignment = Enum.TextXAlignment.Right
+        NameLbl.BackgroundTransparency = 1
+        NameLbl.AnchorPoint = Vector2.new(1, 0.5)
+        NameLbl.Position = UDim2.new(1, -26, 0.5, 0)
+        NameLbl.Size = UDim2.new(0, 76, 0, 16)
+        NameLbl.ZIndex = 6
+        NameLbl.Name = "NameLbl"
+        NameLbl.Parent = PlayerBadge
+
+        task.spawn(function()
+            local ok, content = pcall(function()
+                return Players:GetUserThumbnailAsync(
+                    LP.UserId,
+                    Enum.ThumbnailType.HeadShot,
+                    Enum.ThumbnailSize.Size48x48
+                )
+            end)
+            if ok and content and AvatarImg.Parent then
+                AvatarImg.Image = content
+            end
+        end)
+    end
 
     local discordOffset = 0
     local DiscordButtonRef = nil
     if GuiConfig.Discord and GuiConfig.Discord ~= "" then
+        local baseX = TextLabel.TextBounds.X + 18
+
+        local Divider = Instance.new("Frame")
+        Divider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Divider.BackgroundTransparency = 0.75
+        Divider.BorderSizePixel = 0
+        Divider.AnchorPoint = Vector2.new(0, 0.5)
+        Divider.Position = UDim2.new(0, baseX, 0.5, 0)
+        Divider.Size = UDim2.new(0, 1, 0, 16)
+        Divider.Name = "DiscordDivider"
+        Divider.Parent = Top
+
+        local DividerCorner = Instance.new("UICorner")
+        DividerCorner.CornerRadius = UDim.new(1, 0)
+        DividerCorner.Parent = Divider
+
         local DiscordImg = Instance.new("ImageLabel")
         DiscordImg.Image = Icons.discord
         DiscordImg.ImageColor3 = Color3.fromRGB(88, 101, 242)
         DiscordImg.BackgroundTransparency = 1
         DiscordImg.ScaleType = Enum.ScaleType.Fit
-        DiscordImg.AnchorPoint = Vector2.new(1, 0.5)
-        DiscordImg.Position = UDim2.new(1, -80, 0.5, 0)
+        DiscordImg.AnchorPoint = Vector2.new(0, 0.5)
+        DiscordImg.Position = UDim2.new(0, baseX + 10, 0.5, 0)
         DiscordImg.Size = UDim2.new(0, 16, 0, 16)
         DiscordImg.Name = "DiscordImg"
         DiscordImg.Parent = Top
@@ -1026,17 +1331,19 @@ function Chloex:Window(GuiConfig)
         DiscordBtn.AutoButtonColor = false
         DiscordBtn.BackgroundTransparency = 1
         DiscordBtn.BorderSizePixel = 0
-        DiscordBtn.AnchorPoint = Vector2.new(1, 0.5)
-        DiscordBtn.Position = UDim2.new(1, -68, 0.5, 0)
-        DiscordBtn.Size = UDim2.new(0, 28, 0, 28)
+        DiscordBtn.AnchorPoint = Vector2.new(0, 0.5)
+        DiscordBtn.Position = UDim2.new(0, baseX + 8, 0.5, 0)
+        DiscordBtn.Size = UDim2.new(0, 0, 1, 0)
         DiscordBtn.Name = "DiscordBtn"
         DiscordBtn.Parent = Top
 
         DiscordBtn.MouseEnter:Connect(function()
             TweenService:Create(DiscordImg, TweenInfo.new(0.2), { ImageColor3 = Color3.fromRGB(120, 132, 255) }):Play()
+            TweenService:Create(Divider, TweenInfo.new(0.2), { BackgroundTransparency = 0.5 }):Play()
         end)
         DiscordBtn.MouseLeave:Connect(function()
             TweenService:Create(DiscordImg, TweenInfo.new(0.2), { ImageColor3 = Color3.fromRGB(88, 101, 242) }):Play()
+            TweenService:Create(Divider, TweenInfo.new(0.2), { BackgroundTransparency = 0.75 }):Play()
         end)
         DiscordBtn.Activated:Connect(function()
             if setclipboard then
@@ -1049,42 +1356,75 @@ function Chloex:Window(GuiConfig)
         DiscordButtonRef = DiscordBtn
     end
 
-    Close.Font = Enum.Font.GothamBold
-    Close.Text = "X"
-    Close.TextColor3 = Color3.fromRGB(140, 145, 165)
+    TextLabel1.Font = Enum.Font.GothamBold
+    TextLabel1.Text = GuiConfig.Footer
+    TextLabel1.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TextLabel1.TextSize = 12
+    TextLabel1.TextTransparency = 0
+    TextLabel1.TextXAlignment = Enum.TextXAlignment.Left
+    TextLabel1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TextLabel1.BackgroundTransparency = 0.9990000128746033
+    TextLabel1.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    TextLabel1.BorderSizePixel = 0
+    TextLabel1.Size = UDim2.new(1, -(TextLabel.TextBounds.X + 104 + discordOffset), 1, 0)
+    TextLabel1.Position = UDim2.new(0, TextLabel.TextBounds.X + 15 + discordOffset, 0, 0)
+    TextLabel1.Parent = Top
+
+    if DiscordButtonRef then
+        DiscordButtonRef.Size = UDim2.new(0, discordOffset + TextLabel1.TextBounds.X + 6, 1, 0)
+    end
+
+    Close.Font = Enum.Font.SourceSans
+    Close.Text = ""
+    Close.TextColor3 = Color3.fromRGB(0, 0, 0)
     Close.TextSize = 14
     Close.AnchorPoint = Vector2.new(1, 0.5)
-    Close.BackgroundTransparency = 1
+    Close.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Close.BackgroundTransparency = 0.9990000128746033
+    Close.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Close.BorderSizePixel = 0
-    Close.Position = UDim2.new(1, -12, 0.5, 0)
-    Close.Size = UDim2.new(0, 24, 0, 24)
+    Close.Position = UDim2.new(1, -8, 0.5, 0)
+    Close.Size = UDim2.new(0, 25, 0, 25)
     Close.Name = "Close"
     Close.Parent = Top
 
-    ImageLabel1.Image = ""
-    ImageLabel1.BackgroundTransparency = 1
-    ImageLabel1.Size = UDim2.new(0, 0, 0, 0)
+    ImageLabel1.Image = "rbxassetid://9886659671"
+    ImageLabel1.AnchorPoint = Vector2.new(0.5, 0.5)
+    ImageLabel1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ImageLabel1.BackgroundTransparency = 0.9990000128746033
+    ImageLabel1.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    ImageLabel1.BorderSizePixel = 0
+    ImageLabel1.Position = UDim2.new(0.49, 0, 0.5, 0)
+    ImageLabel1.Size = UDim2.new(1, -8, 1, -8)
     ImageLabel1.Parent = Close
 
-    Min.Font = Enum.Font.GothamBold
-    Min.Text = "-"
-    Min.TextColor3 = Color3.fromRGB(140, 145, 165)
-    Min.TextSize = 16
+    Min.Font = Enum.Font.SourceSans
+    Min.Text = ""
+    Min.TextColor3 = Color3.fromRGB(0, 0, 0)
+    Min.TextSize = 14
     Min.AnchorPoint = Vector2.new(1, 0.5)
-    Min.BackgroundTransparency = 1
+    Min.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    Min.BackgroundTransparency = 0.9990000128746033
+    Min.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Min.BorderSizePixel = 0
-    Min.Position = UDim2.new(1, -40, 0.5, 0)
-    Min.Size = UDim2.new(0, 24, 0, 24)
+    Min.Position = UDim2.new(1, -38, 0.5, 0)
+    Min.Size = UDim2.new(0, 25, 0, 25)
     Min.Name = "Min"
     Min.Parent = Top
 
-    ImageLabel2.Image = ""
-    ImageLabel2.BackgroundTransparency = 1
-    ImageLabel2.Size = UDim2.new(0, 0, 0, 0)
+    ImageLabel2.Image = "rbxassetid://9886659276"
+    ImageLabel2.AnchorPoint = Vector2.new(0.5, 0.5)
+    ImageLabel2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ImageLabel2.BackgroundTransparency = 0.9990000128746033
+    ImageLabel2.ImageTransparency = 0.2
+    ImageLabel2.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    ImageLabel2.BorderSizePixel = 0
+    ImageLabel2.Position = UDim2.new(0.5, 0, 0.5, 0)
+    ImageLabel2.Size = UDim2.new(1, -9, 1, -9)
     ImageLabel2.Parent = Min
 
-    LayersTab.BackgroundColor3 = Color3.fromRGB(12, 13, 20)
-    LayersTab.BackgroundTransparency = 0
+    LayersTab.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    LayersTab.BackgroundTransparency = 0.9990000128746033
     LayersTab.BorderColor3 = Color3.fromRGB(0, 0, 0)
     LayersTab.BorderSizePixel = 0
     LayersTab.Position = UDim2.new(0, 9, 0, 50)
@@ -1092,7 +1432,7 @@ function Chloex:Window(GuiConfig)
     LayersTab.Name = "LayersTab"
     LayersTab.Parent = Main
 
-    UICorner2.CornerRadius = UDim.new(0, 8)
+    UICorner2.CornerRadius = UDim.new(0, 2)
     UICorner2.Parent = LayersTab
 
     DecideFrame.AnchorPoint = Vector2.new(0.5, 0)
@@ -1179,8 +1519,8 @@ function Chloex:Window(GuiConfig)
     local SearchResults, SearchResultsLayout, SearchBox
     if GuiConfig.Search then
         local SearchBar = Instance.new("Frame")
-        SearchBar.BackgroundColor3 = Color3.fromRGB(20, 22, 32)
-        SearchBar.BackgroundTransparency = 0
+        SearchBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        SearchBar.BackgroundTransparency = 0.93
         SearchBar.BorderSizePixel = 0
         SearchBar.Position = UDim2.new(0, 0, 0, 0)
         SearchBar.Size = UDim2.new(1, 0, 0, 28)
@@ -1188,17 +1528,12 @@ function Chloex:Window(GuiConfig)
         SearchBar.Parent = LayersTab
 
         local SearchCorner = Instance.new("UICorner")
-        SearchCorner.CornerRadius = UDim.new(0, 6)
+        SearchCorner.CornerRadius = UDim.new(0, 4)
         SearchCorner.Parent = SearchBar
-
-        local SearchStroke = Instance.new("UIStroke")
-        SearchStroke.Color = Color3.fromRGB(40, 43, 58)
-        SearchStroke.Thickness = 1
-        SearchStroke.Parent = SearchBar
 
         local SearchIcon = Instance.new("ImageLabel")
         SearchIcon.Image = Icons.scan
-        SearchIcon.ImageColor3 = Color3.fromRGB(140, 145, 165)
+        SearchIcon.ImageColor3 = Color3.fromRGB(200, 200, 200)
         SearchIcon.BackgroundTransparency = 1
         SearchIcon.ScaleType = Enum.ScaleType.Fit
         SearchIcon.Position = UDim2.new(0, 7, 0.5, 0)
@@ -1862,20 +2197,20 @@ function Chloex:Window(GuiConfig)
         local UIStroke2 = Instance.new("UIStroke");
         local UICorner4 = Instance.new("UICorner");
 
-        Tab.BackgroundColor3 = Color3.fromRGB(20, 22, 32)
+        Tab.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         if CountTab == 0 then
-            Tab.BackgroundTransparency = 0
+            Tab.BackgroundTransparency = 0.9200000166893005
         else
-            Tab.BackgroundTransparency = 1
+            Tab.BackgroundTransparency = 0.9990000128746033
         end
         Tab.BorderColor3 = Color3.fromRGB(0, 0, 0)
         Tab.BorderSizePixel = 0
         Tab.LayoutOrder = CountTab
-        Tab.Size = UDim2.new(1, 0, 0, 32)
+        Tab.Size = UDim2.new(1, 0, 0, 30)
         Tab.Name = "Tab"
         Tab.Parent = ScrollTab
 
-        UICorner3.CornerRadius = UDim.new(0, 6)
+        UICorner3.CornerRadius = UDim.new(0, 4)
         UICorner3.Parent = Tab
 
         TabButton.Font = Enum.Font.GothamBold
@@ -1892,16 +2227,16 @@ function Chloex:Window(GuiConfig)
         TabButton.Parent = Tab
 
         TabName.Font = Enum.Font.GothamBold
-        TabName.Text = tostring(TabConfig.Name)
-        TabName.TextColor3 = Color3.fromRGB(230, 230, 235)
+        TabName.Text = "[ " .. tostring(TabConfig.Name) .. " ]"
+        TabName.TextColor3 = Color3.fromRGB(255, 255, 255)
         TabName.TextSize = 13
         TabName.TextXAlignment = Enum.TextXAlignment.Left
         TabName.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         TabName.BackgroundTransparency = 0.9990000128746033
         TabName.BorderColor3 = Color3.fromRGB(0, 0, 0)
         TabName.BorderSizePixel = 0
-        TabName.Size = UDim2.new(1, -42, 1, 0)
-        TabName.Position = UDim2.new(0, 34, 0, 0)
+        TabName.Size = UDim2.new(1, 0, 1, 0)
+        TabName.Position = UDim2.new(0, 30, 0, 0)
         TabName.Name = "TabName"
         TabName.Parent = Tab
 
@@ -1909,8 +2244,8 @@ function Chloex:Window(GuiConfig)
         FeatureImg.BackgroundTransparency = 0.9990000128746033
         FeatureImg.BorderColor3 = Color3.fromRGB(0, 0, 0)
         FeatureImg.BorderSizePixel = 0
-        FeatureImg.Position = UDim2.new(0, 10, 0, 7)
-        FeatureImg.Size = UDim2.new(0, 18, 0, 18)
+        FeatureImg.Position = UDim2.new(0, 9, 0, 7)
+        FeatureImg.Size = UDim2.new(0, 16, 0, 16)
         FeatureImg.Name = "FeatureImg"
         FeatureImg.Parent = Tab
         if CountTab == 0 then
@@ -1920,7 +2255,7 @@ function Chloex:Window(GuiConfig)
             ChooseFrame.BackgroundColor3 = GuiConfig.Color
             ChooseFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
             ChooseFrame.BorderSizePixel = 0
-            ChooseFrame.Position = UDim2.new(0, 2, 0, 6)
+            ChooseFrame.Position = UDim2.new(0, 2, 0, 9)
             ChooseFrame.Size = UDim2.new(0, 1, 0, 12)
             ChooseFrame.Name = "ChooseFrame"
             ChooseFrame.Parent = Tab
@@ -1956,19 +2291,19 @@ function Chloex:Window(GuiConfig)
                         TweenService:Create(
                             TabFrame,
                             TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
-                            { BackgroundTransparency = 1 }
+                            { BackgroundTransparency = 0.9990000128746033 }
                         ):Play()
                     end
                 end
                 TweenService:Create(
                     Tab,
                     TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
-                    { BackgroundTransparency = 0 }
+                    { BackgroundTransparency = 0.9200000166893005 }
                 ):Play()
                 TweenService:Create(
                     FrameChoose,
                     TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-                    { Position = UDim2.new(0, 2, 0, 6 + (35 * Tab.LayoutOrder)) }
+                    { Position = UDim2.new(0, 2, 0, 9 + (33 * Tab.LayoutOrder)) }
                 ):Play()
                 LayersPageLayout:JumpToIndex(Tab.LayoutOrder)
                 task.wait(0.05)
@@ -2012,13 +2347,13 @@ function Chloex:Window(GuiConfig)
             local UIGradient = Instance.new("UIGradient");
 
             Section.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            Section.BackgroundTransparency = 1
+            Section.BackgroundTransparency = 0.9990000128746033
             Section.BorderColor3 = Color3.fromRGB(0, 0, 0)
             Section.BorderSizePixel = 0
             Section.LayoutOrder = CountSection
             Section.ClipsDescendants = true
             Section.LayoutOrder = 1
-            Section.Size = UDim2.new(1, 0, 0, 38)
+            Section.Size = UDim2.new(1, 0, 0, 30)
             Section.Name = "Section"
             Section.Parent = ScrolLayers
 
@@ -2031,24 +2366,18 @@ function Chloex:Window(GuiConfig)
             local SectionTitle = Instance.new("TextLabel");
 
             SectionReal.AnchorPoint = Vector2.new(0.5, 0)
-            SectionReal.BackgroundColor3 = Color3.fromRGB(15, 16, 24)
-            SectionReal.BackgroundTransparency = 0
+            SectionReal.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            SectionReal.BackgroundTransparency = 0.9350000023841858
             SectionReal.BorderColor3 = Color3.fromRGB(0, 0, 0)
             SectionReal.BorderSizePixel = 0
             SectionReal.LayoutOrder = 1
             SectionReal.Position = UDim2.new(0.5, 0, 0, 0)
-            SectionReal.Size = UDim2.new(1, 1, 0, 38)
+            SectionReal.Size = UDim2.new(1, 1, 0, 30)
             SectionReal.Name = "SectionReal"
             SectionReal.Parent = Section
 
-            UICorner.CornerRadius = UDim.new(0, 8)
+            UICorner.CornerRadius = UDim.new(0, 4)
             UICorner.Parent = SectionReal
-
-            local SectionRealStroke = Instance.new("UIStroke")
-            SectionRealStroke.Color = Color3.fromRGB(40, 43, 58)
-            SectionRealStroke.Thickness = 1
-            SectionRealStroke.Transparency = 0.2
-            SectionRealStroke.Parent = SectionReal
 
             SectionButton.Font = Enum.Font.SourceSans
             SectionButton.Text = ""
@@ -2067,8 +2396,8 @@ function Chloex:Window(GuiConfig)
             FeatureFrame.BackgroundTransparency = 0.9990000128746033
             FeatureFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
             FeatureFrame.BorderSizePixel = 0
-            FeatureFrame.Position = UDim2.new(1, -12, 0.5, 0)
-            FeatureFrame.Size = UDim2.new(0, 16, 0, 16)
+            FeatureFrame.Position = UDim2.new(1, -5, 0.5, 0)
+            FeatureFrame.Size = UDim2.new(0, 20, 0, 20)
             FeatureFrame.Name = "FeatureFrame"
             FeatureFrame.Parent = SectionReal
 
@@ -2078,7 +2407,6 @@ function Chloex:Window(GuiConfig)
             FeatureImg.BackgroundTransparency = 0.9990000128746033
             FeatureImg.BorderColor3 = Color3.fromRGB(0, 0, 0)
             FeatureImg.BorderSizePixel = 0
-            FeatureImg.ImageColor3 = GuiConfig.Color or Color3.fromRGB(90, 140, 255)
             FeatureImg.Position = UDim2.new(0.5, 0, 0.5, 0)
             FeatureImg.Rotation = -90
             FeatureImg.Size = UDim2.new(1, 6, 1, 6)
@@ -2087,8 +2415,8 @@ function Chloex:Window(GuiConfig)
 
             SectionTitle.Font = Enum.Font.GothamBold
             SectionTitle.Text = Title
-            SectionTitle.TextColor3 = Color3.fromRGB(230, 230, 235)
-            SectionTitle.TextSize = 14
+            SectionTitle.TextColor3 = Color3.fromRGB(230.77499270439148, 230.77499270439148, 230.77499270439148)
+            SectionTitle.TextSize = 13
             SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
             SectionTitle.TextYAlignment = Enum.TextYAlignment.Top
             SectionTitle.AnchorPoint = Vector2.new(0, 0.5)
@@ -2096,8 +2424,8 @@ function Chloex:Window(GuiConfig)
             SectionTitle.BackgroundTransparency = 0.9990000128746033
             SectionTitle.BorderColor3 = Color3.fromRGB(0, 0, 0)
             SectionTitle.BorderSizePixel = 0
-            SectionTitle.Position = UDim2.new(0, 14, 0.5, 0)
-            SectionTitle.Size = UDim2.new(1, -50, 0, 14)
+            SectionTitle.Position = UDim2.new(0, 10, 0.5, 0)
+            SectionTitle.Size = UDim2.new(1, -50, 0, 13)
             SectionTitle.Name = "SectionTitle"
             SectionTitle.Parent = SectionReal
 
@@ -2105,7 +2433,7 @@ function Chloex:Window(GuiConfig)
             SectionDecideFrame.BorderColor3 = Color3.fromRGB(0, 0, 0)
             SectionDecideFrame.AnchorPoint = Vector2.new(0.5, 0)
             SectionDecideFrame.BorderSizePixel = 0
-            SectionDecideFrame.Position = UDim2.new(0.5, 0, 0, 38)
+            SectionDecideFrame.Position = UDim2.new(0.5, 0, 0, 33)
             SectionDecideFrame.Size = UDim2.new(0, 0, 0, 2)
             SectionDecideFrame.Name = "SectionDecideFrame"
             SectionDecideFrame.Parent = Section
@@ -2197,7 +2525,7 @@ function Chloex:Window(GuiConfig)
                     CircleClick(SectionButton, Mouse.X, Mouse.Y)
                     if OpenSection then
                         TweenService:Create(FeatureFrame, TweenInfo.new(0.5), { Rotation = 0 }):Play()
-                        TweenService:Create(Section, TweenInfo.new(0.5), { Size = UDim2.new(1, 1, 0, 38) }):Play()
+                        TweenService:Create(Section, TweenInfo.new(0.5), { Size = UDim2.new(1, 1, 0, 30) }):Play()
                         TweenService:Create(SectionDecideFrame, TweenInfo.new(0.5), { Size = UDim2.new(0, 0, 0, 2) })
                             :Play()
                         OpenSection = false
@@ -2610,21 +2938,15 @@ end
                 local ToggleCircle = Instance.new("Frame")
                 local UICorner23 = Instance.new("UICorner")
 
-                Toggle.BackgroundColor3 = Color3.fromRGB(20, 22, 32)
-                Toggle.BackgroundTransparency = 0
+                Toggle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                Toggle.BackgroundTransparency = 0.935
                 Toggle.BorderSizePixel = 0
                 Toggle.LayoutOrder = CountItem
                 Toggle.Name = "Toggle"
                 Toggle.Parent = SectionAdd
 
-                UICorner20.CornerRadius = UDim.new(0, 6)
+                UICorner20.CornerRadius = UDim.new(0, 4)
                 UICorner20.Parent = Toggle
-
-                local ToggleStroke = Instance.new("UIStroke")
-                ToggleStroke.Color = Color3.fromRGB(40, 43, 58)
-                ToggleStroke.Thickness = 1
-                ToggleStroke.Transparency = 0.2
-                ToggleStroke.Parent = Toggle
 
                 ToggleTitle.Font = Enum.Font.GothamBold
                 ToggleTitle.Text = ToggleConfig.Title
@@ -3226,8 +3548,8 @@ end
                 local OptionSelecting = Instance.new("TextLabel")
                 local OptionImg = Instance.new("ImageLabel")
 
-                Dropdown.BackgroundColor3 = Color3.fromRGB(20, 22, 32)
-                Dropdown.BackgroundTransparency = 0
+                Dropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                Dropdown.BackgroundTransparency = 0.935
                 Dropdown.BorderSizePixel = 0
                 Dropdown.LayoutOrder = CountItem
                 Dropdown.Size = UDim2.new(1, 0, 0, 46)
@@ -3240,14 +3562,8 @@ end
                 DropdownButton.Name = "ToggleButton"
                 DropdownButton.Parent = Dropdown
 
-                UICorner10.CornerRadius = UDim.new(0, 6)
+                UICorner10.CornerRadius = UDim.new(0, 4)
                 UICorner10.Parent = Dropdown
-
-                local DropdownStroke = Instance.new("UIStroke")
-                DropdownStroke.Color = Color3.fromRGB(40, 43, 58)
-                DropdownStroke.Thickness = 1
-                DropdownStroke.Transparency = 0.2
-                DropdownStroke.Parent = Dropdown
 
                 DropdownTitle.Font = Enum.Font.GothamBold
                 DropdownTitle.Text = DropdownConfig.Title
@@ -3770,12 +4086,9 @@ end
                 local btns = CardConfig.Buttons or {}
                 local cardHeight = 70 + (#btns > 0 and 40 or 0)
 
-                local hasBadge = CardConfig.Badge and CardConfig.Badge ~= ""
-                if hasBadge then cardHeight = cardHeight + 16 end
-
                 local Card = Instance.new("Frame")
-                Card.BackgroundColor3 = Color3.fromRGB(17, 19, 28)
-                Card.BackgroundTransparency = 0.05
+                Card.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                Card.BackgroundTransparency = 0.935
                 Card.BorderSizePixel = 0
                 Card.LayoutOrder = CountItem
                 Card.Size = UDim2.new(1, 0, 0, cardHeight)
@@ -3783,16 +4096,10 @@ end
                 Card.Parent = SectionAdd
 
                 local CardCorner = Instance.new("UICorner")
-                CardCorner.CornerRadius = UDim.new(0, 10)
+                CardCorner.CornerRadius = UDim.new(0, 6)
                 CardCorner.Parent = Card
 
-                local CardStroke = Instance.new("UIStroke")
-                CardStroke.Color = Color3.fromRGB(45, 48, 62)
-                CardStroke.Thickness = 1
-                CardStroke.Transparency = 0.2
-                CardStroke.Parent = Card
-
-                local cx = 14
+                local cx = 12
                 if CardConfig.Logo and CardConfig.Logo ~= "" then
                     local logo = tostring(CardConfig.Logo)
                     if not string.find(logo, "rbxassetid://") then logo = "rbxassetid://" .. logo end
@@ -3801,66 +4108,40 @@ end
                     Logo.BackgroundTransparency = 1
                     Logo.ScaleType = Enum.ScaleType.Fit
                     Logo.Position = UDim2.new(0, 12, 0, 14)
-                    Logo.Size = UDim2.new(0, 34, 0, 34)
+                    Logo.Size = UDim2.new(0, 32, 0, 32)
                     Logo.Parent = Card
-                    cx = 56
-                end
-
-                local badgeOffset = 0
-                if hasBadge then
-                    local Badge = Instance.new("TextLabel")
-                    Badge.Font = Enum.Font.GothamBold
-                    Badge.Text = string.upper(tostring(CardConfig.Badge))
-                    Badge.TextColor3 = Color3.fromRGB(255, 255, 255)
-                    Badge.TextSize = 10
-                    Badge.AutomaticSize = Enum.AutomaticSize.X
-                    Badge.BackgroundColor3 = CardConfig.BadgeColor or (GuiConfig.Color or Color3.fromRGB(90, 140, 255))
-                    Badge.BackgroundTransparency = 0
-                    Badge.Position = UDim2.new(0, cx, 0, 10)
-                    Badge.Size = UDim2.new(0, 0, 0, 16)
-                    Badge.Parent = Card
-
-                    local BadgePad = Instance.new("UIPadding")
-                    BadgePad.PaddingLeft = UDim.new(0, 8)
-                    BadgePad.PaddingRight = UDim.new(0, 8)
-                    BadgePad.Parent = Badge
-
-                    local BadgeCorner = Instance.new("UICorner")
-                    BadgeCorner.CornerRadius = UDim.new(1, 0)
-                    BadgeCorner.Parent = Badge
-
-                    badgeOffset = 20
+                    cx = 52
                 end
 
                 local CardTitle = Instance.new("TextLabel")
                 CardTitle.Font = Enum.Font.GothamBold
                 CardTitle.Text = CardConfig.Title
-                CardTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
-                CardTitle.TextSize = 14
+                CardTitle.TextColor3 = Color3.fromRGB(235, 235, 235)
+                CardTitle.TextSize = 13
                 CardTitle.TextXAlignment = Enum.TextXAlignment.Left
                 CardTitle.BackgroundTransparency = 1
-                CardTitle.Position = UDim2.new(0, cx, 0, 12 + badgeOffset)
+                CardTitle.Position = UDim2.new(0, cx, 0, 12)
                 CardTitle.Size = UDim2.new(1, -cx - 12, 0, 16)
                 CardTitle.Parent = Card
 
                 local CardDesc = Instance.new("TextLabel")
                 CardDesc.Font = Enum.Font.Gotham
                 CardDesc.Text = CardConfig.Description
-                CardDesc.TextColor3 = Color3.fromRGB(150, 152, 165)
+                CardDesc.TextColor3 = Color3.fromRGB(180, 180, 180)
                 CardDesc.TextSize = 11
                 CardDesc.TextXAlignment = Enum.TextXAlignment.Left
                 CardDesc.TextYAlignment = Enum.TextYAlignment.Top
                 CardDesc.TextWrapped = true
                 CardDesc.BackgroundTransparency = 1
-                CardDesc.Position = UDim2.new(0, cx, 0, 30 + badgeOffset)
+                CardDesc.Position = UDim2.new(0, cx, 0, 30)
                 CardDesc.Size = UDim2.new(1, -cx - 12, 0, 28)
                 CardDesc.Parent = Card
 
                 if #btns > 0 then
                     local Row = Instance.new("Frame")
                     Row.BackgroundTransparency = 1
-                    Row.Position = UDim2.new(0, 10, 0, cardHeight - 38)
-                    Row.Size = UDim2.new(1, -20, 0, 30)
+                    Row.Position = UDim2.new(0, 8, 0, cardHeight - 38)
+                    Row.Size = UDim2.new(1, -16, 0, 30)
                     Row.Parent = Card
 
                     local RowLayout = Instance.new("UIListLayout")
@@ -3874,15 +4155,16 @@ end
                         Btn.Font = Enum.Font.GothamBold
                         Btn.Text = bd.Name or "Button"
                         Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                        Btn.TextSize = 12
-                        Btn.BackgroundColor3 = bd.Color or GuiConfig.Color or Color3.fromRGB(90, 140, 255)
-                        Btn.BackgroundTransparency = 0
+                        Btn.TextSize = 11
+                        Btn.TextTransparency = 0.2
+                        Btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        Btn.BackgroundTransparency = 0.9
                         Btn.BorderSizePixel = 0
                         Btn.Size = bw
                         Btn.Parent = Row
 
                         local BtnCorner = Instance.new("UICorner")
-                        BtnCorner.CornerRadius = UDim.new(0, 8)
+                        BtnCorner.CornerRadius = UDim.new(0, 6)
                         BtnCorner.Parent = Btn
 
                         if bd.Callback then
@@ -5868,8 +6150,95 @@ end
                 return PickerFunc
             end
 
+
+            CountSection = CountSection + 1
+            return Items
         end
+
+        CountTab = CountTab + 1
+        local safeName = TabConfig.Name:gsub("%s+", "_")
+        _G[safeName] = Sections
+        return Sections
     end
+
+    function Tabs:InfoTab(InfoConfig)
+        InfoConfig = InfoConfig or {}
+        local Sections = Tabs:AddTab({
+            Name = InfoConfig.Name or "Info",
+            Icon = InfoConfig.Icon or "idea",
+        })
+        local Items = Sections:AddSection(InfoConfig.SectionTitle or "Information", true)
+
+        if InfoConfig.Banner and InfoConfig.Banner ~= "" then
+            Items:AddBanner({
+                Image = InfoConfig.Banner,
+                Version = InfoConfig.Version,
+                AspectRatio = InfoConfig.BannerAspectRatio,
+            })
+        end
+
+        if InfoConfig.DiscordLink then
+            Items:AddCard({
+                Title = InfoConfig.DiscordName or "Community",
+                Description = InfoConfig.DiscordText or "Support, updates and announcements.",
+                Logo = Icons.discord,
+                Buttons = {
+                    {
+                        Name = "Copy Invite",
+                        Callback = function()
+                            if setclipboard then
+                                setclipboard(InfoConfig.DiscordLink)
+                                than("Discord invite copied", 4, GuiConfig.Color, "HydraHub", "Community")
+                            end
+                        end,
+                    },
+                },
+            })
+        end
+
+        for _, card in ipairs(InfoConfig.Cards or {}) do
+            Items:AddCard(card)
+        end
+
+        return Sections, Items
+    end
+
+    GuiFunc.InfoTab = function(_, cfg) return Tabs:InfoTab(cfg) end
+    Tabs.Window = GuiFunc
+    Tabs.ExportConfig = function() return GuiFunc:ExportConfig() end
+    Tabs.ImportConfig = function(_, str) return GuiFunc:ImportConfig(str) end
+    Tabs.Confirm = function(_, config) return GuiFunc:Confirm(config) end
+
+    if GuiConfig.Search then
+        UserInputService.InputBegan:Connect(function(input, gpe)
+            if gpe then return end
+            local ctrl = UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)
+                or UserInputService:IsKeyDown(Enum.KeyCode.RightControl)
+                or UserInputService:IsKeyDown(Enum.KeyCode.LeftMeta)
+                or UserInputService:IsKeyDown(Enum.KeyCode.RightMeta)
+            local shift = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+                or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+            if ctrl and shift and input.KeyCode == Enum.KeyCode.F then
+                if DropShadowHolder then DropShadowHolder.Visible = true end
+                if GuiFunc.FocusSearch then GuiFunc.FocusSearch() end
+            elseif ctrl and input.KeyCode == Enum.KeyCode.O then
+                if DropShadowHolder then DropShadowHolder.Visible = true end
+                if GuiFunc.FocusSearch then GuiFunc.FocusSearch() end
+            end
+        end)
+    end
+
+    task.spawn(function()
+        task.wait(0.5)
+        local autoName = GuiFunc:GetAutoLoad()
+        if autoName and autoName ~= "" then
+            GuiFunc:LoadConfigByName(autoName)
+        end
+    end)
+
+    return Tabs
 end
+
+
 
 return Chloex
