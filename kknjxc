@@ -610,10 +610,6 @@ function than(msg, delay, color, title, desc)
         Delay = delay or 4
     })
 end
-            end
-        end
-    end)
-end
 
 function Chloex:Window(GuiConfig)
     GuiConfig              = GuiConfig or {}
@@ -5871,5 +5867,9 @@ end
                 RegisterSearch({ label = PickerConfig.Title, tab = TabConfig.Name, kind = "Picker", switch = SearchSwitch })
                 return PickerFunc
             end
+
+        end
+    end
+end
 
 return Chloex
