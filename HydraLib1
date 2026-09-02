@@ -8,13 +8,13 @@ local Mouse = LocalPlayer:GetMouse()
 
 local C_BG      = Color3.fromRGB(14, 22, 48)
 local C_SIDEBAR = Color3.fromRGB(18, 30, 66)
-local C_PANEL   = Color3.fromRGB(24, 38, 82)
-local C_PANEL2  = Color3.fromRGB(28, 44, 92)
+local C_PANEL   = Color3.fromRGB(0, 0, 0)
+local C_PANEL2  = Color3.fromRGB(0, 0, 0)
 local C_ACCENT  = Color3.fromRGB(90, 140, 255)
 local C_TEXT    = Color3.fromRGB(235, 235, 240)
 local C_SUBTEXT = Color3.fromRGB(140, 145, 165)
-local C_BORDER  = Color3.fromRGB(70, 95, 170)
-local C_FIELD   = Color3.fromRGB(20, 32, 70)
+local C_BORDER  = Color3.fromRGB(40, 43, 58)
+local C_FIELD   = Color3.fromRGB(0, 0, 0)
 local C_GREEN   = Color3.fromRGB(120, 220, 140)
 
 local Icons = {
@@ -437,7 +437,7 @@ function Dragon:Window(GuiConfig)
     do
         SearchBar = Instance.new("Frame")
         SearchBar.BackgroundColor3 = C_PANEL2
-        SearchBar.BackgroundTransparency = 0.35
+        SearchBar.BackgroundTransparency = 0.55
         stroke(SearchBar, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
         SearchBar.BorderSizePixel = 0
         SearchBar.Size = UDim2.new(1, 0, 0, 28)
@@ -465,7 +465,7 @@ function Dragon:Window(GuiConfig)
         SearchResults = Instance.new("ScrollingFrame")
         SearchResults.Active = true
         SearchResults.BackgroundColor3 = C_PANEL
-        SearchResults.BackgroundTransparency = 0.35
+        SearchResults.BackgroundTransparency = 0.55
         stroke(SearchResults, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
         SearchResults.BorderSizePixel = 0
         SearchResults.ScrollBarThickness = 2
@@ -511,7 +511,7 @@ function Dragon:Window(GuiConfig)
                 local entry = s.entry
                 local Row = Instance.new("Frame")
                 Row.BackgroundColor3 = C_PANEL2
-                Row.BackgroundTransparency = 0.35
+                Row.BackgroundTransparency = 0.55
                 stroke(Row, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 Row.BorderSizePixel = 0
                 Row.Size = UDim2.new(1, 0, 0, 40)
@@ -820,7 +820,7 @@ function Dragon:Window(GuiConfig)
         Dialog.Size = UDim2.new(0, 300, 0, 150)
         Dialog.Position = UDim2.new(0.5, -150, 0.5, -75)
         Dialog.BackgroundColor3 = C_PANEL
-        Dialog.BackgroundTransparency = 0.08
+        Dialog.BackgroundTransparency = 0.55
         Dialog.BorderSizePixel = 0
         Dialog.ZIndex = 51
         Dialog.Parent = Overlay
@@ -868,7 +868,7 @@ function Dragon:Window(GuiConfig)
         Cancel.Size = UDim2.new(0.4, -10, 0, 32)
         Cancel.Position = UDim2.new(0.55, 0, 1, -44)
         Cancel.BackgroundColor3 = C_FIELD
-        Cancel.BackgroundTransparency = 0.15
+        Cancel.BackgroundTransparency = 0.55
         Cancel.Text = config.CancelText or "Cancel"
         Cancel.Font = Enum.Font.GothamBold
         Cancel.TextSize = 13
@@ -1071,7 +1071,7 @@ function Dragon:Window(GuiConfig)
 
             local Section = Instance.new("Frame")
             Section.BackgroundColor3 = C_PANEL
-            Section.BackgroundTransparency = 0.35
+            Section.BackgroundTransparency = 0.55
             stroke(Section, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
             Section.BorderSizePixel = 0
             Section.ClipsDescendants = true
@@ -1215,7 +1215,7 @@ function Dragon:Window(GuiConfig)
 
                 local Paragraph = Instance.new("Frame")
                 Paragraph.BackgroundColor3 = C_PANEL2
-                Paragraph.BackgroundTransparency = 0.08
+                Paragraph.BackgroundTransparency = 0.55
                 stroke(Paragraph, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 Paragraph.BorderSizePixel = 0
                 Paragraph.LayoutOrder = CountItem
@@ -1276,7 +1276,7 @@ function Dragon:Window(GuiConfig)
                     ParagraphButton.Position = UDim2.new(0, 10, 0, 42)
                     ParagraphButton.Size = UDim2.new(1, -20, 0, 28)
                     ParagraphButton.BackgroundColor3 = C_FIELD
-                    ParagraphButton.BackgroundTransparency = 0.2
+                    ParagraphButton.BackgroundTransparency = 0.55
                     ParagraphButton.Font = Enum.Font.GothamBold
                     ParagraphButton.TextSize = 12
                     ParagraphButton.TextColor3 = C_TEXT
@@ -1326,7 +1326,7 @@ function Dragon:Window(GuiConfig)
 
                 local ButtonRoot = Instance.new("Frame")
                 ButtonRoot.BackgroundColor3 = C_PANEL2
-                ButtonRoot.BackgroundTransparency = 0.08
+                ButtonRoot.BackgroundTransparency = 0.55
                 stroke(ButtonRoot, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 ButtonRoot.BorderSizePixel = 0
                 ButtonRoot.Size = UDim2.new(1, 0, 0, 40)
@@ -1396,7 +1396,7 @@ function Dragon:Window(GuiConfig)
 
                 local Toggle = Instance.new("Frame")
                 Toggle.BackgroundColor3 = C_PANEL2
-                Toggle.BackgroundTransparency = 0.08
+                Toggle.BackgroundTransparency = 0.55
                 Toggle.BorderSizePixel = 0
                 Toggle.LayoutOrder = CountItem
                 Toggle.Name = "Toggle"
@@ -1546,7 +1546,7 @@ function Dragon:Window(GuiConfig)
 
                 local Slider = Instance.new("Frame")
                 Slider.BackgroundColor3 = C_PANEL2
-                Slider.BackgroundTransparency = 0.08
+                Slider.BackgroundTransparency = 0.55
                 stroke(Slider, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 Slider.BorderSizePixel = 0
                 Slider.LayoutOrder = CountItem
@@ -1585,7 +1585,7 @@ function Dragon:Window(GuiConfig)
                 local SliderInput = Instance.new("Frame")
                 SliderInput.AnchorPoint = Vector2.new(1, 0)
                 SliderInput.BackgroundColor3 = C_FIELD
-                SliderInput.BackgroundTransparency = 0.5
+                SliderInput.BackgroundTransparency = 0.55
                 SliderInput.Position = UDim2.new(1, -10, 0, 6)
                 SliderInput.Size = UDim2.new(0, 46, 0, 18)
                 SliderInput.Name = "SliderInput"
@@ -1743,7 +1743,7 @@ function Dragon:Window(GuiConfig)
 
                 local InputRoot = Instance.new("Frame")
                 InputRoot.BackgroundColor3 = C_PANEL2
-                InputRoot.BackgroundTransparency = 0.08
+                InputRoot.BackgroundTransparency = 0.55
                 stroke(InputRoot, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 InputRoot.BorderSizePixel = 0
                 InputRoot.LayoutOrder = CountItem
@@ -1779,7 +1779,7 @@ function Dragon:Window(GuiConfig)
 
                 local Field = Instance.new("Frame")
                 Field.BackgroundColor3 = C_FIELD
-                Field.BackgroundTransparency = 0.2
+                Field.BackgroundTransparency = 0.55
                 Field.Position = UDim2.new(0, 8, 0, hasContent and 36 or 24)
                 Field.Size = UDim2.new(1, -16, 0, 22)
                 Field.Parent = InputRoot
@@ -1845,7 +1845,7 @@ function Dragon:Window(GuiConfig)
 
                 local Dropdown = Instance.new("Frame")
                 Dropdown.BackgroundColor3 = C_PANEL2
-                Dropdown.BackgroundTransparency = 0.08
+                Dropdown.BackgroundTransparency = 0.55
                 Dropdown.BorderSizePixel = 0
                 Dropdown.LayoutOrder = CountItem
                 Dropdown.Size = UDim2.new(1, 0, 0, hasContent and 58 or 46)
@@ -1882,7 +1882,7 @@ function Dragon:Window(GuiConfig)
                 local SelectFrame = Instance.new("Frame")
                 SelectFrame.AnchorPoint = Vector2.new(1, 0.5)
                 SelectFrame.BackgroundColor3 = C_FIELD
-                SelectFrame.BackgroundTransparency = 0.2
+                SelectFrame.BackgroundTransparency = 0.55
                 SelectFrame.Position = UDim2.new(1, -8, 0.5, 0)
                 SelectFrame.Size = UDim2.new(0, 130, 0, 26)
                 SelectFrame.Parent = Dropdown
@@ -1930,7 +1930,7 @@ function Dragon:Window(GuiConfig)
                 local DropPanel = Instance.new("Frame")
                 DropPanel.AnchorPoint = Vector2.new(0.5, 0.5)
                 DropPanel.BackgroundColor3 = C_PANEL
-                DropPanel.BackgroundTransparency = 0.08
+                DropPanel.BackgroundTransparency = 0.55
                 stroke(DropPanel, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 DropPanel.BorderSizePixel = 0
                 DropPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -1960,7 +1960,7 @@ function Dragon:Window(GuiConfig)
                 DropSearch.TextColor3 = C_TEXT
                 DropSearch.TextSize = 12
                 DropSearch.BackgroundColor3 = C_PANEL2
-                DropSearch.BackgroundTransparency = 0
+                DropSearch.BackgroundTransparency = 0.55
                 stroke(DropSearch, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 DropSearch.BorderSizePixel = 0
                 DropSearch.ClearTextOnFocus = false
@@ -2127,7 +2127,7 @@ function Dragon:Window(GuiConfig)
 
                 local Banner = Instance.new("Frame")
                 Banner.BackgroundColor3 = C_PANEL2
-                Banner.BackgroundTransparency = 0.08
+                Banner.BackgroundTransparency = 0.55
                 stroke(Banner, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 Banner.BorderSizePixel = 0
                 Banner.LayoutOrder = CountItem
@@ -2238,7 +2238,7 @@ function Dragon:Window(GuiConfig)
                 local btnRows = math.max(1, #CardConfig.Buttons)
                 local Card = Instance.new("Frame")
                 Card.BackgroundColor3 = C_PANEL2
-                Card.BackgroundTransparency = 0.08
+                Card.BackgroundTransparency = 0.55
                 Card.BorderSizePixel = 0
                 Card.LayoutOrder = CountItem
                 Card.Size = UDim2.new(1, 0, 0, 56 + (btnRows > 0 and 34 or 0))
@@ -2330,7 +2330,7 @@ function Dragon:Window(GuiConfig)
 
                 local Panel = Instance.new("Frame")
                 Panel.BackgroundColor3 = C_FIELD
-                Panel.BackgroundTransparency = 0.15
+                Panel.BackgroundTransparency = 0.55
                 Panel.BorderSizePixel = 0
                 Panel.Size = UDim2.new(1, 0, 0, baseHeight)
                 Panel.LayoutOrder = CountItem
@@ -2364,7 +2364,7 @@ function Dragon:Window(GuiConfig)
                 if PanelConfig.Placeholder then
                     local InputFrame = Instance.new("Frame")
                     InputFrame.BackgroundColor3 = C_FIELD
-                    InputFrame.BackgroundTransparency = 0.2
+                    InputFrame.BackgroundTransparency = 0.55
                     InputFrame.Position = UDim2.new(0, 8, 0, 38)
                     InputFrame.Size = UDim2.new(1, -16, 0, 26)
                     InputFrame.Parent = Panel
@@ -2392,7 +2392,7 @@ function Dragon:Window(GuiConfig)
                 ButtonMain.TextColor3 = C_TEXT
                 ButtonMain.TextSize = 12
                 ButtonMain.BackgroundColor3 = C_FIELD
-                ButtonMain.BackgroundTransparency = 0.2
+                ButtonMain.BackgroundTransparency = 0.55
                 ButtonMain.Size = PanelConfig.SubButtonText and UDim2.new(0.5, -10, 0, 26) or UDim2.new(1, -16, 0, 26)
                 ButtonMain.Position = UDim2.new(0, 8, 0, yBtn)
                 ButtonMain.Parent = Panel
@@ -2408,7 +2408,7 @@ function Dragon:Window(GuiConfig)
                     SubButton.TextColor3 = C_SUBTEXT
                     SubButton.TextSize = 12
                     SubButton.BackgroundColor3 = C_FIELD
-                    SubButton.BackgroundTransparency = 0.2
+                    SubButton.BackgroundTransparency = 0.55
                     SubButton.Size = UDim2.new(0.5, -10, 0, 26)
                     SubButton.Position = UDim2.new(0.5, 2, 0, yBtn)
                     SubButton.Parent = Panel
@@ -2452,7 +2452,7 @@ function Dragon:Window(GuiConfig)
 
                 local LogRoot = Instance.new("Frame")
                 LogRoot.BackgroundColor3 = C_PANEL2
-                LogRoot.BackgroundTransparency = 0.08
+                LogRoot.BackgroundTransparency = 0.55
                 LogRoot.BorderSizePixel = 0
                 LogRoot.LayoutOrder = CountItem
                 LogRoot.Size = UDim2.new(1, 0, 0, LogConfig.Height)
@@ -2562,7 +2562,7 @@ function Dragon:Window(GuiConfig)
 
                 local ListRoot = Instance.new("Frame")
                 ListRoot.BackgroundColor3 = C_FIELD
-                ListRoot.BackgroundTransparency = 0.15
+                ListRoot.BackgroundTransparency = 0.55
                 ListRoot.BorderSizePixel = 0
                 ListRoot.LayoutOrder = CountItem
                 ListRoot.Size = UDim2.new(1, 0, 0, 34)
@@ -2650,7 +2650,7 @@ function Dragon:Window(GuiConfig)
                             order = order + 1
                             local Row = Instance.new("Frame")
                             Row.BackgroundColor3 = C_FIELD
-                            Row.BackgroundTransparency = 0.5
+                            Row.BackgroundTransparency = 0.55
                             Row.Size = UDim2.new(1, 0, 0, 24)
                             Row.LayoutOrder = order
                             Row.Parent = SelectedWrap
@@ -2703,7 +2703,7 @@ function Dragon:Window(GuiConfig)
 
                 local PickerHeader = Instance.new("Frame")
                 PickerHeader.BackgroundColor3 = C_PANEL
-                PickerHeader.BackgroundTransparency = 0.08
+                PickerHeader.BackgroundTransparency = 0.55
                 stroke(PickerHeader, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 PickerHeader.BorderSizePixel = 0
                 PickerHeader.Size = UDim2.new(1, 0, 0, 34)
@@ -2728,7 +2728,7 @@ function Dragon:Window(GuiConfig)
                 SelectAllBtn.TextColor3 = C_SUBTEXT
                 SelectAllBtn.TextSize = 11
                 SelectAllBtn.BackgroundColor3 = C_FIELD
-                SelectAllBtn.BackgroundTransparency = 0.5
+                SelectAllBtn.BackgroundTransparency = 0.55
                 SelectAllBtn.AnchorPoint = Vector2.new(1, 0.5)
                 SelectAllBtn.Position = UDim2.new(1, -78, 0.5, 0)
                 SelectAllBtn.Size = UDim2.new(0, 74, 0, 22)
@@ -2760,7 +2760,7 @@ function Dragon:Window(GuiConfig)
                 PickerSearch.TextXAlignment = Enum.TextXAlignment.Left
                 PickerSearch.ClearTextOnFocus = false
                 PickerSearch.BackgroundColor3 = C_PANEL2
-                PickerSearch.BackgroundTransparency = 0.08
+                PickerSearch.BackgroundTransparency = 0.55
                 stroke(PickerSearch, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 PickerSearch.BorderSizePixel = 0
                 PickerSearch.Position = UDim2.new(0, 10, 0, 40)
@@ -3035,7 +3035,7 @@ function Dragon:Window(GuiConfig)
 
                 local Root = Instance.new("Frame")
                 Root.BackgroundColor3 = C_PANEL2
-                Root.BackgroundTransparency = 0.08
+                Root.BackgroundTransparency = 0.55
                 stroke(Root, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 Root.BorderSizePixel = 0
                 Root.LayoutOrder = CountItem
