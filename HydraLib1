@@ -106,11 +106,11 @@ local function safeSize(pxWidth, pxHeight)
     if isMobile then
         -- Dragon caps are much higher than Chloex (0.5 / 0.3) so the
         -- window actually fills the phone screen instead of shrinking.
-        if scaleX > 0.94 then scaleX = 0.94 end
-        if scaleY > 0.82 then scaleY = 0.82 end
+        if scaleX > 0.78 then scaleX = 0.78 end
+        if scaleY > 0.62 then scaleY = 0.62 end
     else
-        if scaleX > 0.85 then scaleX = 0.85 end
-        if scaleY > 0.85 then scaleY = 0.85 end
+        if scaleX > 0.65 then scaleX = 0.65 end
+        if scaleY > 0.65 then scaleY = 0.65 end
     end
     return UDim2.new(scaleX, 0, scaleY, 0)
 end
@@ -312,17 +312,17 @@ function Dragon:Window(GuiConfig)
     -- Dragon aims for before being clamped to the real viewport.
     local DRAGON_TARGET_W, DRAGON_TARGET_H
     if isMobile then
-        DRAGON_TARGET_W, DRAGON_TARGET_H = 900, 620
+        DRAGON_TARGET_W, DRAGON_TARGET_H = 620, 420
     else
-        DRAGON_TARGET_W, DRAGON_TARGET_H = 1180, 820
+        DRAGON_TARGET_W, DRAGON_TARGET_H = 860, 600
     end
 
     local mainScale = safeSize(DRAGON_TARGET_W, DRAGON_TARGET_H)
     local MinW, MinH, MaxW, MaxH
     if isMobile then
-        MinW, MinH, MaxW, MaxH = 360, 260, 1200, 900
+        MinW, MinH, MaxW, MaxH = 340, 240, 700, 520
     else
-        MinW, MinH, MaxW, MaxH = 720, 520, 1600, 1100
+        MinW, MinH, MaxW, MaxH = 560, 400, 980, 700
     end
     local mainW, mainH = resolveScaledPixelSize(mainScale, MinW, MinH, MaxW, MaxH)
     Main.Size = UDim2.new(0, mainW, 0, mainH)
@@ -441,7 +441,7 @@ function Dragon:Window(GuiConfig)
 
     -- Dragon's sidebar is wider than Chloex's (100/150) to match the
     -- much bigger window and keep proportions rapi.
-    local SidebarWidth = isMobile and 190 or 230
+    local SidebarWidth = isMobile and 110 or 160
 
     local Sidebar = Instance.new("Frame")
     Sidebar.Size = UDim2.new(0, SidebarWidth, 1, -46)
