@@ -16,8 +16,6 @@ local C_SUBTEXT = Color3.fromRGB(140, 145, 165)
 local C_BORDER  = Color3.fromRGB(40, 43, 58)
 local C_GREEN   = Color3.fromRGB(120, 220, 140)
 
--- Ported straight from kknjx.lua so Tabs:AddTab({ Icon = "name" }) can
--- resolve a short name to a real rbxassetid, same as kknjx does.
 local Icons = {
     player    = "rbxassetid://12120698352",
     web       = "rbxassetid://137601480983962",
@@ -90,22 +88,11 @@ local isMobile = isMobileDevice()
 
 local viewport = workspace.CurrentCamera.ViewportSize
 
--- ═══════════════════════════════════════════════════════════════
--- DRAGON AUTO-SCALE
--- Same base logic as HydraLib1's safeSize (scale = target / viewport),
--- but Dragon targets a much bigger window and uses higher mobile caps
--- so it doesn't get crushed to 50%x30% of the screen like Chloex does.
--- On top of that we clamp the final pixel size to the real viewport
--- (kknjx-style fixed-pixel philosophy) so it never overflows on tiny
--- screens and never looks tiny on big cloud-emulator viewports.
--- ═══════════════════════════════════════════════════════════════
 
 local function safeSize(pxWidth, pxHeight)
     local scaleX = pxWidth / viewport.X
     local scaleY = pxHeight / viewport.Y
     if isMobile then
-        -- Dragon caps are much higher than Chloex (0.5 / 0.3) so the
-        -- window actually fills the phone screen instead of shrinking.
         if scaleX > 0.78 then scaleX = 0.78 end
         if scaleY > 0.62 then scaleY = 0.62 end
     else
@@ -115,8 +102,6 @@ local function safeSize(pxWidth, pxHeight)
     return UDim2.new(scaleX, 0, scaleY, 0)
 end
 
--- Resolves a scale-based UDim2 into a final pixel size, clamped between
--- a sensible min/max so Dragon always looks rapi regardless of device.
 local function resolveScaledPixelSize(scaleUDim, minW, minH, maxW, maxH)
     local w = math.clamp(scaleUDim.X.Scale * viewport.X, minW, maxW)
     local h = math.clamp(scaleUDim.Y.Scale * viewport.Y, minH, maxH)
@@ -307,9 +292,6 @@ function Dragon:Window(GuiConfig)
     local Main = Instance.new("Frame")
     Main.AnchorPoint = Vector2.new(0.5, 0.5)
 
-    -- Dragon target sizes are noticeably larger than Chloex's
-    -- (470x270 mobile / 760x560 desktop). These are the "law" sizes
-    -- Dragon aims for before being clamped to the real viewport.
     local DRAGON_TARGET_W, DRAGON_TARGET_H
     if isMobile then
         DRAGON_TARGET_W, DRAGON_TARGET_H = 620, 420
@@ -328,8 +310,6 @@ function Dragon:Window(GuiConfig)
     Main.Size = UDim2.new(0, mainW, 0, mainH)
     Main.Position = UDim2.fromScale(0.5, 0.5)
 
-    -- Glass look ported from kknjx: navy tint at low opacity instead of
-    -- a flat opaque panel, plus a thin glowing blue UIStroke outline.
     Main.BackgroundColor3 = Color3.fromRGB(14, 22, 48)
     Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.08
     Main.BorderSizePixel = 0
@@ -359,10 +339,6 @@ function Dragon:Window(GuiConfig)
     topFix.BorderSizePixel = 0
     topFix.Parent = TopBar
 
-    -- Dragon's header logo: default is the Hydra logo asset, but stays
-    -- overridable via GuiConfig.Image (same pattern kknjx uses), so
-    -- anyone forking this lib can swap their own logo without editing
-    -- the source.
     local LogoImg = Instance.new("ImageLabel")
     LogoImg.Size = UDim2.fromOffset(28, 28)
     LogoImg.Position = UDim2.fromOffset(10, 9)
@@ -403,12 +379,6 @@ function Dragon:Window(GuiConfig)
     SubtitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     SubtitleLabel.Parent = TopBar
 
-    -- ═══════════════════════════════════════════════════════════
-    -- kknjx-style dynamic grow: if the title/footer text is wider
-    -- than the current window, expand Main's width to fit (like
-    -- kknjx's `115 + TextLabel.TextBounds.X + TextLabel1.TextBounds.X`
-    -- resize), but never past MaxW and never below the base mainW.
-    -- ═══════════════════════════════════════════════════════════
     do
         local neededW = 48 + math.max(TitleLabel.TextBounds.X, SubtitleLabel.TextBounds.X) + 120
         local grownW = math.clamp(math.max(mainW, neededW), MinW, MaxW)
@@ -439,8 +409,6 @@ function Dragon:Window(GuiConfig)
     CloseBtn.Parent = TopBar
 
 
-    -- Dragon's sidebar is wider than Chloex's (100/150) to match the
-    -- much bigger window and keep proportions rapi.
     local SidebarWidth = isMobile and 110 or 160
 
     local Sidebar = Instance.new("Frame")
@@ -468,7 +436,7 @@ function Dragon:Window(GuiConfig)
         SearchBar.BackgroundTransparency = 0.25
         SearchBar.BorderSizePixel = 0
         SearchBar.Size = UDim2.new(1, 0, 0, 28)
-        SearchBar.LayoutOrder = -1000 -- always first, above every tab button
+        SearchBar.LayoutOrder = -1000
         SearchBar.Name = "SearchBar"
         SearchBar.Parent = Sidebar
         corner(SearchBar, 6)
@@ -712,8 +680,6 @@ function Dragon:Window(GuiConfig)
     ResizeIcon.ZIndex = 10
     ResizeIcon.Parent = ResizeHandle
 
-    -- Reuse the same bounds Dragon used to size itself initially so
-    -- manual resize stays consistent with the auto-scale "law" sizes.
     local MIN_W, MIN_H, MAX_W, MAX_H = MinW, MinH, MaxW, MaxH
 
     local resizing, resizeStart, sizeStart
@@ -994,7 +960,7 @@ function Dragon:Window(GuiConfig)
             btn.AutoButtonColor = false
             btn.Text = ""
             btn.Name = "CatBtn"
-            btn.LayoutOrder = CountTab -- keeps tab order stable and always below SearchBar (-1000)
+            btn.LayoutOrder = CountTab
             btn.Parent = Sidebar
             corner(btn, 6)
 
@@ -1007,8 +973,6 @@ function Dragon:Window(GuiConfig)
             indicator.Parent = btn
             corner(indicator, 2)
 
-            -- Icon on the left, looked up from the Icons table (or used
-            -- directly as an id/full string), same lookup kknjx uses.
             local icon = Instance.new("ImageLabel")
             icon.Size = UDim2.fromOffset(16, 16)
             icon.Position = UDim2.new(0, 12, 0.5, -8)
@@ -1150,9 +1114,6 @@ function Dragon:Window(GuiConfig)
             HeaderTitle.Name = "SectionTitle"
             HeaderTitle.Parent = Header
 
-            -- Accent gradient bar (ported from kknjx's SectionDecideFrame) —
-            -- universal, always driven by GuiConfig.Color so any UI built on
-            -- Dragon (blue, purple, whatever) gets the matching accent.
             local AccentBar = Instance.new("Frame")
             AccentBar.AnchorPoint = Vector2.new(0.5, 0)
             AccentBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -1242,9 +1203,6 @@ function Dragon:Window(GuiConfig)
             local Items = {}
             local CountItem = 0
 
-            -- ═══════════════════════════════════════════
-            -- AddParagraph
-            -- ═══════════════════════════════════════════
             function Items:AddParagraph(ParagraphConfig)
                 ParagraphConfig = ParagraphConfig or {}
                 ParagraphConfig.Title = ParagraphConfig.Title or "Title"
@@ -1354,9 +1312,6 @@ function Dragon:Window(GuiConfig)
                 return ParagraphFunc
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddButton
-            -- ═══════════════════════════════════════════
             function Items:AddButton(ButtonConfig)
                 ButtonConfig = ButtonConfig or {}
                 ButtonConfig.Title = ButtonConfig.Title or "Confirm"
@@ -1416,9 +1371,6 @@ function Dragon:Window(GuiConfig)
                 RegisterSearch({ label = ButtonConfig.Title, tab = TabConfig.Name, kind = "Button", switch = SearchSwitch })
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddToggle
-            -- ═══════════════════════════════════════════
             function Items:AddToggle(ToggleConfig)
                 ToggleConfig = ToggleConfig or {}
                 ToggleConfig.Title = ToggleConfig.Title or "Title"
@@ -1556,9 +1508,6 @@ function Dragon:Window(GuiConfig)
                 return ToggleFunc
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddSlider
-            -- ═══════════════════════════════════════════
             function Items:AddSlider(SliderConfig)
                 SliderConfig = SliderConfig or {}
                 SliderConfig.Title = SliderConfig.Title or "Slider"
@@ -1765,9 +1714,6 @@ function Dragon:Window(GuiConfig)
                 return SliderFunc
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddInput
-            -- ═══════════════════════════════════════════
             function Items:AddInput(InputConfig)
                 InputConfig = InputConfig or {}
                 InputConfig.Title = InputConfig.Title or "Input"
@@ -1867,9 +1813,6 @@ function Dragon:Window(GuiConfig)
                 return InputFunc
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddDropdown
-            -- ═══════════════════════════════════════════
             function Items:AddDropdown(DropdownConfig)
                 DropdownConfig = DropdownConfig or {}
                 DropdownConfig.Title = DropdownConfig.Title or "Title"
@@ -2162,9 +2105,6 @@ function Dragon:Window(GuiConfig)
                 return DropdownFunc
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddBanner
-            -- ═══════════════════════════════════════════
             function Items:AddBanner(BannerConfig)
                 BannerConfig = BannerConfig or {}
                 BannerConfig.Version = BannerConfig.Version or ""
@@ -2237,9 +2177,6 @@ function Dragon:Window(GuiConfig)
                 CountItem = CountItem + 1
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddDivider
-            -- ═══════════════════════════════════════════
             function Items:AddDivider()
                 local Divider = Instance.new("Frame")
                 Divider.BackgroundColor3 = C_BORDER
@@ -2259,9 +2196,6 @@ function Dragon:Window(GuiConfig)
                 CountItem = CountItem + 1
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddSubSection
-            -- ═══════════════════════════════════════════
             function Items:AddSubSection(title)
                 local SubLabel = Instance.new("TextLabel")
                 SubLabel.Font = Enum.Font.GothamBold
@@ -2277,9 +2211,6 @@ function Dragon:Window(GuiConfig)
                 CountItem = CountItem + 1
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddCard
-            -- ═══════════════════════════════════════════
             function Items:AddCard(CardConfig)
                 CardConfig = CardConfig or {}
                 CardConfig.Title = CardConfig.Title or "Title"
@@ -2355,9 +2286,6 @@ function Dragon:Window(GuiConfig)
                 RegisterSearch({ label = CardConfig.Title, tab = TabConfig.Name, kind = "Card", switch = SearchSwitch })
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddPanel
-            -- ═══════════════════════════════════════════
             function Items:AddPanel(PanelConfig)
                 PanelConfig = PanelConfig or {}
                 PanelConfig.Title = PanelConfig.Title or "Title"
@@ -2494,9 +2422,6 @@ function Dragon:Window(GuiConfig)
                 return PanelFunc
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddLogPanel
-            -- ═══════════════════════════════════════════
             function Items:AddLogPanel(LogConfig)
                 LogConfig = LogConfig or {}
                 LogConfig.Title = LogConfig.Title or "Log"
@@ -2602,13 +2527,6 @@ function Dragon:Window(GuiConfig)
                 return LogFunc
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddListView — restyled after HydraMainLibrary's
-            -- built-in team cards + fullscreen pick-pet picker
-            -- (Select All / Done header, search, compact rows),
-            -- rewritten to be generic/universal instead of the
-            -- game-specific pet logic it came from.
-            -- ═══════════════════════════════════════════
             function Items:AddListView(ListConfig)
                 ListConfig = ListConfig or {}
                 ListConfig.Title = ListConfig.Title or "List"
@@ -2617,7 +2535,7 @@ function Dragon:Window(GuiConfig)
                 ListConfig.GetLabel = ListConfig.GetLabel or function(item) return tostring(item) end
                 ListConfig.GetSubLabel = ListConfig.GetSubLabel or nil
                 ListConfig.OnSelect = ListConfig.OnSelect or function() end
-                ListConfig.BuiltIn = ListConfig.BuiltIn or {} -- optional list of {Name, Desc, OnEquip} "BUILT-IN" cards
+                ListConfig.BuiltIn = ListConfig.BuiltIn or {}
 
                 local ListFunc = { Items = {}, Selected = {} }
 
@@ -2641,8 +2559,6 @@ function Dragon:Window(GuiConfig)
                 ListTitle.Size = UDim2.new(1, -110, 1, 0)
                 ListTitle.Parent = ListRoot
 
-                -- Small compact opener button (kknjx pick-pet size, not the
-                -- old oversized "+ ADD TO LIST" full-width button)
                 local OpenBtn = Instance.new("TextButton")
                 OpenBtn.Font = Enum.Font.GothamBold
                 OpenBtn.Text = "Pick ›"
@@ -2709,8 +2625,6 @@ function Dragon:Window(GuiConfig)
                             RowLbl.Size = UDim2.new(1, -32, 1, 0)
                             RowLbl.Parent = Row
 
-                            -- Small remove button, matching HydraMainLibrary's
-                            -- compact "-" (not the old oversized delete button)
                             local RemoveBtn = Instance.new("TextButton")
                             RemoveBtn.Font = Enum.Font.GothamBold
                             RemoveBtn.Text = "-"
@@ -2735,9 +2649,6 @@ function Dragon:Window(GuiConfig)
                     ResizeRoot()
                 end
 
-                -- Fullscreen-style picker overlay (Select All / Done header,
-                -- search box, scrollable rows) — the kknjx/HydraMainLibrary
-                -- "Pick Pet" look, generalized for any list of items.
                 local PickerOverlay = Instance.new("Frame")
                 PickerOverlay.BackgroundColor3 = C_BG
                 PickerOverlay.BackgroundTransparency = 0.05
@@ -2745,7 +2656,7 @@ function Dragon:Window(GuiConfig)
                 PickerOverlay.Size = UDim2.new(1, 0, 1, 0)
                 PickerOverlay.Visible = false
                 PickerOverlay.ZIndex = 40
-                PickerOverlay.Parent = Content.Parent -- same level as Content/Sidebar, inside Main
+                PickerOverlay.Parent = Content.Parent
 
                 local PickerHeader = Instance.new("Frame")
                 PickerHeader.BackgroundColor3 = C_PANEL
@@ -2850,7 +2761,6 @@ function Dragon:Window(GuiConfig)
                         if c:IsA("GuiObject") then c:Destroy() end
                     end
 
-                    -- Built-in cards first (kknjx-style purple "BUILT-IN" badge + Dragon logo)
                     local order = 0
                     for _, entry in ipairs(ListConfig.BuiltIn) do
                         local ql = string.lower(query or "")
@@ -2941,8 +2851,6 @@ function Dragon:Window(GuiConfig)
                         end
                     end
 
-                    -- Regular items — compact rows (kknjx pick-pet row size,
-                    -- not the old oversized full-width item buttons)
                     for _, item in ipairs(ListFunc.Items) do
                         local label = ListConfig.GetLabel(item)
                         local ql = string.lower(query or "")
@@ -3046,9 +2954,6 @@ function Dragon:Window(GuiConfig)
                 return ListFunc
             end
 
-            -- ═══════════════════════════════════════════
-            -- AddInlinePicker
-            -- ═══════════════════════════════════════════
             function Items:AddInlinePicker(PickerConfig)
                 PickerConfig = PickerConfig or {}
                 PickerConfig.Title = PickerConfig.Title or "Picker"
