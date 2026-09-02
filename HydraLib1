@@ -328,7 +328,7 @@ function Dragon:Window(GuiConfig)
     local TopBar = Instance.new("Frame")
     TopBar.Size = UDim2.new(1, 0, 0, 46)
     TopBar.BackgroundColor3 = C_SIDEBAR
-    TopBar.BackgroundTransparency = 0.35
+    TopBar.BackgroundTransparency = 0.1
     TopBar.BorderSizePixel = 0
     TopBar.Parent = Main
     corner(TopBar, 12)
@@ -336,7 +336,7 @@ function Dragon:Window(GuiConfig)
     topFix.Size = UDim2.new(1, 0, 0, 12)
     topFix.Position = UDim2.new(0, 0, 1, -12)
     topFix.BackgroundColor3 = C_SIDEBAR
-    topFix.BackgroundTransparency = 0.35
+    topFix.BackgroundTransparency = 0.1
     topFix.BorderSizePixel = 0
     topFix.Parent = TopBar
 
@@ -416,7 +416,7 @@ function Dragon:Window(GuiConfig)
     Sidebar.Size = UDim2.new(0, SidebarWidth, 1, -46)
     Sidebar.Position = UDim2.new(0, 0, 0, 46)
     Sidebar.BackgroundColor3 = C_SIDEBAR
-    Sidebar.BackgroundTransparency = 0.35
+    Sidebar.BackgroundTransparency = 0.1
     Sidebar.BorderSizePixel = 0
     Sidebar.Parent = Main
 
@@ -436,6 +436,7 @@ function Dragon:Window(GuiConfig)
         SearchBar = Instance.new("Frame")
         SearchBar.BackgroundColor3 = C_PANEL2
         SearchBar.BackgroundTransparency = 0.25
+        stroke(SearchBar, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
         SearchBar.BorderSizePixel = 0
         SearchBar.Size = UDim2.new(1, 0, 0, 28)
         SearchBar.LayoutOrder = -1000
@@ -463,6 +464,7 @@ function Dragon:Window(GuiConfig)
         SearchResults.Active = true
         SearchResults.BackgroundColor3 = C_PANEL
         SearchResults.BackgroundTransparency = 0.55
+        stroke(SearchResults, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
         SearchResults.BorderSizePixel = 0
         SearchResults.ScrollBarThickness = 2
         SearchResults.ScrollBarImageColor3 = GuiConfig.Color
@@ -508,6 +510,7 @@ function Dragon:Window(GuiConfig)
                 local Row = Instance.new("Frame")
                 Row.BackgroundColor3 = C_PANEL2
                 Row.BackgroundTransparency = 0.07
+                stroke(Row, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 Row.BorderSizePixel = 0
                 Row.Size = UDim2.new(1, 0, 0, 40)
                 Row.LayoutOrder = found
@@ -623,7 +626,7 @@ function Dragon:Window(GuiConfig)
     FooterBar.Size = UDim2.new(1, 0, 0, 28)
     FooterBar.Position = UDim2.new(0, 0, 1, -28)
     FooterBar.BackgroundColor3 = C_SIDEBAR
-    FooterBar.BackgroundTransparency = 0.35
+    FooterBar.BackgroundTransparency = 0.1
     FooterBar.BorderSizePixel = 0
     FooterBar.ZIndex = 5
     FooterBar.Parent = Main
@@ -814,7 +817,7 @@ function Dragon:Window(GuiConfig)
         Dialog.Size = UDim2.new(0, 300, 0, 150)
         Dialog.Position = UDim2.new(0.5, -150, 0.5, -75)
         Dialog.BackgroundColor3 = C_PANEL
-        Dialog.BackgroundTransparency = 0.35
+        Dialog.BackgroundTransparency = 0.1
         Dialog.BorderSizePixel = 0
         Dialog.ZIndex = 51
         Dialog.Parent = Overlay
@@ -1065,6 +1068,7 @@ function Dragon:Window(GuiConfig)
             local Section = Instance.new("Frame")
             Section.BackgroundColor3 = C_PANEL
             Section.BackgroundTransparency = 0.15
+            stroke(Section, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
             Section.BorderSizePixel = 0
             Section.ClipsDescendants = true
             Section.LayoutOrder = CountSection
@@ -1207,7 +1211,8 @@ function Dragon:Window(GuiConfig)
 
                 local Paragraph = Instance.new("Frame")
                 Paragraph.BackgroundColor3 = C_PANEL2
-                Paragraph.BackgroundTransparency = 0.35
+                Paragraph.BackgroundTransparency = 0.1
+                stroke(Paragraph, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 Paragraph.BorderSizePixel = 0
                 Paragraph.LayoutOrder = CountItem
                 Paragraph.Size = UDim2.new(1, 0, 0, 46)
@@ -1317,7 +1322,8 @@ function Dragon:Window(GuiConfig)
 
                 local ButtonRoot = Instance.new("Frame")
                 ButtonRoot.BackgroundColor3 = C_PANEL2
-                ButtonRoot.BackgroundTransparency = 0.35
+                ButtonRoot.BackgroundTransparency = 0.1
+                stroke(ButtonRoot, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 ButtonRoot.BorderSizePixel = 0
                 ButtonRoot.Size = UDim2.new(1, 0, 0, 40)
                 ButtonRoot.LayoutOrder = CountItem
@@ -1386,13 +1392,13 @@ function Dragon:Window(GuiConfig)
 
                 local Toggle = Instance.new("Frame")
                 Toggle.BackgroundColor3 = C_PANEL2
-                Toggle.BackgroundTransparency = 0.35
+                Toggle.BackgroundTransparency = 0.1
                 Toggle.BorderSizePixel = 0
                 Toggle.LayoutOrder = CountItem
                 Toggle.Name = "Toggle"
                 Toggle.Parent = Body
                 corner(Toggle, 6)
-                stroke(Toggle, C_BORDER, 1)
+                stroke(Toggle, Color3.fromRGB(90, 140, 255), 1)
 
                 local hasTitle2 = ToggleConfig.Title2 ~= ""
                 local hasContent = ToggleConfig.Content ~= ""
@@ -1536,7 +1542,8 @@ function Dragon:Window(GuiConfig)
 
                 local Slider = Instance.new("Frame")
                 Slider.BackgroundColor3 = C_PANEL2
-                Slider.BackgroundTransparency = 0.35
+                Slider.BackgroundTransparency = 0.1
+                stroke(Slider, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 Slider.BorderSizePixel = 0
                 Slider.LayoutOrder = CountItem
                 Slider.Size = UDim2.new(1, 0, 0, hasContent and 58 or 46)
@@ -1732,7 +1739,8 @@ function Dragon:Window(GuiConfig)
 
                 local InputRoot = Instance.new("Frame")
                 InputRoot.BackgroundColor3 = C_PANEL2
-                InputRoot.BackgroundTransparency = 0.35
+                InputRoot.BackgroundTransparency = 0.1
+                stroke(InputRoot, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 InputRoot.BorderSizePixel = 0
                 InputRoot.LayoutOrder = CountItem
                 InputRoot.Size = UDim2.new(1, 0, 0, hasContent and 62 or 48)
@@ -1833,14 +1841,14 @@ function Dragon:Window(GuiConfig)
 
                 local Dropdown = Instance.new("Frame")
                 Dropdown.BackgroundColor3 = C_PANEL2
-                Dropdown.BackgroundTransparency = 0.35
+                Dropdown.BackgroundTransparency = 0.1
                 Dropdown.BorderSizePixel = 0
                 Dropdown.LayoutOrder = CountItem
                 Dropdown.Size = UDim2.new(1, 0, 0, hasContent and 58 or 46)
                 Dropdown.Name = "Dropdown"
                 Dropdown.Parent = Body
                 corner(Dropdown, 6)
-                stroke(Dropdown, C_BORDER, 1)
+                stroke(Dropdown, Color3.fromRGB(90, 140, 255), 1)
 
                 local DropdownTitle = Instance.new("TextLabel")
                 DropdownTitle.Font = Enum.Font.GothamBold
@@ -1918,7 +1926,8 @@ function Dragon:Window(GuiConfig)
                 local DropPanel = Instance.new("Frame")
                 DropPanel.AnchorPoint = Vector2.new(0.5, 0.5)
                 DropPanel.BackgroundColor3 = C_PANEL
-                DropPanel.BackgroundTransparency = 0.35
+                DropPanel.BackgroundTransparency = 0.1
+                stroke(DropPanel, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 DropPanel.BorderSizePixel = 0
                 DropPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
                 DropPanel.Size = UDim2.new(0, 280, 0, 300)
@@ -1948,6 +1957,7 @@ function Dragon:Window(GuiConfig)
                 DropSearch.TextSize = 12
                 DropSearch.BackgroundColor3 = C_PANEL2
                 DropSearch.BackgroundTransparency = 0
+                stroke(DropSearch, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 DropSearch.BorderSizePixel = 0
                 DropSearch.ClearTextOnFocus = false
                 DropSearch.Position = UDim2.new(0, 8, 0, 30)
@@ -2113,7 +2123,8 @@ function Dragon:Window(GuiConfig)
 
                 local Banner = Instance.new("Frame")
                 Banner.BackgroundColor3 = C_PANEL2
-                Banner.BackgroundTransparency = 0.35
+                Banner.BackgroundTransparency = 0.1
+                stroke(Banner, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 Banner.BorderSizePixel = 0
                 Banner.LayoutOrder = CountItem
                 Banner.Size = UDim2.new(1, 0, 0, 60)
@@ -2158,7 +2169,7 @@ function Dragon:Window(GuiConfig)
                 if BannerConfig.Version ~= "" then
                     local Pill = Instance.new("Frame")
                     Pill.BackgroundColor3 = GuiConfig.Color
-                    Pill.BackgroundTransparency = 0.6
+                    Pill.BackgroundTransparency = 0.1
                     Pill.Position = UDim2.new(0, 14, 0, 34)
                     Pill.Size = UDim2.new(0, 0, 0, 16)
                     Pill.AutomaticSize = Enum.AutomaticSize.X
@@ -2223,13 +2234,13 @@ function Dragon:Window(GuiConfig)
                 local btnRows = math.max(1, #CardConfig.Buttons)
                 local Card = Instance.new("Frame")
                 Card.BackgroundColor3 = C_PANEL2
-                Card.BackgroundTransparency = 0.35
+                Card.BackgroundTransparency = 0.1
                 Card.BorderSizePixel = 0
                 Card.LayoutOrder = CountItem
                 Card.Size = UDim2.new(1, 0, 0, 56 + (btnRows > 0 and 34 or 0))
                 Card.Parent = Body
                 corner(Card, 6)
-                stroke(Card, C_BORDER, 1)
+                stroke(Card, Color3.fromRGB(90, 140, 255), 1)
 
                 local CardTitle = Instance.new("TextLabel")
                 CardTitle.Font = Enum.Font.GothamBold
@@ -2321,7 +2332,7 @@ function Dragon:Window(GuiConfig)
                 Panel.LayoutOrder = CountItem
                 Panel.Parent = Body
                 corner(Panel, 6)
-                stroke(Panel, C_BORDER, 1)
+                stroke(Panel, Color3.fromRGB(90, 140, 255), 1)
 
                 local Title = Instance.new("TextLabel")
                 Title.Font = Enum.Font.GothamBold
@@ -2437,7 +2448,7 @@ function Dragon:Window(GuiConfig)
 
                 local LogRoot = Instance.new("Frame")
                 LogRoot.BackgroundColor3 = C_PANEL2
-                LogRoot.BackgroundTransparency = 0.35
+                LogRoot.BackgroundTransparency = 0.1
                 LogRoot.BorderSizePixel = 0
                 LogRoot.LayoutOrder = CountItem
                 LogRoot.Size = UDim2.new(1, 0, 0, LogConfig.Height)
@@ -2688,7 +2699,8 @@ function Dragon:Window(GuiConfig)
 
                 local PickerHeader = Instance.new("Frame")
                 PickerHeader.BackgroundColor3 = C_PANEL
-                PickerHeader.BackgroundTransparency = 0.35
+                PickerHeader.BackgroundTransparency = 0.1
+                stroke(PickerHeader, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 PickerHeader.BorderSizePixel = 0
                 PickerHeader.Size = UDim2.new(1, 0, 0, 34)
                 PickerHeader.ZIndex = 41
@@ -2744,7 +2756,8 @@ function Dragon:Window(GuiConfig)
                 PickerSearch.TextXAlignment = Enum.TextXAlignment.Left
                 PickerSearch.ClearTextOnFocus = false
                 PickerSearch.BackgroundColor3 = C_PANEL2
-                PickerSearch.BackgroundTransparency = 0.35
+                PickerSearch.BackgroundTransparency = 0.1
+                stroke(PickerSearch, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 PickerSearch.BorderSizePixel = 0
                 PickerSearch.Position = UDim2.new(0, 10, 0, 40)
                 PickerSearch.Size = UDim2.new(1, -20, 0, 26)
@@ -3018,14 +3031,15 @@ function Dragon:Window(GuiConfig)
 
                 local Root = Instance.new("Frame")
                 Root.BackgroundColor3 = C_PANEL2
-                Root.BackgroundTransparency = 0.35
+                Root.BackgroundTransparency = 0.1
+                stroke(Root, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 Root.BorderSizePixel = 0
                 Root.LayoutOrder = CountItem
                 Root.ClipsDescendants = true
                 Root.Size = UDim2.new(1, 0, 0, 46)
                 Root.Parent = Body
                 corner(Root, 6)
-                stroke(Root, C_BORDER, 1)
+                stroke(Root, Color3.fromRGB(90, 140, 255), 1)
 
                 local HeaderBtn = Instance.new("TextButton")
                 HeaderBtn.Text = ""
