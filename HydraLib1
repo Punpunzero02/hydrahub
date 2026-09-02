@@ -2126,6 +2126,273 @@ function Dragon:Window(GuiConfig)
                 return DropdownFunc
             end
 
+            function Items:AddDropdown2(DropdownConfig)
+                DropdownConfig = DropdownConfig or {}
+                DropdownConfig.Title = DropdownConfig.Title or "Title"
+                DropdownConfig.Content = DropdownConfig.Content or ""
+                DropdownConfig.Multi = DropdownConfig.Multi or false
+                DropdownConfig.Options = DropdownConfig.Options or {}
+                DropdownConfig.Default = DropdownConfig.Default or (DropdownConfig.Multi and {} or nil)
+                DropdownConfig.Callback = DropdownConfig.Callback or function() end
+
+                local configKey = "Dropdown2_" .. DropdownConfig.Title
+                local shouldSave = DropdownConfig.Save ~= false
+                if shouldSave and ConfigData[configKey] ~= nil then
+                    DropdownConfig.Default = ConfigData[configKey]
+                end
+
+                local DropdownFunc = { Value = DropdownConfig.Default, Options = DropdownConfig.Options }
+                local hasContent = DropdownConfig.Content ~= ""
+
+                local Dropdown = Instance.new("Frame")
+                Dropdown.BackgroundColor3 = C_PANEL2
+                Dropdown.BackgroundTransparency = 0.55
+                Dropdown.BorderSizePixel = 0
+                Dropdown.LayoutOrder = CountItem
+                Dropdown.Size = UDim2.new(1, 0, 0, hasContent and 40 or 30)
+                Dropdown.Name = "Dropdown2"
+                Dropdown.Parent = Body
+                corner(Dropdown, 6)
+                stroke(Dropdown, Color3.fromRGB(90, 140, 255), 1)
+
+                local DropdownTitle = Instance.new("TextLabel")
+                DropdownTitle.Font = Enum.Font.GothamBold
+                DropdownTitle.Text = DropdownConfig.Title
+                DropdownTitle.TextColor3 = C_TEXT
+                DropdownTitle.TextSize = 13
+                DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
+                DropdownTitle.BackgroundTransparency = 1
+                DropdownTitle.Position = UDim2.new(0, 10, 0, hasContent and 4 or 0)
+                DropdownTitle.Size = UDim2.new(1, -160, 0, hasContent and 13 or 30)
+                if not hasContent then
+                    DropdownTitle.TextYAlignment = Enum.TextYAlignment.Center
+                end
+                DropdownTitle.Parent = Dropdown
+
+                if hasContent then
+                    local DropdownContent = Instance.new("TextLabel")
+                    DropdownContent.Font = Enum.Font.Gotham
+                    DropdownContent.Text = DropdownConfig.Content
+                    DropdownContent.TextColor3 = C_SUBTEXT
+                    DropdownContent.TextSize = 10
+                    DropdownContent.TextWrapped = true
+                    DropdownContent.TextXAlignment = Enum.TextXAlignment.Left
+                    DropdownContent.BackgroundTransparency = 1
+                    DropdownContent.Position = UDim2.new(0, 10, 0, 18)
+                    DropdownContent.Size = UDim2.new(1, -160, 0, 11)
+                    DropdownContent.Parent = Dropdown
+                end
+
+                local SelectFrame = Instance.new("Frame")
+                SelectFrame.AnchorPoint = Vector2.new(1, 0.5)
+                SelectFrame.BackgroundColor3 = C_FIELD
+                SelectFrame.BackgroundTransparency = 0.55
+                SelectFrame.Position = UDim2.new(1, -8, 0.5, 0)
+                SelectFrame.Size = UDim2.new(0, 130, 0, 20)
+                SelectFrame.Parent = Dropdown
+                corner(SelectFrame, 5)
+
+                local OptionSelecting = Instance.new("TextLabel")
+                OptionSelecting.Font = Enum.Font.GothamBold
+                OptionSelecting.Text = DropdownConfig.Multi and "Select Options" or "Select Option"
+                OptionSelecting.TextColor3 = C_SUBTEXT
+                OptionSelecting.TextSize = 11
+                OptionSelecting.TextXAlignment = Enum.TextXAlignment.Left
+                OptionSelecting.TextTruncate = Enum.TextTruncate.AtEnd
+                OptionSelecting.BackgroundTransparency = 1
+                OptionSelecting.AnchorPoint = Vector2.new(0, 0.5)
+                OptionSelecting.Position = UDim2.new(0, 8, 0.5, 0)
+                OptionSelecting.Size = UDim2.new(1, -24, 1, -8)
+                OptionSelecting.Parent = SelectFrame
+
+                local ArrowLabel = Instance.new("ImageLabel")
+                ArrowLabel.BackgroundTransparency = 1
+                ArrowLabel.Image = "rbxassetid://16851841101"
+                ArrowLabel.ImageColor3 = C_SUBTEXT
+                ArrowLabel.Rotation = 180
+                ArrowLabel.Size = UDim2.new(0, 12, 0, 12)
+                ArrowLabel.AnchorPoint = Vector2.new(0, 0.5)
+                ArrowLabel.Position = UDim2.new(1, -18, 0.5, 0)
+                ArrowLabel.Parent = SelectFrame
+
+                local DropdownButton = Instance.new("TextButton")
+                DropdownButton.Text = ""
+                DropdownButton.BackgroundTransparency = 1
+                DropdownButton.Size = UDim2.new(1, 0, 1, 0)
+                DropdownButton.ZIndex = 5
+                DropdownButton.Parent = SelectFrame
+
+                local DropdownOverlay = Instance.new("Frame")
+                DropdownOverlay.Size = UDim2.new(1, 0, 1, 0)
+                DropdownOverlay.BackgroundColor3 = Color3.new(0, 0, 0)
+                DropdownOverlay.BackgroundTransparency = 0.4
+                DropdownOverlay.BorderSizePixel = 0
+                DropdownOverlay.Visible = false
+                DropdownOverlay.ZIndex = 30
+                DropdownOverlay.Parent = Main
+
+                local DropPanel = Instance.new("Frame")
+                DropPanel.AnchorPoint = Vector2.new(0.5, 0.5)
+                DropPanel.BackgroundColor3 = C_PANEL
+                DropPanel.BackgroundTransparency = 0.55
+                stroke(DropPanel, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
+                DropPanel.BorderSizePixel = 0
+                DropPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
+                DropPanel.Size = UDim2.new(0, 280, 0, 300)
+                DropPanel.ZIndex = 31
+                DropPanel.Parent = DropdownOverlay
+                corner(DropPanel, 8)
+                stroke(DropPanel, GuiConfig.Color, 1)
+
+                local DropTitle = Instance.new("TextLabel")
+                DropTitle.BackgroundTransparency = 1
+                DropTitle.Position = UDim2.new(0, 12, 0, 8)
+                DropTitle.Size = UDim2.new(1, -24, 0, 24)
+                DropTitle.Text = "Search"
+                DropTitle.TextColor3 = C_SUBTEXT
+                DropTitle.Font = Enum.Font.GothamBold
+                DropTitle.TextSize = 13
+                DropTitle.TextXAlignment = Enum.TextXAlignment.Center
+                DropTitle.ZIndex = 32
+                DropTitle.Parent = DropPanel
+
+                local DropScroll = Instance.new("ScrollingFrame")
+                DropScroll.Size = UDim2.new(1, -16, 1, -46)
+                DropScroll.Position = UDim2.new(0, 8, 0, 40)
+                DropScroll.BackgroundTransparency = 1
+                DropScroll.BorderSizePixel = 0
+                DropScroll.ScrollBarThickness = 3
+                DropScroll.ScrollBarImageColor3 = GuiConfig.Color
+                DropScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+                DropScroll.ZIndex = 32
+                DropScroll.Parent = DropPanel
+
+                local DropList = Instance.new("UIListLayout")
+                DropList.Padding = UDim.new(0, 3)
+                DropList.SortOrder = Enum.SortOrder.LayoutOrder
+                DropList.Parent = DropScroll
+
+                DropList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    DropScroll.CanvasSize = UDim2.new(0, 0, 0, DropList.AbsoluteContentSize.Y + 8)
+                end)
+
+                local CloseBtn = Instance.new("TextButton")
+                CloseBtn.AnchorPoint = Vector2.new(1, 0)
+                CloseBtn.BackgroundTransparency = 1
+                CloseBtn.Position = UDim2.new(1, -6, 0, 4)
+                CloseBtn.Size = UDim2.new(0, 20, 0, 20)
+                CloseBtn.Text = "x"
+                CloseBtn.TextColor3 = C_SUBTEXT
+                CloseBtn.Font = Enum.Font.GothamBold
+                CloseBtn.TextSize = 14
+                CloseBtn.ZIndex = 33
+                CloseBtn.Parent = DropPanel
+
+                local function IsSelected(value)
+                    if DropdownConfig.Multi then
+                        for _, v in ipairs(DropdownFunc.Value or {}) do
+                            if v == value then return true end
+                        end
+                        return false
+                    end
+                    return DropdownFunc.Value == value
+                end
+
+                local function CurrentLabel()
+                    if DropdownConfig.Multi then
+                        local n = #(DropdownFunc.Value or {})
+                        return n == 0 and (DropdownConfig.Multi and "Select Options" or "Select Option") or (n .. " selected")
+                    end
+                    return DropdownFunc.Value ~= nil and tostring(DropdownFunc.Value) or (DropdownConfig.Multi and "Select Options" or "Select Option")
+                end
+
+                local function Persist()
+                    if not shouldSave then return end
+                    ConfigData[configKey] = DropdownFunc.Value
+                    QueueSaveConfig()
+                end
+
+                local function RefreshOptions()
+                    for _, child in ipairs(DropScroll:GetChildren()) do
+                        if child:IsA("Frame") then child:Destroy() end
+                    end
+                    local order = 0
+                    for _, opt in ipairs(DropdownFunc.Options) do
+                        local label = tostring(opt)
+                        order = order + 1
+                        local isSel = IsSelected(opt)
+
+                        local Row = Instance.new("TextButton")
+                        Row.Font = Enum.Font.GothamBold
+                        Row.Text = label
+                        Row.TextColor3 = isSel and GuiConfig.Color or C_TEXT
+                        Row.TextSize = 12
+                        Row.TextXAlignment = Enum.TextXAlignment.Left
+                        Row.BackgroundColor3 = isSel and GuiConfig.Color or C_PANEL2
+                        Row.BackgroundTransparency = isSel and 0.82 or 0
+                        Row.Size = UDim2.new(1, 0, 0, 30)
+                        Row.LayoutOrder = order
+                        Row.ZIndex = 32
+                        Row.Parent = DropScroll
+                        corner(Row, 5)
+                        pad(Row, 10, 0, 0, 0)
+                        local rowStroke = stroke(Row, isSel and GuiConfig.Color or C_BORDER, 1)
+                        rowStroke.ZIndex = 32
+
+                        Row.Activated:Connect(function()
+                            if DropdownConfig.Multi then
+                                local found = false
+                                for i, v in ipairs(DropdownFunc.Value) do
+                                    if v == opt then
+                                        table.remove(DropdownFunc.Value, i)
+                                        found = true
+                                        break
+                                    end
+                                end
+                                if not found then table.insert(DropdownFunc.Value, opt) end
+                                RefreshOptions()
+                                OptionSelecting.Text = CurrentLabel()
+                                Persist()
+                                local ok, err = pcall(function() DropdownConfig.Callback(DropdownFunc.Value) end)
+                                if not ok then warn("Dropdown2 Callback error:", err) end
+                            else
+                                DropdownFunc.Value = opt
+                                OptionSelecting.Text = CurrentLabel()
+                                DropdownOverlay.Visible = false
+                                Persist()
+                                local ok, err = pcall(function() DropdownConfig.Callback(DropdownFunc.Value) end)
+                                if not ok then warn("Dropdown2 Callback error:", err) end
+                            end
+                        end)
+                    end
+                end
+
+                DropdownButton.Activated:Connect(function()
+                    DropdownOverlay.Visible = true
+                    RefreshOptions()
+                end)
+                CloseBtn.Activated:Connect(function()
+                    DropdownOverlay.Visible = false
+                end)
+
+                function DropdownFunc:Set(value, noSave)
+                    DropdownFunc.Value = value
+                    OptionSelecting.Text = CurrentLabel()
+                    if shouldSave and not noSave then Persist() end
+                end
+                function DropdownFunc:SetOptions(list)
+                    DropdownConfig.Options = list or {}
+                    DropdownFunc.Options = DropdownConfig.Options
+                    RefreshOptions()
+                end
+
+                OptionSelecting.Text = CurrentLabel()
+                CountItem = CountItem + 1
+                if shouldSave then Elements[configKey] = DropdownFunc end
+                RegisterSearch({ label = DropdownConfig.Title, tab = TabConfig.Name, kind = "Dropdown2", switch = SearchSwitch })
+                return DropdownFunc
+            end
+
             function Items:AddBanner(BannerConfig)
                 BannerConfig = BannerConfig or {}
                 BannerConfig.Version = BannerConfig.Version or ""
