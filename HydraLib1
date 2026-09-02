@@ -1875,8 +1875,6 @@ function Dragon:Window(GuiConfig)
                     DropdownContent.Font = Enum.Font.Gotham
                     DropdownContent.Text = DropdownConfig.Content
                     DropdownContent.TextColor3 = C_SUBTEXT
-                    DropdownContent.TextStrokeColor3 = Color3.fromRGB(10, 15, 30)
-                    DropdownContent.TextStrokeTransparency = 0.4
                     DropdownContent.TextSize = 10
                     DropdownContent.TextWrapped = true
                     DropdownContent.TextXAlignment = Enum.TextXAlignment.Left
