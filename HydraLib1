@@ -14,7 +14,7 @@ local C_ACCENT  = Color3.fromRGB(90, 140, 255)
 local C_TEXT    = Color3.fromRGB(235, 235, 240)
 local C_SUBTEXT = Color3.fromRGB(140, 145, 165)
 local C_BORDER  = Color3.fromRGB(40, 43, 58)
-local C_FIELD   = Color3.fromRGB(10, 13, 24)
+local C_FIELD   = Color3.fromRGB(4, 5, 9)
 local C_GREEN   = Color3.fromRGB(120, 220, 140)
 
 local Icons = {
@@ -422,6 +422,7 @@ function Dragon:Window(GuiConfig)
 
     local SidebarList = Instance.new("UIListLayout")
     SidebarList.Padding = UDim.new(0, 3)
+    SidebarList.SortOrder = Enum.SortOrder.LayoutOrder
     SidebarList.Parent = Sidebar
     pad(Sidebar, 8, 12, 8, 8)
 
@@ -461,7 +462,7 @@ function Dragon:Window(GuiConfig)
         SearchResults = Instance.new("ScrollingFrame")
         SearchResults.Active = true
         SearchResults.BackgroundColor3 = C_PANEL
-        SearchResults.BackgroundTransparency = 0.2
+        SearchResults.BackgroundTransparency = 0.55
         SearchResults.BorderSizePixel = 0
         SearchResults.ScrollBarThickness = 2
         SearchResults.ScrollBarImageColor3 = GuiConfig.Color
@@ -664,37 +665,19 @@ function Dragon:Window(GuiConfig)
     end)
 
 
-    local ResizeHandle = Instance.new("Frame")
+    local ResizeHandle = Instance.new("TextLabel")
     ResizeHandle.Size = UDim2.fromOffset(18, 18)
     ResizeHandle.Position = UDim2.new(1, -18, 1, -18)
     ResizeHandle.BackgroundTransparency = 1
+    ResizeHandle.Font = Enum.Font.GothamBold
+    ResizeHandle.Text = "◢"
+    ResizeHandle.TextColor3 = C_SUBTEXT
+    ResizeHandle.TextTransparency = 0.3
+    ResizeHandle.TextSize = 14
+    ResizeHandle.TextXAlignment = Enum.TextXAlignment.Right
+    ResizeHandle.TextYAlignment = Enum.TextYAlignment.Bottom
     ResizeHandle.ZIndex = 10
     ResizeHandle.Parent = Main
-
-    for gi = 1, 3 do
-        local ResizeDot = Instance.new("Frame")
-        ResizeDot.BackgroundColor3 = C_SUBTEXT
-        ResizeDot.BackgroundTransparency = 0.3
-        ResizeDot.BorderSizePixel = 0
-        ResizeDot.AnchorPoint = Vector2.new(1, 1)
-        ResizeDot.Size = UDim2.new(0, 2, 0, 2)
-        ResizeDot.Position = UDim2.new(1, -3 - (gi - 1) * 5, 1, -3)
-        ResizeDot.ZIndex = 10
-        ResizeDot.Parent = ResizeHandle
-        corner(ResizeDot, 1)
-        for gj = 1, gi do
-            local D2 = Instance.new("Frame")
-            D2.BackgroundColor3 = C_SUBTEXT
-            D2.BackgroundTransparency = 0.3
-            D2.BorderSizePixel = 0
-            D2.AnchorPoint = Vector2.new(1, 1)
-            D2.Size = UDim2.new(0, 2, 0, 2)
-            D2.Position = UDim2.new(1, -3 - (gi - 1) * 5, 1, -3 - gj * 5)
-            D2.ZIndex = 10
-            D2.Parent = ResizeHandle
-            corner(D2, 1)
-        end
-    end
 
     local MIN_W, MIN_H, MAX_W, MAX_H = MinW, MinH, MaxW, MaxH
 
@@ -1169,12 +1152,7 @@ function Dragon:Window(GuiConfig)
                 task.defer(function()
                     ResizePending = false
 
-                    local bodyH = 6
-                    for _, v in Body:GetChildren() do
-                        if v.Name ~= "UIListLayout" then
-                            bodyH = bodyH + v.Size.Y.Offset + 3
-                        end
-                    end
+                    local bodyH = BodyLayout.AbsoluteContentSize.Y + 6
 
                     TweenService:Create(Chevron, TweenInfo.new(0.3), { Rotation = 0 }):Play()
                     TweenService:Create(Section, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 38 + bodyH) }):Play()
@@ -1182,6 +1160,8 @@ function Dragon:Window(GuiConfig)
                     TweenService:Create(AccentBar, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 2) }):Play()
                 end)
             end
+
+            BodyLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateSizeSection)
 
             if AlwaysOpen == true then
                 Header:Destroy()
@@ -1285,7 +1265,7 @@ function Dragon:Window(GuiConfig)
                     ParagraphButton.Position = UDim2.new(0, 10, 0, 42)
                     ParagraphButton.Size = UDim2.new(1, -20, 0, 28)
                     ParagraphButton.BackgroundColor3 = C_FIELD
-                    ParagraphButton.BackgroundTransparency = 0.55
+                    ParagraphButton.BackgroundTransparency = 0.2
                     ParagraphButton.Font = Enum.Font.GothamBold
                     ParagraphButton.TextSize = 12
                     ParagraphButton.TextColor3 = C_TEXT
@@ -1462,7 +1442,7 @@ function Dragon:Window(GuiConfig)
                 local FeatureFrame = Instance.new("Frame")
                 FeatureFrame.AnchorPoint = Vector2.new(1, 0.5)
                 FeatureFrame.BackgroundColor3 = C_BORDER
-                FeatureFrame.BackgroundTransparency = 0.2
+                FeatureFrame.BackgroundTransparency = 0.55
                 FeatureFrame.BorderSizePixel = 0
                 FeatureFrame.Position = UDim2.new(1, -10, 0.5, 0)
                 FeatureFrame.Size = UDim2.new(0, 34, 0, 18)
@@ -1781,7 +1761,7 @@ function Dragon:Window(GuiConfig)
 
                 local Field = Instance.new("Frame")
                 Field.BackgroundColor3 = C_FIELD
-                Field.BackgroundTransparency = 0.55
+                Field.BackgroundTransparency = 0.2
                 Field.Position = UDim2.new(0, 8, 0, hasContent and 36 or 24)
                 Field.Size = UDim2.new(1, -16, 0, 22)
                 Field.Parent = InputRoot
@@ -1883,7 +1863,7 @@ function Dragon:Window(GuiConfig)
                 local SelectFrame = Instance.new("Frame")
                 SelectFrame.AnchorPoint = Vector2.new(1, 0.5)
                 SelectFrame.BackgroundColor3 = C_FIELD
-                SelectFrame.BackgroundTransparency = 0.55
+                SelectFrame.BackgroundTransparency = 0.2
                 SelectFrame.Position = UDim2.new(1, -8, 0.5, 0)
                 SelectFrame.Size = UDim2.new(0, 130, 0, 26)
                 SelectFrame.Parent = Dropdown
@@ -2324,7 +2304,8 @@ function Dragon:Window(GuiConfig)
                 baseHeight = baseHeight + 34
 
                 local Panel = Instance.new("Frame")
-                Panel.BackgroundColor3 = C_PANEL2
+                Panel.BackgroundColor3 = C_FIELD
+                Panel.BackgroundTransparency = 0.15
                 Panel.BorderSizePixel = 0
                 Panel.Size = UDim2.new(1, 0, 0, baseHeight)
                 Panel.LayoutOrder = CountItem
@@ -2358,7 +2339,7 @@ function Dragon:Window(GuiConfig)
                 if PanelConfig.Placeholder then
                     local InputFrame = Instance.new("Frame")
                     InputFrame.BackgroundColor3 = C_FIELD
-                    InputFrame.BackgroundTransparency = 0.55
+                    InputFrame.BackgroundTransparency = 0.2
                     InputFrame.Position = UDim2.new(0, 8, 0, 38)
                     InputFrame.Size = UDim2.new(1, -16, 0, 26)
                     InputFrame.Parent = Panel
@@ -2386,7 +2367,7 @@ function Dragon:Window(GuiConfig)
                 ButtonMain.TextColor3 = C_TEXT
                 ButtonMain.TextSize = 12
                 ButtonMain.BackgroundColor3 = C_FIELD
-                ButtonMain.BackgroundTransparency = 0.55
+                ButtonMain.BackgroundTransparency = 0.2
                 ButtonMain.Size = PanelConfig.SubButtonText and UDim2.new(0.5, -10, 0, 26) or UDim2.new(1, -16, 0, 26)
                 ButtonMain.Position = UDim2.new(0, 8, 0, yBtn)
                 ButtonMain.Parent = Panel
@@ -2402,7 +2383,7 @@ function Dragon:Window(GuiConfig)
                     SubButton.TextColor3 = C_SUBTEXT
                     SubButton.TextSize = 12
                     SubButton.BackgroundColor3 = C_FIELD
-                    SubButton.BackgroundTransparency = 0.55
+                    SubButton.BackgroundTransparency = 0.2
                     SubButton.Size = UDim2.new(0.5, -10, 0, 26)
                     SubButton.Position = UDim2.new(0.5, 2, 0, yBtn)
                     SubButton.Parent = Panel
@@ -2554,7 +2535,8 @@ function Dragon:Window(GuiConfig)
                 local ListFunc = { Items = {}, Selected = {} }
 
                 local ListRoot = Instance.new("Frame")
-                ListRoot.BackgroundColor3 = C_PANEL2
+                ListRoot.BackgroundColor3 = C_FIELD
+                ListRoot.BackgroundTransparency = 0.15
                 ListRoot.BorderSizePixel = 0
                 ListRoot.LayoutOrder = CountItem
                 ListRoot.Size = UDim2.new(1, 0, 0, 34)
@@ -2575,9 +2557,8 @@ function Dragon:Window(GuiConfig)
 
                 local OpenBtn = Instance.new("TextButton")
                 OpenBtn.Font = Enum.Font.GothamBold
-                OpenBtn.Text = "Pick >"
-                OpenBtn.TextColor3 = GuiConfig.Color
-                OpenBtn.TextSize = 12
+                OpenBtn.Text = ""
+                OpenBtn.AutoButtonColor = false
                 OpenBtn.BackgroundColor3 = GuiConfig.Color
                 OpenBtn.BackgroundTransparency = 0.85
                 OpenBtn.AnchorPoint = Vector2.new(1, 0.5)
@@ -2586,6 +2567,28 @@ function Dragon:Window(GuiConfig)
                 OpenBtn.Parent = ListRoot
                 corner(OpenBtn, 5)
                 stroke(OpenBtn, GuiConfig.Color, 1)
+
+                local OpenBtnLabel = Instance.new("TextLabel")
+                OpenBtnLabel.Font = Enum.Font.GothamBold
+                OpenBtnLabel.Text = "Pick"
+                OpenBtnLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                OpenBtnLabel.TextSize = 12
+                OpenBtnLabel.BackgroundTransparency = 1
+                OpenBtnLabel.AnchorPoint = Vector2.new(0, 0.5)
+                OpenBtnLabel.Position = UDim2.new(0, 8, 0.5, 0)
+                OpenBtnLabel.Size = UDim2.new(1, -24, 1, 0)
+                OpenBtnLabel.TextXAlignment = Enum.TextXAlignment.Left
+                OpenBtnLabel.Parent = OpenBtn
+
+                local OpenBtnChevron = Instance.new("ImageLabel")
+                OpenBtnChevron.BackgroundTransparency = 1
+                OpenBtnChevron.AnchorPoint = Vector2.new(1, 0.5)
+                OpenBtnChevron.Position = UDim2.new(1, -6, 0.5, 0)
+                OpenBtnChevron.Rotation = 0
+                OpenBtnChevron.Image = "rbxassetid://16851841101"
+                OpenBtnChevron.ImageColor3 = Color3.fromRGB(255, 255, 255)
+                OpenBtnChevron.Size = UDim2.new(0, 12, 0, 12)
+                OpenBtnChevron.Parent = OpenBtn
 
                 local SelectedWrap = Instance.new("Frame")
                 SelectedWrap.BackgroundTransparency = 1
@@ -2848,7 +2851,7 @@ function Dragon:Window(GuiConfig)
 
                             local EquipBtn = Instance.new("TextButton")
                             EquipBtn.Font = Enum.Font.GothamBold
-                            EquipBtn.Text = "USE"
+                            EquipBtn.Text = "⇄"
                             EquipBtn.TextColor3 = Color3.fromRGB(190, 170, 255)
                             EquipBtn.TextSize = 11
                             EquipBtn.BackgroundColor3 = Color3.fromRGB(60, 40, 120)
