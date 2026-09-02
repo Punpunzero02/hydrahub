@@ -6,15 +6,15 @@ local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 
 
-local C_BG      = Color3.fromRGB(9, 10, 16)
-local C_SIDEBAR = Color3.fromRGB(12, 13, 20)
-local C_PANEL   = Color3.fromRGB(0, 0, 0)
-local C_PANEL2  = Color3.fromRGB(0, 0, 0)
+local C_BG      = Color3.fromRGB(14, 22, 48)
+local C_SIDEBAR = Color3.fromRGB(18, 30, 66)
+local C_PANEL   = Color3.fromRGB(24, 38, 82)
+local C_PANEL2  = Color3.fromRGB(28, 44, 92)
 local C_ACCENT  = Color3.fromRGB(90, 140, 255)
 local C_TEXT    = Color3.fromRGB(235, 235, 240)
 local C_SUBTEXT = Color3.fromRGB(140, 145, 165)
-local C_BORDER  = Color3.fromRGB(40, 43, 58)
-local C_FIELD   = Color3.fromRGB(4, 5, 9)
+local C_BORDER  = Color3.fromRGB(70, 95, 170)
+local C_FIELD   = Color3.fromRGB(20, 32, 70)
 local C_GREEN   = Color3.fromRGB(120, 220, 140)
 
 local Icons = {
@@ -312,7 +312,7 @@ function Dragon:Window(GuiConfig)
     Main.Position = UDim2.fromScale(0.5, 0.5)
 
     Main.BackgroundColor3 = Color3.fromRGB(14, 22, 48)
-    Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.08
+    Main.BackgroundTransparency = GuiConfig.GlassTransparency or 0.2
     Main.BorderSizePixel = 0
     Main.ClipsDescendants = true
     Main.Parent = ScreenGui
@@ -328,15 +328,16 @@ function Dragon:Window(GuiConfig)
     local TopBar = Instance.new("Frame")
     TopBar.Size = UDim2.new(1, 0, 0, 46)
     TopBar.BackgroundColor3 = C_SIDEBAR
-    TopBar.BackgroundTransparency = 0.08
+    TopBar.BackgroundTransparency = 0.25
     TopBar.BorderSizePixel = 0
     TopBar.Parent = Main
     corner(TopBar, 12)
+    stroke(TopBar, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.6
     local topFix = Instance.new("Frame")
     topFix.Size = UDim2.new(1, 0, 0, 12)
     topFix.Position = UDim2.new(0, 0, 1, -12)
     topFix.BackgroundColor3 = C_SIDEBAR
-    topFix.BackgroundTransparency = 0.08
+    topFix.BackgroundTransparency = 0.25
     topFix.BorderSizePixel = 0
     topFix.Parent = TopBar
 
@@ -416,9 +417,10 @@ function Dragon:Window(GuiConfig)
     Sidebar.Size = UDim2.new(0, SidebarWidth, 1, -46)
     Sidebar.Position = UDim2.new(0, 0, 0, 46)
     Sidebar.BackgroundColor3 = C_SIDEBAR
-    Sidebar.BackgroundTransparency = 0.08
+    Sidebar.BackgroundTransparency = 0.25
     Sidebar.BorderSizePixel = 0
     Sidebar.Parent = Main
+    stroke(Sidebar, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.6
 
     local SidebarList = Instance.new("UIListLayout")
     SidebarList.Padding = UDim.new(0, 3)
@@ -435,7 +437,7 @@ function Dragon:Window(GuiConfig)
     do
         SearchBar = Instance.new("Frame")
         SearchBar.BackgroundColor3 = C_PANEL2
-        SearchBar.BackgroundTransparency = 0.25
+        SearchBar.BackgroundTransparency = 0.35
         stroke(SearchBar, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
         SearchBar.BorderSizePixel = 0
         SearchBar.Size = UDim2.new(1, 0, 0, 28)
@@ -463,7 +465,7 @@ function Dragon:Window(GuiConfig)
         SearchResults = Instance.new("ScrollingFrame")
         SearchResults.Active = true
         SearchResults.BackgroundColor3 = C_PANEL
-        SearchResults.BackgroundTransparency = 0.55
+        SearchResults.BackgroundTransparency = 0.35
         stroke(SearchResults, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
         SearchResults.BorderSizePixel = 0
         SearchResults.ScrollBarThickness = 2
@@ -509,7 +511,7 @@ function Dragon:Window(GuiConfig)
                 local entry = s.entry
                 local Row = Instance.new("Frame")
                 Row.BackgroundColor3 = C_PANEL2
-                Row.BackgroundTransparency = 0.07
+                Row.BackgroundTransparency = 0.35
                 stroke(Row, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
                 Row.BorderSizePixel = 0
                 Row.Size = UDim2.new(1, 0, 0, 40)
@@ -626,10 +628,11 @@ function Dragon:Window(GuiConfig)
     FooterBar.Size = UDim2.new(1, 0, 0, 28)
     FooterBar.Position = UDim2.new(0, 0, 1, -28)
     FooterBar.BackgroundColor3 = C_SIDEBAR
-    FooterBar.BackgroundTransparency = 0.08
+    FooterBar.BackgroundTransparency = 0.25
     FooterBar.BorderSizePixel = 0
     FooterBar.ZIndex = 5
     FooterBar.Parent = Main
+    stroke(FooterBar, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.6
 
     local FooterLabel = Instance.new("TextLabel")
     FooterLabel.BackgroundTransparency = 1
@@ -865,6 +868,7 @@ function Dragon:Window(GuiConfig)
         Cancel.Size = UDim2.new(0.4, -10, 0, 32)
         Cancel.Position = UDim2.new(0.55, 0, 1, -44)
         Cancel.BackgroundColor3 = C_FIELD
+        Cancel.BackgroundTransparency = 0.15
         Cancel.Text = config.CancelText or "Cancel"
         Cancel.Font = Enum.Font.GothamBold
         Cancel.TextSize = 13
@@ -1067,7 +1071,7 @@ function Dragon:Window(GuiConfig)
 
             local Section = Instance.new("Frame")
             Section.BackgroundColor3 = C_PANEL
-            Section.BackgroundTransparency = 0.15
+            Section.BackgroundTransparency = 0.35
             stroke(Section, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
             Section.BorderSizePixel = 0
             Section.ClipsDescendants = true
