@@ -1145,8 +1145,10 @@ function Dragon:Window(GuiConfig)
 
             local Section = Instance.new("Frame")
             Section.BackgroundColor3 = C_PANEL
-            Section.BackgroundTransparency = 0.55
-            stroke(Section, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
+            Section.BackgroundTransparency = (AlwaysOpen == true) and 1 or 0.55
+            if AlwaysOpen ~= true then
+                stroke(Section, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
+            end
             Section.BorderSizePixel = 0
             Section.ClipsDescendants = true
             Section.LayoutOrder = CountSection
@@ -3883,7 +3885,6 @@ function Dragon:Window(GuiConfig)
                 HeaderBtn.MouseButton1Click:Connect(function()
                     expanded = not expanded
                     TweenService:Create(Chevron, TweenInfo.new(0.2), { Rotation = expanded and 0 or -90 }):Play()
-                    Root.ClipsDescendants = not expanded
                     if expanded then BuildOptions() else Resize() end
                 end)
 
