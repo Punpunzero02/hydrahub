@@ -596,21 +596,21 @@ function Dragon:Window(GuiConfig)
     Content.BackgroundTransparency = 1
     Content.BorderSizePixel = 0
     Content.Parent = Main
-    pad(Content, 14, 12, 14, 12)
+    pad(Content, 12, 8, 12, 8)
 
     local HeaderLabel = Instance.new("TextLabel")
     HeaderLabel.BackgroundTransparency = 1
-    HeaderLabel.Size = UDim2.new(1, 0, 0, 24)
+    HeaderLabel.Size = UDim2.new(1, 0, 0, 16)
     HeaderLabel.Text = ""
     HeaderLabel.TextColor3 = C_TEXT
     HeaderLabel.Font = Enum.Font.GothamBold
-    HeaderLabel.TextSize = 18
+    HeaderLabel.TextSize = 13
     HeaderLabel.TextXAlignment = Enum.TextXAlignment.Left
     HeaderLabel.Parent = Content
 
     local PageHolder = Instance.new("Frame")
-    PageHolder.Size = UDim2.new(1, 0, 1, -30)
-    PageHolder.Position = UDim2.fromOffset(0, 30)
+    PageHolder.Size = UDim2.new(1, 0, 1, -20)
+    PageHolder.Position = UDim2.fromOffset(0, 20)
     PageHolder.BackgroundTransparency = 1
     PageHolder.BorderSizePixel = 0
     PageHolder.ClipsDescendants = true
@@ -925,6 +925,62 @@ function Dragon:Window(GuiConfig)
         return true
     end
 
+
+    -- Shared flyout panel for AddDropdown3 (satu panel dipakai bareng semua Dropdown3,
+    -- persis logic kknjx: MoreBlur + DropdownSelect + DropPageLayout, escape semua ClipsDescendants)
+    local D3MoreBlur = Instance.new("Frame")
+    D3MoreBlur.BackgroundTransparency = 1
+    D3MoreBlur.BorderSizePixel = 0
+    D3MoreBlur.Size = UDim2.new(1, 0, 1, 0)
+    D3MoreBlur.Visible = false
+    D3MoreBlur.ZIndex = 40
+    D3MoreBlur.Name = "D3MoreBlur"
+    D3MoreBlur.Parent = Main
+
+    local D3ConnectButton = Instance.new("TextButton")
+    D3ConnectButton.Text = ""
+    D3ConnectButton.BackgroundTransparency = 1
+    D3ConnectButton.Size = UDim2.new(1, 0, 1, 0)
+    D3ConnectButton.ZIndex = 40
+    D3ConnectButton.Parent = D3MoreBlur
+
+    local D3Select = Instance.new("Frame")
+    D3Select.AnchorPoint = Vector2.new(1, 0.5)
+    D3Select.BackgroundColor3 = C_PANEL2
+    D3Select.BackgroundTransparency = 0.05
+    D3Select.BorderSizePixel = 0
+    D3Select.Position = UDim2.new(1, 172, 0.5, 0)
+    D3Select.Size = UDim2.new(0, 160, 0, 220)
+    D3Select.ClipsDescendants = true
+    D3Select.ZIndex = 41
+    D3Select.Name = "D3Select"
+    D3Select.Parent = D3MoreBlur
+    corner(D3Select, 6)
+    stroke(D3Select, GuiConfig.Color, 1).Transparency = 0.3
+
+    local D3Folder = Instance.new("Folder")
+    D3Folder.Name = "D3Folder"
+    D3Folder.Parent = D3Select
+
+    local D3PageLayout = Instance.new("UIPageLayout")
+    D3PageLayout.EasingDirection = Enum.EasingDirection.InOut
+    D3PageLayout.EasingStyle = Enum.EasingStyle.Quad
+    D3PageLayout.TweenTime = 0.01
+    D3PageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    D3PageLayout.FillDirection = Enum.FillDirection.Vertical
+    D3PageLayout.Parent = D3Folder
+
+    local D3Count = 0
+
+    local function D3Close()
+        if not D3MoreBlur.Visible then return end
+        TweenService:Create(D3Select, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Position = UDim2.new(1, 172, 0.5, 0) }):Play()
+        task.delay(0.2, function()
+            D3MoreBlur.Visible = false
+        end)
+    end
+
+    D3ConnectButton.Activated:Connect(D3Close)
 
     local Tabs = {}
     local CountTab = 0
@@ -2485,30 +2541,15 @@ function Dragon:Window(GuiConfig)
                 DropdownButton.ZIndex = 5
                 DropdownButton.Parent = SelectFrame
 
-                local MoreBlur = Instance.new("Frame")
-                MoreBlur.AnchorPoint = Vector2.new(1, 0.5)
-                MoreBlur.BackgroundTransparency = 1
-                MoreBlur.BorderSizePixel = 0
-                MoreBlur.ClipsDescendants = true
-                MoreBlur.Position = UDim2.new(1, -8, 0.5, 0)
-                MoreBlur.Size = UDim2.new(0, 172, 1, 200)
-                MoreBlur.Visible = false
-                MoreBlur.ZIndex = 30
-                MoreBlur.Name = "MoreBlur3"
-                MoreBlur.Parent = Dropdown
-
-                local DropdownSelect = Instance.new("Frame")
-                DropdownSelect.AnchorPoint = Vector2.new(1, 0.5)
-                DropdownSelect.BackgroundColor3 = C_PANEL2
-                DropdownSelect.BackgroundTransparency = 0.15
-                DropdownSelect.BorderSizePixel = 0
-                DropdownSelect.Position = UDim2.new(1, 172, 0.5, 0)
-                DropdownSelect.Size = UDim2.new(0, 160, 0, 190)
-                DropdownSelect.ZIndex = 31
-                DropdownSelect.Name = "DropdownSelect"
-                DropdownSelect.Parent = MoreBlur
-                corner(DropdownSelect, 6)
-                stroke(DropdownSelect, GuiConfig.Color, 1).Transparency = 0.4
+                -- page khusus dropdown ini di dalam panel SHARED (D3Folder), bukan bikin panel sendiri
+                local DropdownContainer = Instance.new("Frame")
+                DropdownContainer.Size = UDim2.new(1, 0, 1, 0)
+                DropdownContainer.BackgroundTransparency = 1
+                DropdownContainer.LayoutOrder = D3Count
+                DropdownContainer.Name = "D3Page_" .. DropdownConfig.Title
+                DropdownContainer.Parent = D3Folder
+                local myPageOrder = D3Count
+                D3Count = D3Count + 1
 
                 local DropSearch = Instance.new("TextBox")
                 DropSearch.PlaceholderText = "Search..."
@@ -2523,8 +2564,8 @@ function Dragon:Window(GuiConfig)
                 DropSearch.ClearTextOnFocus = false
                 DropSearch.Position = UDim2.new(0, 6, 0, 6)
                 DropSearch.Size = UDim2.new(1, -12, 0, 24)
-                DropSearch.ZIndex = 32
-                DropSearch.Parent = DropdownSelect
+                DropSearch.ZIndex = 42
+                DropSearch.Parent = DropdownContainer
                 corner(DropSearch, 5)
                 pad(DropSearch, 8, 0, 0, 0)
 
@@ -2536,8 +2577,8 @@ function Dragon:Window(GuiConfig)
                 DropScroll.ScrollBarThickness = 3
                 DropScroll.ScrollBarImageColor3 = GuiConfig.Color
                 DropScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-                DropScroll.ZIndex = 32
-                DropScroll.Parent = DropdownSelect
+                DropScroll.ZIndex = 42
+                DropScroll.Parent = DropdownContainer
 
                 local DropList = Instance.new("UIListLayout")
                 DropList.Padding = UDim.new(0, 3)
@@ -2635,31 +2676,10 @@ function Dragon:Window(GuiConfig)
                 end
 
                 DropdownButton.Activated:Connect(function()
-                    MoreBlur.Visible = true
                     BuildOptions()
-                    TweenService:Create(DropdownSelect, TweenInfo.new(0.25, Enum.EasingStyle.Quad), { Position = UDim2.new(1, -6, 0.5, 0) }):Play()
-                end)
-
-                UserInputService.InputBegan:Connect(function(input, gpe)
-                    if gpe then return end
-                    if not MoreBlur.Visible then return end
-                    if input.UserInputType ~= Enum.UserInputType.MouseButton1
-                        and input.UserInputType ~= Enum.UserInputType.Touch then return end
-
-                    local mousePos = UserInputService:GetMouseLocation()
-                    local absPos, absSize = DropdownSelect.AbsolutePosition, DropdownSelect.AbsoluteSize
-                    local inside = mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X
-                        and mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y
-                    local selAbsPos, selAbsSize = SelectFrame.AbsolutePosition, SelectFrame.AbsoluteSize
-                    local onSelect = mousePos.X >= selAbsPos.X and mousePos.X <= selAbsPos.X + selAbsSize.X
-                        and mousePos.Y >= selAbsPos.Y and mousePos.Y <= selAbsPos.Y + selAbsSize.Y
-
-                    if not inside and not onSelect then
-                        TweenService:Create(DropdownSelect, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Position = UDim2.new(1, 172, 0.5, 0) }):Play()
-                        task.delay(0.2, function()
-                            MoreBlur.Visible = false
-                        end)
-                    end
+                    D3MoreBlur.Visible = true
+                    D3PageLayout:JumpToIndex(myPageOrder)
+                    TweenService:Create(D3Select, TweenInfo.new(0.25, Enum.EasingStyle.Quad), { Position = UDim2.new(1, -11, 0.5, 0) }):Play()
                 end)
 
                 local searchTicket = 0
