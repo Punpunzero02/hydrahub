@@ -2389,6 +2389,312 @@ function Dragon:Window(GuiConfig)
                 return DropdownFunc
             end
 
+            function Items:AddDropdown3(DropdownConfig)
+                DropdownConfig = DropdownConfig or {}
+                DropdownConfig.Title = DropdownConfig.Title or "Title"
+                DropdownConfig.Content = DropdownConfig.Content or ""
+                DropdownConfig.Multi = DropdownConfig.Multi or false
+                DropdownConfig.Options = DropdownConfig.Options or {}
+                DropdownConfig.Default = DropdownConfig.Default or (DropdownConfig.Multi and {} or nil)
+                DropdownConfig.Callback = DropdownConfig.Callback or function() end
+
+                local configKey = "Dropdown3_" .. DropdownConfig.Title
+                local shouldSave = DropdownConfig.Save ~= false
+                if shouldSave and ConfigData[configKey] ~= nil then
+                    DropdownConfig.Default = ConfigData[configKey]
+                end
+
+                local DropdownFunc = { Value = DropdownConfig.Default, Options = DropdownConfig.Options }
+                local hasContent = DropdownConfig.Content ~= ""
+
+                local Dropdown = Instance.new("Frame")
+                Dropdown.BackgroundColor3 = C_PANEL2
+                Dropdown.BackgroundTransparency = 0.55
+                Dropdown.BorderSizePixel = 0
+                Dropdown.LayoutOrder = CountItem
+                Dropdown.Size = UDim2.new(1, 0, 0, hasContent and 40 or 30)
+                Dropdown.Name = "Dropdown3"
+                Dropdown.Parent = Body
+                corner(Dropdown, 6)
+                stroke(Dropdown, Color3.fromRGB(90, 140, 255), 1)
+
+                local DropdownTitle = Instance.new("TextLabel")
+                DropdownTitle.Font = Enum.Font.GothamBold
+                DropdownTitle.Text = DropdownConfig.Title
+                DropdownTitle.TextColor3 = C_TEXT
+                DropdownTitle.TextSize = 13
+                DropdownTitle.TextXAlignment = Enum.TextXAlignment.Left
+                DropdownTitle.BackgroundTransparency = 1
+                DropdownTitle.Position = UDim2.new(0, 10, 0, hasContent and 4 or 0)
+                DropdownTitle.Size = UDim2.new(1, -160, 0, hasContent and 13 or 30)
+                if not hasContent then
+                    DropdownTitle.TextYAlignment = Enum.TextYAlignment.Center
+                end
+                DropdownTitle.Parent = Dropdown
+
+                if hasContent then
+                    local DropdownContent = Instance.new("TextLabel")
+                    DropdownContent.Font = Enum.Font.Gotham
+                    DropdownContent.Text = DropdownConfig.Content
+                    DropdownContent.TextColor3 = C_SUBTEXT
+                    DropdownContent.TextSize = 10
+                    DropdownContent.TextWrapped = true
+                    DropdownContent.TextXAlignment = Enum.TextXAlignment.Left
+                    DropdownContent.BackgroundTransparency = 1
+                    DropdownContent.Position = UDim2.new(0, 10, 0, 18)
+                    DropdownContent.Size = UDim2.new(1, -160, 0, 11)
+                    DropdownContent.Parent = Dropdown
+                end
+
+                local SelectFrame = Instance.new("Frame")
+                SelectFrame.AnchorPoint = Vector2.new(1, 0.5)
+                SelectFrame.BackgroundColor3 = C_FIELD
+                SelectFrame.BackgroundTransparency = 0.55
+                SelectFrame.Position = UDim2.new(1, -8, 0.5, 0)
+                SelectFrame.Size = UDim2.new(0, 130, 0, 20)
+                SelectFrame.Parent = Dropdown
+                corner(SelectFrame, 5)
+
+                local OptionSelecting = Instance.new("TextLabel")
+                OptionSelecting.Font = Enum.Font.GothamBold
+                OptionSelecting.Text = DropdownConfig.Multi and "Select Options" or "Select Option"
+                OptionSelecting.TextColor3 = C_SUBTEXT
+                OptionSelecting.TextSize = 11
+                OptionSelecting.TextXAlignment = Enum.TextXAlignment.Left
+                OptionSelecting.TextTruncate = Enum.TextTruncate.AtEnd
+                OptionSelecting.BackgroundTransparency = 1
+                OptionSelecting.AnchorPoint = Vector2.new(0, 0.5)
+                OptionSelecting.Position = UDim2.new(0, 8, 0.5, 0)
+                OptionSelecting.Size = UDim2.new(1, -24, 1, -8)
+                OptionSelecting.Parent = SelectFrame
+
+                local ArrowLabel = Instance.new("ImageLabel")
+                ArrowLabel.BackgroundTransparency = 1
+                ArrowLabel.Image = "rbxassetid://16851841101"
+                ArrowLabel.ImageColor3 = C_SUBTEXT
+                ArrowLabel.Rotation = 180
+                ArrowLabel.Size = UDim2.new(0, 12, 0, 12)
+                ArrowLabel.AnchorPoint = Vector2.new(0, 0.5)
+                ArrowLabel.Position = UDim2.new(1, -18, 0.5, 0)
+                ArrowLabel.Parent = SelectFrame
+
+                local DropdownButton = Instance.new("TextButton")
+                DropdownButton.Text = ""
+                DropdownButton.BackgroundTransparency = 1
+                DropdownButton.Size = UDim2.new(1, 0, 1, 0)
+                DropdownButton.ZIndex = 5
+                DropdownButton.Parent = SelectFrame
+
+                local MoreBlur = Instance.new("Frame")
+                MoreBlur.AnchorPoint = Vector2.new(1, 0.5)
+                MoreBlur.BackgroundTransparency = 1
+                MoreBlur.BorderSizePixel = 0
+                MoreBlur.ClipsDescendants = true
+                MoreBlur.Position = UDim2.new(1, -8, 0.5, 0)
+                MoreBlur.Size = UDim2.new(0, 172, 1, 200)
+                MoreBlur.Visible = false
+                MoreBlur.ZIndex = 30
+                MoreBlur.Name = "MoreBlur3"
+                MoreBlur.Parent = Dropdown
+
+                local DropdownSelect = Instance.new("Frame")
+                DropdownSelect.AnchorPoint = Vector2.new(1, 0.5)
+                DropdownSelect.BackgroundColor3 = C_PANEL2
+                DropdownSelect.BackgroundTransparency = 0.15
+                DropdownSelect.BorderSizePixel = 0
+                DropdownSelect.Position = UDim2.new(1, 172, 0.5, 0)
+                DropdownSelect.Size = UDim2.new(0, 160, 0, 190)
+                DropdownSelect.ZIndex = 31
+                DropdownSelect.Name = "DropdownSelect"
+                DropdownSelect.Parent = MoreBlur
+                corner(DropdownSelect, 6)
+                stroke(DropdownSelect, GuiConfig.Color, 1).Transparency = 0.4
+
+                local DropSearch = Instance.new("TextBox")
+                DropSearch.PlaceholderText = "Search..."
+                DropSearch.PlaceholderColor3 = C_SUBTEXT
+                DropSearch.Font = Enum.Font.Gotham
+                DropSearch.Text = ""
+                DropSearch.TextColor3 = C_TEXT
+                DropSearch.TextSize = 12
+                DropSearch.BackgroundColor3 = C_FIELD
+                DropSearch.BackgroundTransparency = 0.4
+                DropSearch.BorderSizePixel = 0
+                DropSearch.ClearTextOnFocus = false
+                DropSearch.Position = UDim2.new(0, 6, 0, 6)
+                DropSearch.Size = UDim2.new(1, -12, 0, 24)
+                DropSearch.ZIndex = 32
+                DropSearch.Parent = DropdownSelect
+                corner(DropSearch, 5)
+                pad(DropSearch, 8, 0, 0, 0)
+
+                local DropScroll = Instance.new("ScrollingFrame")
+                DropScroll.Size = UDim2.new(1, -12, 1, -40)
+                DropScroll.Position = UDim2.new(0, 6, 0, 36)
+                DropScroll.BackgroundTransparency = 1
+                DropScroll.BorderSizePixel = 0
+                DropScroll.ScrollBarThickness = 3
+                DropScroll.ScrollBarImageColor3 = GuiConfig.Color
+                DropScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+                DropScroll.ZIndex = 32
+                DropScroll.Parent = DropdownSelect
+
+                local DropList = Instance.new("UIListLayout")
+                DropList.Padding = UDim.new(0, 3)
+                DropList.SortOrder = Enum.SortOrder.LayoutOrder
+                DropList.Parent = DropScroll
+
+                DropList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    DropScroll.CanvasSize = UDim2.new(0, 0, 0, DropList.AbsoluteContentSize.Y + 8)
+                end)
+
+                local function CurrentLabel()
+                    if DropdownConfig.Multi then
+                        local n = #(DropdownFunc.Value or {})
+                        return n > 0 and (n .. " selected") or "Select Options"
+                    end
+                    return DropdownFunc.Value ~= nil and tostring(DropdownFunc.Value) or "Select Option"
+                end
+
+                local function IsSelected(opt)
+                    if DropdownConfig.Multi then
+                        for _, v in ipairs(DropdownFunc.Value or {}) do
+                            if v == opt then return true end
+                        end
+                        return false
+                    end
+                    return DropdownFunc.Value == opt
+                end
+
+                local function Persist()
+                    if shouldSave then
+                        ConfigData[configKey] = DropdownFunc.Value
+                        QueueSaveConfig()
+                    end
+                end
+
+                local optionRows = {}
+                local function RefreshVisuals()
+                    OptionSelecting.Text = CurrentLabel()
+                    for opt, row in pairs(optionRows) do
+                        row.BackgroundTransparency = IsSelected(opt) and 0.2 or 0.55
+                    end
+                end
+
+                local function SelectOption(opt)
+                    if DropdownConfig.Multi then
+                        DropdownFunc.Value = DropdownFunc.Value or {}
+                        local found = false
+                        for i, v in ipairs(DropdownFunc.Value) do
+                            if v == opt then
+                                table.remove(DropdownFunc.Value, i)
+                                found = true
+                                break
+                            end
+                        end
+                        if not found then table.insert(DropdownFunc.Value, opt) end
+                    else
+                        DropdownFunc.Value = opt
+                    end
+                    RefreshVisuals()
+                    Persist()
+                    local ok, err = pcall(function() DropdownConfig.Callback(DropdownFunc.Value) end)
+                end
+
+                local function BuildOptions()
+                    for _, c in ipairs(DropScroll:GetChildren()) do
+                        if c:IsA("GuiObject") then c:Destroy() end
+                    end
+                    optionRows = {}
+
+                    local query = string.lower(DropSearch.Text)
+                    for _, opt in ipairs(DropdownFunc.Options) do
+                        local label = string.lower(tostring(opt))
+                        if query == "" or string.find(label, query, 1, true) then
+                            local Row = Instance.new("TextButton")
+                            Row.Font = Enum.Font.Gotham
+                            Row.Text = tostring(opt)
+                            Row.TextColor3 = C_TEXT
+                            Row.TextSize = 12
+                            Row.TextXAlignment = Enum.TextXAlignment.Left
+                            Row.BackgroundColor3 = C_FIELD
+                            Row.BackgroundTransparency = IsSelected(opt) and 0.2 or 0.55
+                            Row.Size = UDim2.new(1, 0, 0, 24)
+                            Row.ZIndex = 33
+                            Row.Parent = DropScroll
+                            corner(Row, 4)
+                            pad(Row, 8, 0, 0, 0)
+
+                            optionRows[opt] = Row
+
+                            Row.Activated:Connect(function()
+                                SelectOption(opt)
+                            end)
+                        end
+                    end
+                end
+
+                DropdownButton.Activated:Connect(function()
+                    MoreBlur.Visible = true
+                    BuildOptions()
+                    TweenService:Create(DropdownSelect, TweenInfo.new(0.25, Enum.EasingStyle.Quad), { Position = UDim2.new(1, -6, 0.5, 0) }):Play()
+                end)
+
+                UserInputService.InputBegan:Connect(function(input, gpe)
+                    if gpe then return end
+                    if not MoreBlur.Visible then return end
+                    if input.UserInputType ~= Enum.UserInputType.MouseButton1
+                        and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+                    local mousePos = UserInputService:GetMouseLocation()
+                    local absPos, absSize = DropdownSelect.AbsolutePosition, DropdownSelect.AbsoluteSize
+                    local inside = mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X
+                        and mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y
+                    local selAbsPos, selAbsSize = SelectFrame.AbsolutePosition, SelectFrame.AbsoluteSize
+                    local onSelect = mousePos.X >= selAbsPos.X and mousePos.X <= selAbsPos.X + selAbsSize.X
+                        and mousePos.Y >= selAbsPos.Y and mousePos.Y <= selAbsPos.Y + selAbsSize.Y
+
+                    if not inside and not onSelect then
+                        TweenService:Create(DropdownSelect, TweenInfo.new(0.2, Enum.EasingStyle.Quad), { Position = UDim2.new(1, 172, 0.5, 0) }):Play()
+                        task.delay(0.2, function()
+                            MoreBlur.Visible = false
+                        end)
+                    end
+                end)
+
+                local searchTicket = 0
+                DropSearch:GetPropertyChangedSignal("Text"):Connect(function()
+                    searchTicket = searchTicket + 1
+                    local ticket = searchTicket
+                    task.delay(0.08, function()
+                        if ticket == searchTicket then BuildOptions() end
+                    end)
+                end)
+
+                RefreshVisuals()
+                CountItem = CountItem + 1
+
+                function DropdownFunc:Set(value, noSave)
+                    DropdownFunc.Value = value
+                    RefreshVisuals()
+                    if not noSave then Persist() end
+                end
+
+                function DropdownFunc:Get()
+                    return DropdownFunc.Value
+                end
+
+                function DropdownFunc:SetOptions(list)
+                    DropdownConfig.Options = list or {}
+                    DropdownFunc.Options = DropdownConfig.Options
+                    BuildOptions()
+                end
+
+                if shouldSave then Elements[configKey] = DropdownFunc end
+                RegisterSearch({ label = DropdownConfig.Title, tab = TabConfig.Name, kind = "Dropdown3", switch = SearchSwitch })
+                return DropdownFunc
+            end
+
             function Items:AddBanner(BannerConfig)
                 BannerConfig = BannerConfig or {}
                 BannerConfig.Version = BannerConfig.Version or ""
