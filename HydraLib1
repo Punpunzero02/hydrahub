@@ -2050,22 +2050,14 @@ function Dragon:Window(GuiConfig)
                             Row.TextColor3 = isSel and GuiConfig.Color or C_TEXT
                             Row.TextSize = 12
                             Row.TextXAlignment = Enum.TextXAlignment.Left
-                            Row.BackgroundTransparency = 1
+                            Row.BackgroundColor3 = isSel and GuiConfig.Color or C_PANEL2
+                            Row.BackgroundTransparency = isSel and 0.82 or 0.15
                             Row.Size = UDim2.new(1, 0, 0, 30)
                             Row.LayoutOrder = order
                             Row.ZIndex = 32
                             Row.Parent = DropScroll
+                            corner(Row, 5)
                             pad(Row, 10, 0, 0, 0)
-
-                            local RowLine = Instance.new("Frame")
-                            RowLine.AnchorPoint = Vector2.new(0, 1)
-                            RowLine.BackgroundColor3 = C_BORDER
-                            RowLine.BackgroundTransparency = 0.4
-                            RowLine.BorderSizePixel = 0
-                            RowLine.Position = UDim2.new(0, 0, 1, 0)
-                            RowLine.Size = UDim2.new(1, 0, 0, 1)
-                            RowLine.ZIndex = 32
-                            RowLine.Parent = Row
 
                             Row.Activated:Connect(function()
                                 if DropdownConfig.Multi then
@@ -2334,22 +2326,14 @@ function Dragon:Window(GuiConfig)
                         Row.TextColor3 = isSel and GuiConfig.Color or C_TEXT
                         Row.TextSize = 12
                         Row.TextXAlignment = Enum.TextXAlignment.Left
-                        Row.BackgroundTransparency = 1
+                        Row.BackgroundColor3 = isSel and GuiConfig.Color or C_PANEL2
+                        Row.BackgroundTransparency = isSel and 0.82 or 0.15
                         Row.Size = UDim2.new(1, 0, 0, 30)
                         Row.LayoutOrder = order
                         Row.ZIndex = 32
                         Row.Parent = DropScroll
+                        corner(Row, 5)
                         pad(Row, 10, 0, 0, 0)
-
-                        local RowLine = Instance.new("Frame")
-                        RowLine.AnchorPoint = Vector2.new(0, 1)
-                        RowLine.BackgroundColor3 = C_BORDER
-                        RowLine.BackgroundTransparency = 0.4
-                        RowLine.BorderSizePixel = 0
-                        RowLine.Position = UDim2.new(0, 0, 1, 0)
-                        RowLine.Size = UDim2.new(1, 0, 0, 1)
-                        RowLine.ZIndex = 32
-                        RowLine.Parent = Row
 
                         Row.Activated:Connect(function()
                             if DropdownConfig.Multi then
