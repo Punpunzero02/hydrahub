@@ -445,7 +445,6 @@ function Dragon:Window(GuiConfig)
         SearchBar.Name = "SearchBar"
         SearchBar.Parent = Sidebar
         corner(SearchBar, 6)
-        stroke(SearchBar, C_BORDER, 1)
 
         SearchBox = Instance.new("TextBox")
         SearchBox.Font = Enum.Font.GothamBold
@@ -1213,10 +1212,12 @@ function Dragon:Window(GuiConfig)
             })
             AccentGradient.Parent = AccentBar
 
+            local HeaderH = (AlwaysOpen == true) and 4 or 38
+
             local Body = Instance.new("Frame")
             Body.BackgroundTransparency = 1
             Body.ClipsDescendants = true
-            Body.Position = UDim2.new(0, 0, 0, 38)
+            Body.Position = UDim2.new(0, 0, 0, HeaderH)
             Body.Size = UDim2.new(1, 0, 0, 0)
             Body.Name = "SectionAdd"
             Body.Parent = Section
@@ -1239,7 +1240,7 @@ function Dragon:Window(GuiConfig)
                     local bodyH = BodyLayout.AbsoluteContentSize.Y + 6
 
                     TweenService:Create(Chevron, TweenInfo.new(0.3), { Rotation = 0 }):Play()
-                    TweenService:Create(Section, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 38 + bodyH) }):Play()
+                    TweenService:Create(Section, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, HeaderH + bodyH) }):Play()
                     TweenService:Create(Body, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, bodyH) }):Play()
                     TweenService:Create(AccentBar, TweenInfo.new(0.3), { Size = UDim2.new(1, 0, 0, 2) }):Play()
                 end)
@@ -1250,6 +1251,7 @@ function Dragon:Window(GuiConfig)
             if AlwaysOpen == true then
                 Header:Destroy()
                 FeatureFrame:Destroy()
+                AccentBar:Destroy()
                 OpenSection = true
                 UpdateSizeSection()
             elseif AlwaysOpen == false then
@@ -1298,7 +1300,6 @@ function Dragon:Window(GuiConfig)
                 Paragraph.Name = "Paragraph"
                 Paragraph.Parent = Body
                 corner(Paragraph, 6)
-                stroke(Paragraph, C_BORDER, 1)
 
                 local iconOffset = 10
                 if ParagraphConfig.Icon then
@@ -1409,7 +1410,6 @@ function Dragon:Window(GuiConfig)
                 ButtonRoot.Name = "Button"
                 ButtonRoot.Parent = Body
                 corner(ButtonRoot, 6)
-                stroke(ButtonRoot, C_BORDER, 1)
 
                 local MainButton = Instance.new("TextButton")
                 MainButton.Font = Enum.Font.GothamBold
@@ -1629,7 +1629,6 @@ function Dragon:Window(GuiConfig)
                 Slider.Name = "Slider"
                 Slider.Parent = Body
                 corner(Slider, 6)
-                stroke(Slider, C_BORDER, 1)
 
                 local SliderTitle = Instance.new("TextLabel")
                 SliderTitle.Font = Enum.Font.GothamBold
@@ -1826,7 +1825,6 @@ function Dragon:Window(GuiConfig)
                 InputRoot.Name = "Input"
                 InputRoot.Parent = Body
                 corner(InputRoot, 6)
-                stroke(InputRoot, C_BORDER, 1)
 
                 local InputTitle = Instance.new("TextLabel")
                 InputTitle.Font = Enum.Font.GothamBold
@@ -2016,7 +2014,6 @@ function Dragon:Window(GuiConfig)
                 DropPanel.ZIndex = 31
                 DropPanel.Parent = DropdownOverlay
                 corner(DropPanel, 8)
-                stroke(DropPanel, GuiConfig.Color, 1)
 
                 local DropTitle = Instance.new("TextLabel")
                 DropTitle.BackgroundTransparency = 1
@@ -2306,7 +2303,6 @@ function Dragon:Window(GuiConfig)
                 DropPanel.AnchorPoint = Vector2.new(0.5, 0.5)
                 DropPanel.BackgroundColor3 = C_PANEL
                 DropPanel.BackgroundTransparency = 0
-                stroke(DropPanel, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.3
                 DropPanel.BorderSizePixel = 0
                 DropPanel.Position = UDim2.new(0.5, 0, 0.5, 0)
                 DropPanel.Size = UDim2.new(0, 280, 0, 300)
@@ -2824,7 +2820,6 @@ function Dragon:Window(GuiConfig)
                 Banner.ClipsDescendants = true
                 Banner.Parent = Body
                 corner(Banner, 6)
-                stroke(Banner, C_BORDER, 1)
 
                 local BannerGradient = Instance.new("UIGradient")
                 BannerGradient.Color = ColorSequence.new({
@@ -3733,7 +3728,6 @@ function Dragon:Window(GuiConfig)
                 Root.Size = UDim2.new(1, 0, 0, 46)
                 Root.Parent = Body
                 corner(Root, 6)
-                stroke(Root, Color3.fromRGB(90, 140, 255), 1)
 
                 local HeaderBtn = Instance.new("TextButton")
                 HeaderBtn.Text = ""
