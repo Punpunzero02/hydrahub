@@ -2604,7 +2604,6 @@ function Dragon:Window(GuiConfig)
                     DropScroll.CanvasSize = UDim2.new(0, 0, 0, DropList.AbsoluteContentSize.Y)
                 end)
 
-                -- search: sama kayak kknjx, cuma toggle .Visible, ga destroy instance
                 local d3SearchTicket = 0
                 local function RunD3Search()
                     local query = string.lower(DropSearch.Text)
@@ -3912,6 +3911,377 @@ function Dragon:Window(GuiConfig)
                 CountItem = CountItem + 1
                 RegisterSearch({ label = PickerConfig.Title, tab = TabConfig.Name, kind = "Picker", switch = SearchSwitch })
                 return PickerFunc
+            end
+
+            -- Generic selectable card list: dynamic items (name + optional subtitle/badge),
+            -- single or multi select, optional "built-in" preset entries, click-to-equip.
+            -- Universal: works for teams, pets, presets, or any named list in any game.
+            function Items:AddSelectableList(ListConfig)
+                ListConfig = ListConfig or {}
+                ListConfig.Title = ListConfig.Title or "Select"
+                ListConfig.Content = ListConfig.Content or ""
+                ListConfig.Multi = ListConfig.Multi or false
+                ListConfig.Height = ListConfig.Height or 180
+                ListConfig.GetLabel = ListConfig.GetLabel or function(item) return tostring(item) end
+                ListConfig.GetSubLabel = ListConfig.GetSubLabel or nil
+                ListConfig.GetBadge = ListConfig.GetBadge or nil
+                ListConfig.Items = ListConfig.Items or {}
+                ListConfig.BuiltIn = ListConfig.BuiltIn or {}
+                ListConfig.Callback = ListConfig.Callback or function(_) end
+                ListConfig.Default = ListConfig.Default or (ListConfig.Multi and {} or nil)
+
+                local configKey = "SelectableList_" .. ListConfig.Title
+                local shouldSave = ListConfig.Save ~= false
+
+                local ListFunc = { Items = ListConfig.Items, Value = ListConfig.Default }
+
+                local function IsSelected(item)
+                    if ListConfig.Multi then
+                        return type(ListFunc.Value) == "table" and ListFunc.Value[item] == true
+                    end
+                    return ListFunc.Value == item
+                end
+
+                local function CurrentLabel()
+                    if ListConfig.Multi then
+                        local n = 0
+                        if type(ListFunc.Value) == "table" then
+                            for _ in pairs(ListFunc.Value) do n = n + 1 end
+                        end
+                        return n == 0 and "Select items" or (n .. " selected")
+                    end
+                    return ListFunc.Value ~= nil and ListConfig.GetLabel(ListFunc.Value) or "Select item"
+                end
+
+                local function Persist()
+                    if not shouldSave then return end
+                    ConfigData[configKey] = ListFunc.Value
+                    QueueSaveConfig()
+                end
+
+                local Root = Instance.new("Frame")
+                Root.BackgroundColor3 = C_PANEL2
+                Root.BackgroundTransparency = 0.55
+                stroke(Root, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
+                Root.BorderSizePixel = 0
+                Root.LayoutOrder = CountItem
+                Root.Size = UDim2.new(1, 0, 0, ListConfig.Content ~= "" and 56 or 44)
+                Root.Name = "SelectableList"
+                Root.Parent = Body
+                corner(Root, 6)
+
+                local RootTitle = Instance.new("TextLabel")
+                RootTitle.Font = Enum.Font.GothamBold
+                RootTitle.Text = ListConfig.Title
+                RootTitle.TextColor3 = C_TEXT
+                RootTitle.TextSize = 13
+                RootTitle.TextXAlignment = Enum.TextXAlignment.Left
+                RootTitle.BackgroundTransparency = 1
+                RootTitle.Position = UDim2.new(0, 10, 0, 8)
+                RootTitle.Size = UDim2.new(1, -110, 0, 13)
+                RootTitle.Parent = Root
+
+                if ListConfig.Content ~= "" then
+                    local RootContent = Instance.new("TextLabel")
+                    RootContent.Font = Enum.Font.Gotham
+                    RootContent.Text = ListConfig.Content
+                    RootContent.TextColor3 = C_SUBTEXT
+                    RootContent.TextSize = 10
+                    RootContent.TextWrapped = true
+                    RootContent.TextXAlignment = Enum.TextXAlignment.Left
+                    RootContent.BackgroundTransparency = 1
+                    RootContent.Position = UDim2.new(0, 10, 0, 21)
+                    RootContent.Size = UDim2.new(1, -110, 0, 24)
+                    RootContent.Parent = Root
+                end
+
+                local CurrentLbl = Instance.new("TextLabel")
+                CurrentLbl.Font = Enum.Font.Gotham
+                CurrentLbl.Text = CurrentLabel()
+                CurrentLbl.TextColor3 = GuiConfig.Color
+                CurrentLbl.TextSize = 10
+                CurrentLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                CurrentLbl.TextXAlignment = Enum.TextXAlignment.Right
+                CurrentLbl.BackgroundTransparency = 1
+                CurrentLbl.AnchorPoint = Vector2.new(1, 0)
+                CurrentLbl.Position = UDim2.new(1, -78, 0, 10)
+                CurrentLbl.Size = UDim2.new(0, 68, 0, 24)
+                CurrentLbl.Parent = Root
+
+                local OpenBtn = Instance.new("TextButton")
+                OpenBtn.Font = Enum.Font.GothamBold
+                OpenBtn.Text = "Select"
+                OpenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                OpenBtn.TextSize = 11
+                OpenBtn.AutoButtonColor = false
+                OpenBtn.BackgroundColor3 = GuiConfig.Color
+                OpenBtn.BackgroundTransparency = 0.15
+                OpenBtn.AnchorPoint = Vector2.new(1, 0.5)
+                OpenBtn.Position = UDim2.new(1, -8, 0, 20)
+                OpenBtn.Size = UDim2.new(0, 60, 0, 22)
+                OpenBtn.Parent = Root
+                corner(OpenBtn, 5)
+
+                -- overlay picker: full card list, each row = name + optional sublabel + optional badge
+                local Overlay = Instance.new("Frame")
+                Overlay.BackgroundColor3 = C_BG
+                Overlay.BackgroundTransparency = 0.05
+                Overlay.BorderSizePixel = 0
+                Overlay.Size = UDim2.new(1, 0, 1, 0)
+                Overlay.Visible = false
+                Overlay.ZIndex = 40
+                Overlay.Parent = Content.Parent
+
+                local OHeader = Instance.new("Frame")
+                OHeader.BackgroundColor3 = C_PANEL
+                OHeader.BackgroundTransparency = 0.55
+                stroke(OHeader, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
+                OHeader.BorderSizePixel = 0
+                OHeader.Size = UDim2.new(1, 0, 0, 34)
+                OHeader.ZIndex = 41
+                OHeader.Parent = Overlay
+
+                local OTitle = Instance.new("TextLabel")
+                OTitle.Font = Enum.Font.GothamBold
+                OTitle.Text = ListConfig.Title
+                OTitle.TextColor3 = C_TEXT
+                OTitle.TextSize = 13
+                OTitle.TextXAlignment = Enum.TextXAlignment.Left
+                OTitle.BackgroundTransparency = 1
+                OTitle.Position = UDim2.new(0, 12, 0, 0)
+                OTitle.Size = UDim2.new(1, -80, 1, 0)
+                OTitle.ZIndex = 41
+                OTitle.Parent = OHeader
+
+                local DoneBtn = Instance.new("TextButton")
+                DoneBtn.Font = Enum.Font.GothamBold
+                DoneBtn.Text = "Done"
+                DoneBtn.TextColor3 = C_TEXT
+                DoneBtn.TextSize = 11
+                DoneBtn.BackgroundColor3 = GuiConfig.Color
+                DoneBtn.AnchorPoint = Vector2.new(1, 0.5)
+                DoneBtn.Position = UDim2.new(1, -8, 0.5, 0)
+                DoneBtn.Size = UDim2.new(0, 64, 0, 22)
+                DoneBtn.ZIndex = 41
+                DoneBtn.Parent = OHeader
+                corner(DoneBtn, 5)
+
+                local OSearch = Instance.new("TextBox")
+                OSearch.PlaceholderText = "Search..."
+                OSearch.PlaceholderColor3 = C_SUBTEXT
+                OSearch.Font = Enum.Font.Gotham
+                OSearch.Text = ""
+                OSearch.TextColor3 = C_TEXT
+                OSearch.TextSize = 12
+                OSearch.TextXAlignment = Enum.TextXAlignment.Left
+                OSearch.ClearTextOnFocus = false
+                OSearch.BackgroundColor3 = C_PANEL2
+                OSearch.BackgroundTransparency = 0.55
+                stroke(OSearch, Color3.fromRGB(90, 140, 255), 1).Transparency = 0.55
+                OSearch.BorderSizePixel = 0
+                OSearch.Position = UDim2.new(0, 10, 0, 40)
+                OSearch.Size = UDim2.new(1, -20, 0, 26)
+                OSearch.ZIndex = 41
+                OSearch.Parent = Overlay
+                corner(OSearch, 5)
+                pad(OSearch, 8, 0, 0, 0)
+
+                local OScroll = Instance.new("ScrollingFrame")
+                OScroll.Position = UDim2.new(0, 10, 0, 72)
+                OScroll.Size = UDim2.new(1, -20, 1, -80)
+                OScroll.BackgroundTransparency = 1
+                OScroll.BorderSizePixel = 0
+                OScroll.ScrollBarThickness = 3
+                OScroll.ScrollBarImageColor3 = GuiConfig.Color
+                OScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+                OScroll.ZIndex = 40
+                OScroll.Parent = Overlay
+
+                local OList = Instance.new("UIListLayout")
+                OList.Padding = UDim.new(0, 4)
+                OList.SortOrder = Enum.SortOrder.LayoutOrder
+                OList.Parent = OScroll
+
+                OList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    OScroll.CanvasSize = UDim2.new(0, 0, 0, OList.AbsoluteContentSize.Y + 8)
+                end)
+
+                local function SetValue(item, fire)
+                    if ListConfig.Multi then
+                        ListFunc.Value = type(ListFunc.Value) == "table" and ListFunc.Value or {}
+                        if ListFunc.Value[item] then
+                            ListFunc.Value[item] = nil
+                        else
+                            ListFunc.Value[item] = true
+                        end
+                    else
+                        ListFunc.Value = item
+                    end
+                    CurrentLbl.Text = CurrentLabel()
+                    Persist()
+                    if fire ~= false then
+                        local ok, err = pcall(function() ListConfig.Callback(ListFunc.Value) end)
+                        if not ok then warn("SelectableList Callback error:", err) end
+                    end
+                end
+
+                local function RebuildRows(query)
+                    for _, c in ipairs(OScroll:GetChildren()) do
+                        if c:IsA("GuiObject") then c:Destroy() end
+                    end
+                    local ql = string.lower(query or "")
+                    local order = 0
+
+                    local function buildRow(item, isBuiltIn, onEquip)
+                        local label = ListConfig.GetLabel(item)
+                        if ql ~= "" and not string.find(string.lower(label), ql, 1, true) then return end
+                        order = order + 1
+                        local isSel = IsSelected(item)
+
+                        local Row = Instance.new(isBuiltIn and "Frame" or "TextButton")
+                        if not isBuiltIn then Row.Text = "" end
+                        Row.BackgroundColor3 = isSel and GuiConfig.Color or C_PANEL2
+                        Row.BackgroundTransparency = isSel and 0.8 or 0.1
+                        Row.Size = UDim2.new(1, 0, 0, ListConfig.GetSubLabel and 42 or 32)
+                        Row.LayoutOrder = order
+                        Row.ZIndex = 41
+                        Row.Parent = OScroll
+                        corner(Row, 5)
+                        stroke(Row, isSel and GuiConfig.Color or C_BORDER, 1).ZIndex = 41
+
+                        if isBuiltIn then
+                            local Badge = Instance.new("TextLabel")
+                            Badge.Font = Enum.Font.GothamBold
+                            Badge.Text = "BUILT-IN"
+                            Badge.TextColor3 = GuiConfig.Color
+                            Badge.TextSize = 8
+                            Badge.BackgroundTransparency = 1
+                            Badge.AnchorPoint = Vector2.new(1, 0)
+                            Badge.Position = UDim2.new(1, -8, 0, 5)
+                            Badge.Size = UDim2.new(0, 60, 0, 10)
+                            Badge.TextXAlignment = Enum.TextXAlignment.Right
+                            Badge.ZIndex = 41
+                            Badge.Parent = Row
+                        end
+
+                        local RowLbl = Instance.new("TextLabel")
+                        RowLbl.Font = Enum.Font.GothamBold
+                        RowLbl.Text = label
+                        RowLbl.TextColor3 = isSel and GuiConfig.Color or C_TEXT
+                        RowLbl.TextSize = 12
+                        RowLbl.TextXAlignment = Enum.TextXAlignment.Left
+                        RowLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                        RowLbl.BackgroundTransparency = 1
+                        RowLbl.Position = UDim2.new(0, 10, 0, ListConfig.GetSubLabel and 4 or 0)
+                        RowLbl.Size = UDim2.new(1, isBuiltIn and -80 or -20, 0, ListConfig.GetSubLabel and 14 or Row.Size.Y.Offset)
+                        RowLbl.ZIndex = 41
+                        RowLbl.Parent = Row
+
+                        if ListConfig.GetSubLabel then
+                            local SubLbl = Instance.new("TextLabel")
+                            SubLbl.Font = Enum.Font.Gotham
+                            SubLbl.Text = ListConfig.GetSubLabel(item) or ""
+                            SubLbl.TextColor3 = C_SUBTEXT
+                            SubLbl.TextSize = 10
+                            SubLbl.TextXAlignment = Enum.TextXAlignment.Left
+                            SubLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                            SubLbl.BackgroundTransparency = 1
+                            SubLbl.Position = UDim2.new(0, 10, 0, 20)
+                            SubLbl.Size = UDim2.new(1, -20, 0, 14)
+                            SubLbl.ZIndex = 41
+                            SubLbl.Parent = Row
+                        end
+
+                        if ListConfig.GetBadge then
+                            local badgeText = ListConfig.GetBadge(item)
+                            if badgeText then
+                                local Pill = Instance.new("TextLabel")
+                                Pill.Font = Enum.Font.GothamBold
+                                Pill.Text = tostring(badgeText)
+                                Pill.TextColor3 = GuiConfig.Color
+                                Pill.TextSize = 10
+                                Pill.BackgroundTransparency = 1
+                                Pill.AnchorPoint = Vector2.new(1, 0.5)
+                                Pill.Position = UDim2.new(1, -8, 0.5, 0)
+                                Pill.Size = UDim2.new(0, 50, 1, -8)
+                                Pill.TextXAlignment = Enum.TextXAlignment.Right
+                                Pill.ZIndex = 41
+                                Pill.Parent = Row
+                            end
+                        end
+
+                        if isBuiltIn then
+                            local EquipBtn = Instance.new("TextButton")
+                            EquipBtn.Font = Enum.Font.GothamBold
+                            EquipBtn.Text = "Use"
+                            EquipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                            EquipBtn.TextSize = 10
+                            EquipBtn.BackgroundColor3 = GuiConfig.Color
+                            EquipBtn.AnchorPoint = Vector2.new(1, 0.5)
+                            EquipBtn.Position = UDim2.new(1, -8, 0.5, 0)
+                            EquipBtn.Size = UDim2.new(0, 36, 0, 18)
+                            EquipBtn.ZIndex = 42
+                            EquipBtn.Parent = Row
+                            corner(EquipBtn, 4)
+                            EquipBtn.Activated:Connect(function()
+                                if onEquip then onEquip() end
+                            end)
+                        else
+                            Row.Activated:Connect(function()
+                                SetValue(item)
+                                RebuildRows(OSearch.Text)
+                                if not ListConfig.Multi then
+                                    Overlay.Visible = false
+                                end
+                            end)
+                        end
+                    end
+
+                    for _, entry in ipairs(ListConfig.BuiltIn) do
+                        buildRow(entry, true, entry.OnEquip or function()
+                            SetValue(entry.Value ~= nil and entry.Value or entry)
+                        end)
+                    end
+                    for _, item in ipairs(ListFunc.Items) do
+                        buildRow(item, false, nil)
+                    end
+                end
+
+                OpenBtn.Activated:Connect(function()
+                    Overlay.Visible = true
+                    OSearch.Text = ""
+                    RebuildRows("")
+                end)
+                DoneBtn.Activated:Connect(function()
+                    Overlay.Visible = false
+                end)
+
+                local listSearchTicket = 0
+                OSearch:GetPropertyChangedSignal("Text"):Connect(function()
+                    listSearchTicket = listSearchTicket + 1
+                    local ticket = listSearchTicket
+                    task.delay(0.08, function()
+                        if ticket == listSearchTicket then RebuildRows(OSearch.Text) end
+                    end)
+                end)
+
+                function ListFunc:SetItems(items)
+                    ListFunc.Items = items or {}
+                    if Overlay.Visible then RebuildRows(OSearch.Text) end
+                end
+                function ListFunc:Set(value, noSave)
+                    ListFunc.Value = value
+                    CurrentLbl.Text = CurrentLabel()
+                    if shouldSave and not noSave then Persist() end
+                end
+                function ListFunc:Get()
+                    return ListFunc.Value
+                end
+
+                CountItem = CountItem + 1
+                if shouldSave then Elements[configKey] = ListFunc end
+                RegisterSearch({ label = ListConfig.Title, tab = TabConfig.Name, kind = "SelectableList", switch = SearchSwitch })
+                return ListFunc
             end
 
             CountSection = CountSection + 1
